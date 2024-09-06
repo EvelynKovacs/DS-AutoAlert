@@ -1,20 +1,25 @@
 package com.example.autoalert.view.activities;
+
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
 import com.example.autoalert.R;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.tasks.Task;
+import com.google.android.material.snackbar.Snackbar;
+import com.google.android.gms.common.api.ResolvableApiException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,11 +27,10 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvAcceleration;
     private TextView tvGravity;
     private TextView tvLocation;
-    private SensorManager sensorManager;
-    private Sensor accelerometerSensor;
     private LocationManager locationManager;
-    private float[] gravity = new float[3];
-    private float[] linearAcceleration = new float[3];
+
+    private static final int REQUEST_LOCATION_PERMISSION = 1;
+    private static final int REQUEST_CHECK_SETTINGS = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,57 +38,56 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         tvSpeed = findViewById(R.id.tv_speed);
-        tvAcceleration = findViewById(R.id.tv_acceleration);
-        tvGravity = findViewById(R.id.tv_gravity);
+
         tvLocation = findViewById(R.id.tv_location);
 
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        accelerometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        // Verificar permisos
+        // Verificar permisos y ubicación
+        checkLocationPermissions();
+        checkLocationSettings();
+    }
+
+    private void checkLocationPermissions() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
-            return;
-        }
-
-        // Registrar los escuchadores
-        sensorManager.registerListener(accelerometerListener, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener); // Actualización cada segundo y cada metro
-
-        // Obtener la última ubicación conocida
-        Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-        if (lastKnownLocation != null) {
-            updateLocation(lastKnownLocation);
-        } else {
-            tvLocation.setText("Esperando ubicación...");
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
         }
     }
 
-    private final SensorEventListener accelerometerListener = new SensorEventListener() {
-        @Override
-        public void onSensorChanged(SensorEvent event) {
-            final float alpha = 0.8f;
-            gravity[0] = alpha * gravity[0] + (1 - alpha) * event.values[0];
-            gravity[1] = alpha * gravity[1] + (1 - alpha) * event.values[1];
-            gravity[2] = alpha * gravity[2] + (1 - alpha) * event.values[2];
+    private void checkLocationSettings() {
+        LocationRequest locationRequest = LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
-            linearAcceleration[0] = event.values[0] - gravity[0];
-            linearAcceleration[1] = event.values[1] - gravity[1];
-            linearAcceleration[2] = event.values[2] - gravity[2];
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
 
-            tvAcceleration.setText(String.format("Aceleración: %.2f m/s²", Math.sqrt(linearAcceleration[0] * linearAcceleration[0] +
-                    linearAcceleration[1] * linearAcceleration[1] +
-                    linearAcceleration[2] * linearAcceleration[2])));
-            tvGravity.setText(String.format("Gravedad: %.2f m/s²", Math.sqrt(gravity[0] * gravity[0] +
-                    gravity[1] * gravity[1] +
-                    gravity[2] * gravity[2])));
-        }
+        Task<LocationSettingsResponse> task = LocationServices.getSettingsClient(this).checkLocationSettings(builder.build());
 
-        @Override
-        public void onAccuracyChanged(Sensor sensor, int accuracy) {}
-    };
+        task.addOnSuccessListener(this, locationSettingsResponse -> {
+            // Si la configuración de ubicación es correcta, podemos continuar
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
+            }
+        });
+
+        task.addOnFailureListener(this, e -> {
+            if (e instanceof ResolvableApiException) {
+                // La configuración de ubicación no está habilitada, solicita al usuario activarla
+                try {
+                    ResolvableApiException resolvable = (ResolvableApiException) e;
+                    resolvable.startResolutionForResult(MainActivity.this, REQUEST_CHECK_SETTINGS);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            } else {
+                // Mostrar un mensaje al usuario indicando que debe activar la ubicación
+                Snackbar.make(findViewById(android.R.id.content), "La ubicación está desactivada. Por favor, actívala para continuar.", Snackbar.LENGTH_LONG)
+                        .setAction("Activar", view -> {
+                            Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                            startActivity(intent);
+                        }).show();
+            }
+        });
+    }
 
     private final LocationListener locationListener = new LocationListener() {
         @Override
@@ -104,17 +107,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateLocation(Location location) {
         float speed = location.getSpeed(); // Velocidad en metros por segundo
+        double speedKmh = speed * 3.6; // Convertir a kilómetros por hora
         double latitude = location.getLatitude();
         double longitude = location.getLongitude();
 
-        tvSpeed.setText(String.format("Velocidad: %.2f m/s", speed));
+        tvSpeed.setText(String.format("Velocidad: %.2f km/h", speedKmh));
         tvLocation.setText(String.format("Ubicación: %.6f, %.6f", latitude, longitude));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        sensorManager.unregisterListener(accelerometerListener);
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.removeUpdates(locationListener);
         }
@@ -123,27 +126,27 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        checkLocationSettings();  // Revisa la configuración al reanudar la app
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
         }
-        sensorManager.registerListener(accelerometerListener, accelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1) {
+        if (requestCode == REQUEST_LOCATION_PERMISSION) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 1, locationListener);
-                    Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    if (lastKnownLocation != null) {
-                        updateLocation(lastKnownLocation);
-                    } else {
-                        tvLocation.setText("Esperando ubicación...");
-                    }
-                }
+                checkLocationSettings();
             }
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CHECK_SETTINGS && resultCode == RESULT_OK) {
+            checkLocationSettings();
         }
     }
 }
