@@ -19,11 +19,13 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.autoalert.R;
+import com.example.autoalert.repository.SensorQueueRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 
 public class SensorViewModel extends AndroidViewModel implements SensorEventListener {
 
@@ -42,6 +44,8 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
     private boolean isLinearAccelerationAvailable;
     private boolean isAccelerometerAvailable;
 
+    private SensorQueueRepository sensorData;
+
     public SensorViewModel(@NonNull Application application) {
         super(application);
         sensorManager = (SensorManager) application.getSystemService(Context.SENSOR_SERVICE);
@@ -54,6 +58,8 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         isGyroscopeAvailable = false;
         isLinearAccelerationAvailable = false;
         isAccelerometerAvailable = false;
+
+        sensorData= new SensorQueueRepository();
     }
 
     // Métodos para obtener el estado de los sensores
@@ -87,6 +93,8 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
                 Sensor.TYPE_LINEAR_ACCELERATION,
                 Sensor.TYPE_ACCELEROMETER
         };
+
+
 
         List<Sensor> allSensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
         Map<String, String> initialValues = new HashMap<>();
@@ -128,6 +136,21 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         sensorNames.setValue(foundSensors);
     }
 
+    // Método para almacenar los datos del acelerómetro temporalmente
+    public void storeSensorData(String  data) {
+        sensorData.addSensorData(data);
+    }
+
+    // Método para obtener y mostrar los datos actuales
+    public void showStoredSensorData() {
+        Queue<String> storedData = sensorData.getAllSensorData(); // Obtener todos los datos almacenados
+
+        // Recorrer los datos y mostrarlos
+        for (String data : storedData) {
+            System.out.println("Sensor Data: " + data);
+        }
+    }
+
 
     public void registerSensorListeners() {
         for (Sensor sensor : sensorsToMonitor) {
@@ -146,6 +169,8 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
             String values = String.format("X: %.2f, Y: %.2f, Z: %.2f", event.values[0], event.values[1], event.values[2]);
             sensorValues.getValue().put(sensorName, values);
             sensorValues.postValue(sensorValues.getValue());
+            storeSensorData(values);
+
         }
     }
 
@@ -190,6 +215,9 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
             notificationManager.notify(1, builder.build());
         }
+    }
+    public void clearSensorData() {
+        sensorData.clearQueue();  // Limpiar los datos almacenados en la cola
     }
 
     private String getSensorName(int type) {

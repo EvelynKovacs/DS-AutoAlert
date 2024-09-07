@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.autoalert.R;
+import com.example.autoalert.repository.SensorQueueRepository;
 import com.example.autoalert.view.adapters.SensorAdapter;
 import com.example.autoalert.viewmodel.SensorDataViewModel;
 import com.example.autoalert.viewmodel.SensorViewModel;
@@ -15,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
-
     private SensorViewModel sensorViewModel;
     private SensorAdapter sensorAdapter;
     private SensorDataViewModel sensorDataViewModel;
@@ -58,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        sensorViewModel.clearSensorData();
         sensorViewModel.registerSensorListeners();
     }
 
