@@ -136,19 +136,20 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         sensorNames.setValue(foundSensors);
     }
 
-    // Método para almacenar los datos del acelerómetro temporalmente
-    public void storeSensorData(String  data) {
-        sensorData.addSensorData(data);
+    public void storeAccelerometerData(String accelerometerData) {
+        if (this.isAccelerometerAvailable()) {
+            sensorData.addAccelerometerData(accelerometerData);
+        }
     }
 
-    // Método para obtener y mostrar los datos actuales
-    public void showStoredSensorData() {
-        Queue<String> storedData = sensorData.getAllSensorData(); // Obtener todos los datos almacenados
-
-        // Recorrer los datos y mostrarlos
-        for (String data : storedData) {
-            System.out.println("Sensor Data: " + data);
+    public void storeGyroscopeData(String gyroscopeData) {
+        if (this.isGyroscopeAvailable()) {
+            sensorData.addGyroscopeData(gyroscopeData);
         }
+    }
+
+    public void storeSpeedData(String speedData) {
+        sensorData.addSpeedData(speedData);
     }
 
 
@@ -169,7 +170,19 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
             String values = String.format("X: %.2f, Y: %.2f, Z: %.2f", event.values[0], event.values[1], event.values[2]);
             sensorValues.getValue().put(sensorName, values);
             sensorValues.postValue(sensorValues.getValue());
-            storeSensorData(values);
+
+
+            // Verificar si es acelerómetro, giroscopio o velocidad y almacenar los datos
+            switch (event.sensor.getType()) {
+                case Sensor.TYPE_ACCELEROMETER:
+                    storeAccelerometerData(values);
+                    break;
+
+                case Sensor.TYPE_GYROSCOPE:
+                    storeGyroscopeData(values);
+                    break;
+
+            }
 
         }
     }
@@ -217,7 +230,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         }
     }
     public void clearSensorData() {
-        sensorData.clearQueue();  // Limpiar los datos almacenados en la cola
+        sensorData.clearAllData();  // Limpiar los datos almacenados en la cola
     }
 
     private String getSensorName(int type) {

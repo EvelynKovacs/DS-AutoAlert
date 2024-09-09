@@ -7,43 +7,60 @@ import java.util.Queue;
 public class SensorQueueRepository {
 
     private static final int MAX_SIZE = 10;
-    private Queue<String> sensorDataQueue;
+
+    // Colas para diferentes sensores
+    private Queue<String> accelerometerDataQueue;
+    private Queue<String> gyroscopeDataQueue;
+    private Queue<String> speedDataQueue;
 
     public SensorQueueRepository() {
-        sensorDataQueue = new LinkedList<>();
+        accelerometerDataQueue = new LinkedList<>();
+        gyroscopeDataQueue = new LinkedList<>();
+        speedDataQueue = new LinkedList<>();
     }
 
-    // Agregar datos a la cola
-    public void addSensorData(String data) {
-        if(sensorDataQueue.size() == MAX_SIZE){
-            String removedData = sensorDataQueue.poll(); // Remover el dato más antiguo
+    // Métodos para el Acelerómetro
+    public void addAccelerometerData(String data) {
+        manageQueueSize(accelerometerDataQueue);
+        accelerometerDataQueue.add(data);
+    }
+
+    public Queue<String> getAllAccelerometerData() {
+        return new LinkedList<>(accelerometerDataQueue);
+    }
+
+    // Métodos para el Giroscopio
+    public void addGyroscopeData(String data) {
+        manageQueueSize(gyroscopeDataQueue);
+        gyroscopeDataQueue.add(data);
+    }
+
+    public Queue<String> getAllGyroscopeData() {
+        return new LinkedList<>(gyroscopeDataQueue);
+    }
+
+    // Métodos para la Velocidad
+    public void addSpeedData(String data) {
+        manageQueueSize(speedDataQueue);
+        speedDataQueue.add(data);
+    }
+
+    public Queue<String> getAllSpeedData() {
+        return new LinkedList<>(speedDataQueue);
+    }
+
+    // Método común para gestionar el tamaño de las colas
+    private void manageQueueSize(Queue<String> queue) {
+        if(queue.size() == MAX_SIZE){
+            String removedData = queue.poll(); // Remover el dato más antiguo
             System.out.println("Se eliminó el dato más antiguo: " + removedData);
         }
-        sensorDataQueue.add(data);
     }
 
-
-    // Obtener datos de la cola
-    public String pollSensorData() {
-        return sensorDataQueue.poll(); // Devuelve y remueve el primer elemento
-    }
-
-    // Verificar si la cola está vacía
-    public boolean isQueueEmpty() {
-        return sensorDataQueue.isEmpty();
-    }
-    // Obtener todos los datos sin eliminarlos
-    public Queue<String> getAllSensorData() {
-        return new LinkedList<>(sensorDataQueue);  // Devolver una copia de la cola
-    }
-
-    // Obtener el tamaño de la cola
-    public int getQueueSize() {
-        return sensorDataQueue.size();
-    }
-
-    // Limpiar la cola
-    public void clearQueue() {
-        sensorDataQueue.clear();
+    // Limpiar todas las colas
+    public void clearAllData() {
+        accelerometerDataQueue.clear();
+        gyroscopeDataQueue.clear();
+        speedDataQueue.clear();
     }
 }
