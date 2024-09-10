@@ -39,7 +39,6 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
     // Booleanos para indicar la disponibilidad de los sensores
     private boolean isGyroscopeAvailable;
-    private boolean isLinearAccelerationAvailable;
     private boolean isAccelerometerAvailable;
 
     public SensorViewModel(@NonNull Application application) {
@@ -52,17 +51,12 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
         // Inicializar los booleanos como falsos
         isGyroscopeAvailable = false;
-        isLinearAccelerationAvailable = false;
         isAccelerometerAvailable = false;
     }
 
     // Métodos para obtener el estado de los sensores
     public boolean isGyroscopeAvailable() {
         return isGyroscopeAvailable;
-    }
-
-    public boolean isLinearAccelerationAvailable() {
-        return isLinearAccelerationAvailable;
     }
 
     public boolean isAccelerometerAvailable() {
@@ -83,8 +77,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
     public void detectSensors() {
         int[] sensorTypes = {
-                Sensor.TYPE_GYROSCOPE,
-                Sensor.TYPE_LINEAR_ACCELERATION,
+                2,
                 Sensor.TYPE_ACCELEROMETER
         };
 
@@ -105,13 +98,10 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
                     // Actualizar los booleanos basados en el tipo de sensor encontrado
                     if (type == Sensor.TYPE_GYROSCOPE) {
                         isGyroscopeAvailable = true;
-                        Log.d(TAG, "Gyroscopio está disponible."); // Mensaje de depuración
-                    } else if (type == Sensor.TYPE_LINEAR_ACCELERATION) {
-                        isLinearAccelerationAvailable = true;
-                        Log.d(TAG, "Aceleración Lineal está disponible."); // Mensaje de depuración
-                    } else if (type == Sensor.TYPE_ACCELEROMETER) {
+                        Log.d(TAG, "Giroscopio está disponible."); // Mensaje de depuración
+                    }  else if (type == Sensor.TYPE_ACCELEROMETER) {
                         isAccelerometerAvailable = true;
-                        Log.d(TAG, "Acelerometro está disponible."); // Mensaje de depuración
+                        Log.d(TAG, "Acelerómetro está disponible."); // Mensaje de depuración
                     }
 
                     break;
@@ -154,6 +144,8 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         // No se necesita implementar para este caso
     }
 
+
+
     public void showSensorNotification() {
         String notificationMessage;
 
@@ -195,11 +187,9 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
     private String getSensorName(int type) {
         switch (type) {
             case Sensor.TYPE_GYROSCOPE:
-                return "Gyroscope";
-            case Sensor.TYPE_LINEAR_ACCELERATION:
-                return "Linear Acceleration";
+                return "Giroscopio";
             case Sensor.TYPE_ACCELEROMETER:
-                return "Accelerometer";
+                return "Acelerómetro";
             default:
                 return null;
         }

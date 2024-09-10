@@ -17,10 +17,12 @@ import java.util.Map;
 public class SensorAdapter extends ArrayAdapter<Sensor> {
 
     private Map<String, String> sensorValues;
+    private List<String> missingSensors;
 
-    public SensorAdapter(Context context, List<Sensor> sensors, Map<String, String> sensorValues) {
+    public SensorAdapter(Context context, List<Sensor> sensors, Map<String, String> sensorValues, List<String> missingSensors) {
         super(context, 0, sensors);
         this.sensorValues = sensorValues;
+        this.missingSensors = missingSensors;
     }
 
     public void updateSensorNames(List<Sensor> sensors) {
@@ -41,6 +43,13 @@ public class SensorAdapter extends ArrayAdapter<Sensor> {
         String sensorName = getSensorName(sensor.getType());
         String sensorValue = sensorValues.get(sensorName);
 
+
+        // Omitir la creación de la vista si el sensor está en la lista de sensores faltantes
+        if (missingSensors.contains(sensorName)) {
+            // Retorna una vista vacía o simplemente no inflas nada
+            return new View(getContext());
+        }
+
         if (convertView == null) {
             convertView = LayoutInflater.from(getContext()).inflate(R.layout.sensor_list_item, parent, false);
         }
@@ -55,11 +64,9 @@ public class SensorAdapter extends ArrayAdapter<Sensor> {
     private String getSensorName(int type) {
         switch (type) {
             case Sensor.TYPE_GYROSCOPE:
-                return "Gyroscope";
-            case Sensor.TYPE_LINEAR_ACCELERATION:
-                return "Linear Acceleration";
+                return "Giroscopio";
             case Sensor.TYPE_ACCELEROMETER:
-                return "Accelerometer";
+                return "Acelerómetro";
             default:
                 return "Unknown Sensor";
         }

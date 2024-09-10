@@ -30,4 +30,9 @@
         android:divider="@android:color/black"
         android:dividerHeight="1dp"
         android:padding="16dp"/>
+
+    <com.jjoe64.graphview.GraphView
+        android:layout_width="match_parent"
+        android:layout_height="200dip"
+        android:id="@+id/graph" />
 </LinearLayout>
