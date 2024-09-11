@@ -1,19 +1,53 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.activities.MainActivity">
+    android:padding="16dp">
 
+    <!-- Estado del Hotspot -->
     <TextView
+        android:id="@+id/statusTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:text="Estado del Hotspot"
+        android:textSize="18sp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <!-- LinearLayout con SSID y contraseña -->
+    <LinearLayout
+        android:id="@+id/infoLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/statusTextView"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:layout_centerHorizontal="true">
+
+        <TextView
+            android:id="@+id/ssidTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SSID: "
+            android:textSize="18sp"
+            android:padding="8dp" />
+
+        <TextView
+            android:id="@+id/passwordTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Contraseña: "
+            android:textSize="18sp"
+            android:padding="8dp" />
+    </LinearLayout>
+
+    <!-- Botón para activar el Hotspot -->
+    <Button
+        android:id="@+id/toggleHotspotButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Activar Hotspot"
+        android:layout_below="@id/infoLayout"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp" />
+
+</RelativeLayout>
