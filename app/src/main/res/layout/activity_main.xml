@@ -1,73 +1,69 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Estado del Hotspot -->
+    <!-- Campo para ingresar el SSID -->
+    <TextView
+        android:id="@+id/ssidLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SSID:"
+        android:textSize="18sp" />
+
+    <EditText
+        android:id="@+id/ssidEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ingrese el nombre del SSID" />
+
+    <!-- Campo para ingresar la contraseña -->
+    <TextView
+        android:id="@+id/passwordLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Contraseña:"
+        android:textSize="18sp" />
+
+    <EditText
+        android:id="@+id/passwordEditText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ingrese la contraseña"
+        android:inputType="textPassword" />
+
+    <!-- Texto de estado del hotspot -->
     <TextView
         android:id="@+id/statusTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Estado del Hotspot"
-        android:textSize="18sp"
-        android:layout_centerHorizontal="true"
-        android:layout_marginBottom="20dp" />
+        android:textSize="16sp"
+        android:paddingTop="16dp" />
 
-    <!-- EditText para ingresar el SSID -->
-    <EditText
-        android:id="@+id/ssidEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Ingresar nombre del Hotspot (SSID)"
-        android:inputType="text"
-        android:layout_below="@id/statusTextView"
-        android:layout_marginBottom="10dp" />
-
-    <!-- EditText para ingresar la contraseña -->
-    <EditText
-        android:id="@+id/passwordEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Ingresar contraseña"
-        android:inputType="textPassword"
-        android:layout_below="@id/ssidEditText"
-        android:layout_marginBottom="20dp" />
-
-    <!-- LinearLayout para mostrar SSID y contraseña cuando el hotspot se activa -->
-    <LinearLayout
-        android:id="@+id/infoLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/passwordEditText"
-        android:orientation="vertical"
-        android:padding="16dp"
-        android:layout_centerHorizontal="true">
-
-        <TextView
-            android:id="@+id/ssidTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="SSID: "
-            android:textSize="18sp"
-            android:padding="8dp" />
-
-        <TextView
-            android:id="@+id/passwordTextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Contraseña: "
-            android:textSize="18sp"
-            android:padding="8dp" />
-    </LinearLayout>
-
-    <!-- Botón para activar el Hotspot -->
+    <!-- Botón para alternar el estado del Hotspot -->
     <Button
         android:id="@+id/toggleHotspotButton"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Activar Hotspot"
-        android:layout_below="@id/infoLayout"
-        android:layout_centerHorizontal="true"
-        android:layout_marginTop="20dp" />
+        android:layout_marginTop="16dp" />
 
-</RelativeLayout>
+    <!-- Mostrar el SSID y la contraseña del Hotspot activo -->
+    <TextView
+        android:id="@+id/ssidTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SSID:"
+        android:textSize="16sp"
+        android:layout_marginTop="24dp" />
+
+    <TextView
+        android:id="@+id/passwordTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Contraseña:"
+        android:textSize="16sp" />
+</LinearLayout>

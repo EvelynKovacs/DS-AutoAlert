@@ -30,6 +30,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private TextView ssidTextView;
     private TextView passwordTextView;
     private EditText ssidEditText;
+    private WifiHotspot wifiHotspotManager;
     private EditText passwordEditText;
 
 
@@ -64,35 +65,40 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
                 return;
             }
             if (!ssid.isEmpty() && !password.isEmpty()) {
-                // Activar el Hotspot con el SSID y la contraseña ingresados por el usuario
-                toggleHotspot(ssid, password);
+                // Verificar si el sistema operativo es Android 10 o superior
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    // Activar el Hotspot (Wi-Fi Direct) con el SSID y la contraseña ingresados por el usuario
+                    toggleHotspot(ssid, password);
+                } else {
+                    // Mostrar mensaje de error si la versión es inferior a Android 10
+                    Toast.makeText(MainActivity.this, "Wi-Fi Direct Hotspot requiere Android 10 o superior", Toast.LENGTH_SHORT).show();
+                }
             }
         });
     }
 
     // Método para alternar el estado del Hotspot
     private void toggleHotspot(String ssid, String password) {
-        boolean success = hotspotManager.setWifiApEnabled(ssid, password, !isHotspotActive);
-
-        if (success) {
-            isHotspotActive = !isHotspotActive; // Cambiar el estado
-            String statusMessage = isHotspotActive ? "Hotspot activado sin contraseña" : "Hotspot desactivado";
-
-            // Mostrar un mensaje de éxito
-            Toast.makeText(this, statusMessage, Toast.LENGTH_SHORT).show();
-
-            // Actualizar la interfaz
-            statusTextView.setText(statusMessage);
-            toggleHotspotButton.setText(isHotspotActive ? "Desactivar Hotspot" : "Activar Hotspot");
-
-
+        if (!isHotspotActive) {
+            // Iniciar el Hotspot con Wi-Fi Direct
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                hotspotManager.startWifiDirectHotspot(ssid, password);
+            }
         } else {
-            // Mostrar un mensaje de error
-            Toast.makeText(this, "Error al cambiar el estado del Hotspot", Toast.LENGTH_SHORT).show();
-
-            // Actualizar la interfaz con el error
-            statusTextView.setText("Error al cambiar el estado del Hotspot");
+            // Detener el Hotspot
+            hotspotManager.stopHotspot();
         }
+
+        isHotspotActive = !isHotspotActive; // Cambiar el estado
+        String statusMessage = isHotspotActive ? "Hotspot activado" : "Hotspot desactivado";
+
+        // Mostrar un mensaje de éxito o error
+        Toast.makeText(this, statusMessage, Toast.LENGTH_SHORT).show();
+
+        // Actualizar la interfaz
+        statusTextView.setText(statusMessage);
+        toggleHotspotButton.setText(isHotspotActive ? "Desactivar Hotspot" : "Activar Hotspot");
+
     }
 
     // Método para verificar permisos en tiempo de ejecución
