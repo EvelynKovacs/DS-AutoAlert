@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -28,6 +29,8 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private boolean isHotspotActive = false;
     private TextView ssidTextView;
     private TextView passwordTextView;
+    private EditText ssidEditText;
+    private EditText passwordEditText;
 
 
     @Override
@@ -37,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         ssidTextView = findViewById(R.id.ssidTextView);
         passwordTextView = findViewById(R.id.passwordTextView);
+        ssidEditText = findViewById(R.id.ssidEditText);
+        passwordEditText = findViewById(R.id.passwordEditText);
 
         // Inicializar el administrador del hotspot
         hotspotManager = new WifiHotspot(this, this);
@@ -48,13 +53,26 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Verificar y solicitar permisos necesarios
         checkPermissions();
 
-        // Configurar el botón para activar/desactivar el hotspot
-        toggleHotspotButton.setOnClickListener(v -> toggleHotspot());
+
+        // Configuramos el botón para activar el hotspot
+        toggleHotspotButton.setOnClickListener(view -> {
+            String ssid = ssidEditText.getText().toString().trim();
+            String password = passwordEditText.getText().toString().trim();
+            // Validar que el usuario haya ingresado el SSID y la contraseña
+            if (ssid.isEmpty() || password.isEmpty()) {
+                Toast.makeText(MainActivity.this, "Ingrese un SSID y una contraseña", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!ssid.isEmpty() && !password.isEmpty()) {
+                // Activar el Hotspot con el SSID y la contraseña ingresados por el usuario
+                toggleHotspot(ssid, password);
+            }
+        });
     }
 
     // Método para alternar el estado del Hotspot
-    private void toggleHotspot() {
-        boolean success = hotspotManager.setWifiApEnabled(!isHotspotActive);
+    private void toggleHotspot(String ssid, String password) {
+        boolean success = hotspotManager.setWifiApEnabled(ssid, password, !isHotspotActive);
 
         if (success) {
             isHotspotActive = !isHotspotActive; // Cambiar el estado
@@ -106,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permisos concedidos, puedes iniciar el hotspot
-                toggleHotspot();
+                Log.e("PermissionSuccesfull", "Permiso de ubicación habilitados. Se puede iniciar el hotspot.");
             } else {
                 // Permisos no concedidos, manejar el caso según tu lógica
                 Log.e("PermissionError", "Permiso de ubicación denegado. No se puede iniciar el hotspot.");

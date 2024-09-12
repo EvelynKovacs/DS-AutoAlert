@@ -23,24 +23,37 @@ public class WifiHotspot {
         this.hotspotListener = listener;
     }
 
-    public boolean setWifiApEnabled(boolean enabled) {
+    public boolean setWifiApEnabled(String ssid, String password, boolean enabled) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // Android 8 o superior
             if (enabled) {
-                startHotspot();
+                startHotspot(ssid, password);
             } else {
                 stopHotspot();
             }
             return true;
-        } else {
+        }
+
+        else {
             // Android 7 o inferior
-            return setWifiApEnabledLegacy(enabled);
+            return setWifiApEnabledLegacy(ssid, password, enabled);
+        }
+    }
+
+    public void setCustomWifiApEnabled(String ssid, String password, boolean enabled) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Android 8 o superior
+            if (enabled) {
+                startHotspot(ssid, password);
+            } else {
+                stopHotspot();
+            }
         }
     }
 
     // Método para versiones anteriores a Android 8 (Android 7 o inferior)
     @SuppressWarnings("deprecation")
-    private boolean setWifiApEnabledLegacy(boolean enabled) {
+    private boolean setWifiApEnabledLegacy(String ssid, String password, boolean enabled) {
         try {
             // Si habilitamos el Hotspot, desactivamos el Wi-Fi normal
             if (enabled && wifiManager.isWifiEnabled()) {
@@ -61,24 +74,24 @@ public class WifiHotspot {
         }
     }
 
-    // Método para iniciar el Hotspot en Android 8 y superior
+    // Método para iniciar el Hotspot en Android 8 y superior con SSID y contraseña personalizados
     @RequiresApi(api = Build.VERSION_CODES.O)
-    private void startHotspot() {
+    private void startHotspot(String ssid, String password) {
         wifiManager.startLocalOnlyHotspot(new LocalOnlyHotspotCallback() {
             @Override
             public void onStarted(LocalOnlyHotspotReservation reservation) {
                 super.onStarted(reservation);
                 hotspotReservation = reservation;
 
-                // Obtener SSID y contraseña
-                WifiConfiguration wifiConfig = hotspotReservation.getWifiConfiguration();
-                String ssid = wifiConfig.SSID;
-                String password = wifiConfig.preSharedKey;
+                WifiConfiguration wifiConfig = new WifiConfiguration();
+                wifiConfig.SSID = ssid;  // Nombre personalizado del Hotspot
+                wifiConfig.preSharedKey = password;  // Contraseña personalizada
 
-                // Informar al listener (MainActivity) del SSID y la contraseña
+                // Notificar al listener (MainActivity) del SSID y la contraseña
                 if (hotspotListener != null) {
-                    hotspotListener.onHotspotStarted(ssid, password);
+                    hotspotListener.onHotspotStarted(wifiConfig.SSID, wifiConfig.preSharedKey);
                 }
+
                 Log.d("Hotspot", "Hotspot iniciado. SSID: " + ssid + " Contraseña: " + password);
             }
 
