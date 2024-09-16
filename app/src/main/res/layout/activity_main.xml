@@ -66,4 +66,24 @@
         android:layout_height="wrap_content"
         android:text="Contraseña:"
         android:textSize="16sp" />
+
+    <Button
+        android:id="@+id/btnSendBroadcast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enviar Broadcast" />
+
+    <TextView
+        android:id="@+id/ipTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="IPs recibidas:"
+        android:textSize="18sp" />
+
+    <Button
+        android:id="@+id/btnSendMessages"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enviar Mensaje a IPs" />
 </LinearLayout>
