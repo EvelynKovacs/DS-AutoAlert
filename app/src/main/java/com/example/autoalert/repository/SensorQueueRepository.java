@@ -1,6 +1,8 @@
 // SensorQueueRepository.java
 package com.example.autoalert.repository;
 
+import android.content.Context;
+
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -12,8 +14,10 @@ public class SensorQueueRepository {
     private Queue<String> accelerometerDataQueue;
     private Queue<String> gyroscopeDataQueue;
     private Queue<String> speedDataQueue;
+    private Context context; // Agregar contexto para el archivo
 
-    public SensorQueueRepository() {
+    public SensorQueueRepository(Context context) {
+        this.context = context.getApplicationContext(); // Usar el contexto de aplicación para evitar fugas
         accelerometerDataQueue = new LinkedList<>();
         gyroscopeDataQueue = new LinkedList<>();
         speedDataQueue = new LinkedList<>();
@@ -21,8 +25,12 @@ public class SensorQueueRepository {
 
     // Métodos para el Acelerómetro
     public void addAccelerometerData(String data) {
-        manageQueueSize(accelerometerDataQueue);
+
+        manageAccelerometerQueue(accelerometerDataQueue);
         accelerometerDataQueue.add(data);
+        System.out.println("Se agregó un dato al Acelerómetro: " + data);
+        SensorDataWriter.writeDataToFile(context,"Acelerómetro: " + data);
+
     }
 
     public Queue<String> getAllAccelerometerData() {
@@ -31,8 +39,12 @@ public class SensorQueueRepository {
 
     // Métodos para el Giroscopio
     public void addGyroscopeData(String data) {
-        manageQueueSize(gyroscopeDataQueue);
+        manageGyroscopeQueue(gyroscopeDataQueue);
         gyroscopeDataQueue.add(data);
+        System.out.println("Se agregó un dato al Giroscopio: " + data);
+        SensorDataWriter.writeDataToFile(context,"Giroscopio: " + data);
+
+
     }
 
     public Queue<String> getAllGyroscopeData() {
@@ -41,19 +53,45 @@ public class SensorQueueRepository {
 
     // Métodos para la Velocidad
     public void addSpeedData(String data) {
-        manageQueueSize(speedDataQueue);
+        manageVelocityQueue(speedDataQueue);
         speedDataQueue.add(data);
+        System.out.println("Se agregó un dato a la velocidad: " + data);
+        SensorDataWriter.writeDataToFile(context,"Velocidad: " + data);
+
+
     }
 
     public Queue<String> getAllSpeedData() {
         return new LinkedList<>(speedDataQueue);
     }
 
-    // Método común para gestionar el tamaño de las colas
-    private void manageQueueSize(Queue<String> queue) {
-        if(queue.size() == MAX_SIZE){
-            String removedData = queue.poll(); // Remover el dato más antiguo
-            System.out.println("Se eliminó el dato más antiguo: " + removedData);
+    // Método para gestionar la cola del acelerómetro
+    private void manageAccelerometerQueue(Queue<String> queue) {
+        if (queue.size() == MAX_SIZE) {
+            String removedData = queue.poll();
+            System.out.println("Se eliminó un dato del Acelerómetro: " + removedData);
+            SensorDataWriter.writeDataToFile(context,"Se eliminó un dato del Acelerómetro: " + removedData);
+
+        }
+    }
+
+    // Método para gestionar la cola del giroscopio
+    private void manageGyroscopeQueue(Queue<String> queue) {
+        if (queue.size() == MAX_SIZE) {
+            String removedData = queue.poll();
+            System.out.println("Se eliminó un dato del Giroscopio: " + removedData);
+            SensorDataWriter.writeDataToFile(context,"Se eliminó un dato del Giroscopio: " + removedData);
+
+        }
+    }
+
+    // Método para gestionar la cola de la velocidad
+    private void manageVelocityQueue(Queue<String> queue) {
+        if (queue.size() == MAX_SIZE) {
+            String removedData = queue.poll();
+            System.out.println("Se eliminó un dato de la Velocidad: " + removedData);
+            SensorDataWriter.writeDataToFile(context,"Se eliminó un dato de la Velocidad: " + removedData);
+
         }
     }
 

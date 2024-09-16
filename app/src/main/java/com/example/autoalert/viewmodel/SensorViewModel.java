@@ -19,6 +19,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.autoalert.R;
+import com.example.autoalert.repository.SensorDataWriter;
 import com.example.autoalert.repository.SensorQueueRepository;
 
 import java.util.ArrayList;
@@ -37,11 +38,16 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
 
     private MutableLiveData<List<Sensor>> sensorNames;
+    // Variable para almacenar el último tiempo de actualización del acelerómetro
+    private long lastAccelerometerUpdate = 0;
+    private long lastGyroscopeUpdate = 0;
+    private static final long UPDATE_INTERVAL_MS = 100;
+
 
 
     // Booleanos para indicar la disponibilidad de los sensores
     private boolean isGyroscopeAvailable;
-    private boolean isLinearAccelerationAvailable;
+
     private boolean isAccelerometerAvailable;
 
     private SensorQueueRepository sensorData;
@@ -56,19 +62,14 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
         // Inicializar los booleanos como falsos
         isGyroscopeAvailable = false;
-        isLinearAccelerationAvailable = false;
         isAccelerometerAvailable = false;
 
-        sensorData= new SensorQueueRepository();
+        sensorData= new SensorQueueRepository(application.getApplicationContext());
     }
 
     // Métodos para obtener el estado de los sensores
     public boolean isGyroscopeAvailable() {
         return isGyroscopeAvailable;
-    }
-
-    public boolean isLinearAccelerationAvailable() {
-        return isLinearAccelerationAvailable;
     }
 
     public boolean isAccelerometerAvailable() {
@@ -90,7 +91,6 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
     public void detectSensors() {
         int[] sensorTypes = {
                 Sensor.TYPE_GYROSCOPE,
-                Sensor.TYPE_LINEAR_ACCELERATION,
                 Sensor.TYPE_ACCELEROMETER
         };
 
@@ -114,9 +114,6 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
                     if (type == Sensor.TYPE_GYROSCOPE) {
                         isGyroscopeAvailable = true;
                         Log.d(TAG, "Gyroscopio está disponible."); // Mensaje de depuración
-                    } else if (type == Sensor.TYPE_LINEAR_ACCELERATION) {
-                        isLinearAccelerationAvailable = true;
-                        Log.d(TAG, "Aceleración Lineal está disponible."); // Mensaje de depuración
                     } else if (type == Sensor.TYPE_ACCELEROMETER) {
                         isAccelerometerAvailable = true;
                         Log.d(TAG, "Acelerometro está disponible."); // Mensaje de depuración
@@ -139,23 +136,25 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
     public void storeAccelerometerData(String accelerometerData) {
         if (this.isAccelerometerAvailable()) {
             sensorData.addAccelerometerData(accelerometerData);
+            //SensorDataWriter.writeDataToFile(getApplication(),"Acelerómetro: " + accelerometerData); // Guardar en archivo
         }
     }
 
     public void storeGyroscopeData(String gyroscopeData) {
         if (this.isGyroscopeAvailable()) {
             sensorData.addGyroscopeData(gyroscopeData);
+            //SensorDataWriter.writeDataToFile(getApplication(),"Giroscopio: " + gyroscopeData);
         }
     }
 
-    public void storeSpeedData(String speedData) {
-        sensorData.addSpeedData(speedData);
-    }
 
 
     public void registerSensorListeners() {
+        // Establecer un intervalo de 1 segundo (1000000 microsegundos)
+        int delay = 10000000; // 1 segundo en microsegundos
+
         for (Sensor sensor : sensorsToMonitor) {
-            sensorManager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
+            sensorManager.registerListener(this, sensor, delay);
         }
     }
 
@@ -163,7 +162,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         sensorManager.unregisterListener(this);
     }
 
-    @Override
+   /* @Override
     public void onSensorChanged(SensorEvent event) {
         String sensorName = getSensorName(event.sensor.getType());
         if (sensorName != null) {
@@ -185,7 +184,38 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
             }
 
         }
-    }
+    }*/
+   @Override
+   public void onSensorChanged(SensorEvent event) {
+       long currentTime = System.currentTimeMillis();  // Obtiene el tiempo actual en milisegundos
+
+       String sensorName = getSensorName(event.sensor.getType());
+       if (sensorName != null) {
+           String values = String.format("X: %.2f, Y: %.2f, Z: %.2f", event.values[0], event.values[1], event.values[2]);
+           sensorValues.getValue().put(sensorName, values);
+           sensorValues.postValue(sensorValues.getValue());
+
+           switch (event.sensor.getType()) {
+               case Sensor.TYPE_ACCELEROMETER:
+                   // Si ha pasado más de un segundo desde la última actualización
+                   if (currentTime - lastAccelerometerUpdate >=  UPDATE_INTERVAL_MS ){
+
+                       lastAccelerometerUpdate = currentTime;
+                       storeAccelerometerData(values);  // Procesa y almacena los datos del acelerómetro
+                   }
+                   break;
+
+               case Sensor.TYPE_GYROSCOPE:
+                   // Si ha pasado más de un segundo desde la última actualización
+                   if (currentTime - lastGyroscopeUpdate >=UPDATE_INTERVAL_MS ) {
+                       lastGyroscopeUpdate = currentTime;
+                       storeGyroscopeData(values);  // Procesa y almacena los datos del giroscopio
+                   }
+                   break;
+           }
+       }
+   }
+
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -237,8 +267,6 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         switch (type) {
             case Sensor.TYPE_GYROSCOPE:
                 return "Gyroscope";
-            case Sensor.TYPE_LINEAR_ACCELERATION:
-                return "Linear Acceleration";
             case Sensor.TYPE_ACCELEROMETER:
                 return "Accelerometer";
             default:
