@@ -1,7 +1,11 @@
 package com.example.autoalert.view.activities;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.view.View;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -15,6 +19,7 @@ import com.jjoe64.graphview.series.LineGraphSeries;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,27 +29,75 @@ public class MainActivity extends AppCompatActivity {
 
     // Para el gráfico
     private int pointsPlotted = 5;
-    private GraphView graph;
-    private LineGraphSeries<DataPoint> series;
+    private GraphView graphGyro, graphAccel;
+    private LineGraphSeries<DataPoint> seriesGyroX, seriesGyroY, seriesGyroZ;
+    private LineGraphSeries<DataPoint> seriesAccelX, seriesAccelY, seriesAccelZ;
+    private Handler handler = new Handler(Looper.getMainLooper()); // Para retrasar las actualizaciones
+
+
+    private static final int GRAPH_UPDATE_DELAY_MS = 500; // Retraso en milisegundos (500 ms = 0.5 segundos)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        /*
-        // Inicializar el gráfico y la serie aquí
-        graph = findViewById(R.id.graph);
-        series = new LineGraphSeries<>();
-        graph.addSeries(series);
+        // Inicializar gráficos
+         graphGyro = findViewById(R.id.graphGyro);
+         graphAccel = findViewById(R.id.graphAcelerometer);
 
-        // Configurar el gráfico para avanzar más lentamente en el eje X
-        graph.getViewport().setXAxisBoundsManual(true);
-        graph.getViewport().setMinX(0);
-        graph.getViewport().setMaxX(50);  // Aumentar el valor máximo del eje X
-        graph.getViewport().setScalable(true);
-        graph.getViewport().setScrollable(true);*/
 
+        // Configurar gráficos (colores, series, etc.) como antes...
+        // Gráfico del giroscopio
+        seriesGyroX = new LineGraphSeries<>();
+        seriesGyroY = new LineGraphSeries<>();
+        seriesGyroZ = new LineGraphSeries<>();
+
+        graphGyro.addSeries(seriesGyroX);
+        graphGyro.addSeries(seriesGyroY);
+        graphGyro.addSeries(seriesGyroZ);
+
+        // Establecer diferentes colores para cada eje
+        seriesGyroX.setColor(getResources().getColor(R.color.red, getTheme()));// Eje X en rojo
+        seriesGyroY.setColor(getResources().getColor(R.color.green, getTheme())); // Eje Y en verde
+        seriesGyroZ.setColor(getResources().getColor(R.color.blue, getTheme())); // Eje Z en azul
+
+
+
+        // Añadir las series al gráfico del giroscopio
+        graphGyro.addSeries(seriesGyroX);
+        graphGyro.addSeries(seriesGyroY);
+        graphGyro.addSeries(seriesGyroZ);
+
+        // Configurar el gráfico
+        graphGyro.getViewport().setXAxisBoundsManual(false); // Ajusta los límites automáticamente
+        graphGyro.getViewport().setMinX(0);
+        graphGyro.getViewport().setMaxX(pointsPlotted);
+        graphGyro.getViewport().setScalable(true);  // Permitir zoom
+        graphGyro.getViewport().setScrollable(true);  // Permitir desplazamiento
+
+
+        // Gráfico del acelerómetro
+         seriesAccelX = new LineGraphSeries<>();
+         seriesAccelY = new LineGraphSeries<>();
+         seriesAccelZ = new LineGraphSeries<>();
+
+        graphAccel.addSeries(seriesAccelX);
+        graphAccel.addSeries(seriesAccelY);
+        graphAccel.addSeries(seriesAccelZ);
+
+        // Establecer diferentes colores para cada eje
+        seriesAccelX.setColor(getResources().getColor(R.color.red, getTheme())); // Eje X en rojo
+        seriesAccelY.setColor(getResources().getColor(R.color.green, getTheme())); // Eje Y en verde
+        seriesAccelZ.setColor(getResources().getColor(R.color.blue, getTheme())); // Eje Z en azul
+
+
+        // Configurar el gráfico del acelerómetro
+        graphAccel.getViewport().setXAxisBoundsManual(false); // Ajusta los límites automáticamente
+        graphAccel.getViewport().setMinX(0);
+        graphAccel.getViewport().setMaxX(pointsPlotted);
+        graphAccel.getViewport().setScalable(true);  // Permitir zoom
+        graphAccel.getViewport().setScrollable(true);  // Permitir desplazamiento
 
         sensorViewModel = new ViewModelProvider(this).get(SensorViewModel.class);
         ListView listView = findViewById(R.id.listView1);
@@ -58,25 +111,27 @@ public class MainActivity extends AppCompatActivity {
             sensorAdapter.updateSensorNames(sensorNames);
         });
 
+        // Observador de los valores de los sensores
         sensorViewModel.getSensorValues().observe(this, sensorValues -> {
             sensorAdapter.updateSensorValues(sensorValues);
-/* MEJORAR ESTO
-            // Actualizar el gráfico en base a los valores de los sensores
-            String sensorName = "Accelerometer";  // Por ejemplo, usar "Accelerometer" para obtener los valores de ese sensor
-            if (sensorValues.containsKey(sensorName)) {
-                String[] values = sensorValues.get(sensorName).split(", ");
-                double xValue = Double.parseDouble(values[0].split(": ")[1]);
-                pointsPlotted++;
-                series.appendData(new DataPoint(pointsPlotted, xValue), true, 50);
-            }*/
+            // Llamar a updateGraph para actualizar el gráfico con los nuevos valores del sensor
+            updateGraph(sensorValues);
+
         });
 
+        TextView warningTextView = findViewById(R.id.sensor_warning);
+
         sensorViewModel.getMissingSensors().observe(this, missingSensors -> {
-            sensorAdapter.notifyDataSetChanged(); // Actualizar la lista cuando cambien los sensores faltantes
+            sensorAdapter.notifyDataSetChanged(); // Actualiza la lista de sensores.
             if (!missingSensors.isEmpty()) {
-                sensorViewModel.showSensorNotification();
+                warningTextView.setVisibility(View.VISIBLE);
+                warningTextView.setText("Advertencia: Faltan los siguientes sensores: " + missingSensors);
+            } else {
+                warningTextView.setVisibility(View.GONE);
             }
+            sensorViewModel.showSensorNotification(); // Muestra la notificación si hay sensores faltantes.
         });
+
 
         sensorViewModel.detectSensors();
 
@@ -92,5 +147,39 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         sensorViewModel.unregisterSensorListeners();
+    }
+
+    // Actualizar el gráfico con datos para los ejes X, Y, Z
+    private void updateGraph(Map<String, String> sensorValues) {
+        String sensorName = "Giroscopio"; // Cambiar por el nombre del sensor de giroscopio
+        if (sensorValues.containsKey(sensorName)) {
+            String[] values = sensorValues.get(sensorName).split(", ");
+            double xValue = Double.parseDouble(values[0].split(": ")[1]);
+            double yValue = Double.parseDouble(values[1].split(": ")[1]);
+            double zValue = Double.parseDouble(values[2].split(": ")[1]);
+
+            // Usar el handler para retrasar la actualización
+            handler.postDelayed(() -> {
+                pointsPlotted++;
+                seriesGyroX.appendData(new DataPoint(pointsPlotted, xValue), true, 50); // Graficar el eje X
+                seriesGyroY.appendData(new DataPoint(pointsPlotted, yValue), true, 50); // Graficar el eje Y
+                seriesGyroZ.appendData(new DataPoint(pointsPlotted, zValue), true, 50); // Graficar el eje Z
+            }, GRAPH_UPDATE_DELAY_MS); // Retrasar la actualización
+        }
+        // Actualizar gráfico del acelerómetro
+        String accelSensor = "Acelerómetro";
+        if (sensorValues.containsKey(accelSensor)) {
+            String[] values = sensorValues.get(accelSensor).split(", ");
+            double xValue = Double.parseDouble(values[0].split(": ")[1]);
+            double yValue = Double.parseDouble(values[1].split(": ")[1]);
+            double zValue = Double.parseDouble(values[2].split(": ")[1]);
+
+            handler.postDelayed(() -> {
+                pointsPlotted++;
+                seriesAccelX.appendData(new DataPoint(pointsPlotted, xValue), true, 50);
+                seriesAccelY.appendData(new DataPoint(pointsPlotted, yValue), true, 50);
+                seriesAccelZ.appendData(new DataPoint(pointsPlotted, zValue), true, 50);
+            }, GRAPH_UPDATE_DELAY_MS);
+        }
     }
 }

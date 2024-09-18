@@ -22,6 +22,7 @@
             android:gravity="center"/>
     </LinearLayout>
 
+
     <!-- ListView para mostrar la lista de sensores -->
     <ListView
         android:id="@+id/listView1"
@@ -31,8 +32,60 @@
         android:dividerHeight="1dp"
         android:padding="16dp"/>
 
-    <com.jjoe64.graphview.GraphView
+    <!-- Leyenda de colores para X, Y, Z -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="200dip"
-        android:id="@+id/graph" />
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="X"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="18sp"
+            android:layout_marginEnd="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Y"
+            android:textColor="@color/green"
+            android:textSize="18sp"
+            android:layout_marginEnd="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z"
+            android:textColor="@color/blue"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+
+    <!-- Gráfico para giroscopio -->
+    <com.jjoe64.graphview.GraphView
+        android:id="@+id/graphGyro"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" />
+
+    <!-- Gráfico para acelerómetro -->
+    <com.jjoe64.graphview.GraphView
+        android:id="@+id/graphAcelerometer"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" />
+
+    <!-- Texto de advertencia para sensores faltantes -->
+    <TextView
+        android:id="@+id/sensor_warning"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone"
+        android:dividerHeight="1dp"
+        android:padding="16dp"
+        android:text="Advertencia: Faltan sensores necesarios para algunas funcionalidades" />
+
 </LinearLayout>

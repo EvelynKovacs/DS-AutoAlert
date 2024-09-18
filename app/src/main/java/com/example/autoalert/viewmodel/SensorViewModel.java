@@ -77,7 +77,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
     public void detectSensors() {
         int[] sensorTypes = {
-                2,
+                Sensor.TYPE_GYROSCOPE,
                 Sensor.TYPE_ACCELEROMETER
         };
 
