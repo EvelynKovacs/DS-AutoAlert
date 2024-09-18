@@ -19,8 +19,10 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.autoalert.R;
+import com.example.autoalert.repository.AccelerometerQueueRepository;
+import com.example.autoalert.repository.GyroscopeQueueRepository;
 import com.example.autoalert.repository.SensorDataWriter;
-import com.example.autoalert.repository.SensorQueueRepository;
+//import com.example.autoalert.repository.SensorQueueRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -50,7 +52,10 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
     private boolean isAccelerometerAvailable;
 
-    private SensorQueueRepository sensorData;
+    //private SensorQueueRepository sensorData;
+    private AccelerometerQueueRepository sensorValuesAccelerometer;
+    private GyroscopeQueueRepository sensorValuesGyroscope;
+
 
     public SensorViewModel(@NonNull Application application) {
         super(application);
@@ -63,8 +68,9 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         // Inicializar los booleanos como falsos
         isGyroscopeAvailable = false;
         isAccelerometerAvailable = false;
+        sensorValuesAccelerometer= new AccelerometerQueueRepository(application.getApplicationContext());
 
-        sensorData= new SensorQueueRepository(application.getApplicationContext());
+        sensorValuesGyroscope= new GyroscopeQueueRepository(application.getApplicationContext());
     }
 
     // Métodos para obtener el estado de los sensores
@@ -135,14 +141,34 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
     public void storeAccelerometerData(String accelerometerData) {
         if (this.isAccelerometerAvailable()) {
-            sensorData.addAccelerometerData(accelerometerData);
+            sensorValuesAccelerometer.addAccelerometerData(accelerometerData);
             //SensorDataWriter.writeDataToFile(getApplication(),"Acelerómetro: " + accelerometerData); // Guardar en archivo
         }
     }
 
     public void storeGyroscopeData(String gyroscopeData) {
         if (this.isGyroscopeAvailable()) {
-            sensorData.addGyroscopeData(gyroscopeData);
+            sensorValuesGyroscope.addGyroscopeData(gyroscopeData);
+            //SensorDataWriter.writeDataToFile(getApplication(),"Giroscopio: " + gyroscopeData);
+        }
+    }
+
+    public void storeValuesAccelerometer(SensorEvent event) {
+        if (this.isAccelerometerAvailable()) {
+            sensorValuesAccelerometer.xValueAdd((double) event.values[0],UPDATE_INTERVAL_MS);
+            sensorValuesAccelerometer.yValueAdd((double)event.values[1],UPDATE_INTERVAL_MS);
+            sensorValuesAccelerometer.zValueAdd((double)event.values[2],UPDATE_INTERVAL_MS);
+
+            //SensorDataWriter.writeDataToFile(getApplication(),"Giroscopio: " + gyroscopeData);
+        }
+    }
+
+    public void storeValuesGyroscope(SensorEvent event) {
+        if (this.isAccelerometerAvailable()) {
+            sensorValuesGyroscope.xValueAdd((double) event.values[0]);
+            sensorValuesGyroscope.yValueAdd((double)event.values[1]);
+            sensorValuesGyroscope.zValueAdd((double)event.values[2]);
+
             //SensorDataWriter.writeDataToFile(getApplication(),"Giroscopio: " + gyroscopeData);
         }
     }
@@ -162,29 +188,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         sensorManager.unregisterListener(this);
     }
 
-   /* @Override
-    public void onSensorChanged(SensorEvent event) {
-        String sensorName = getSensorName(event.sensor.getType());
-        if (sensorName != null) {
-            String values = String.format("X: %.2f, Y: %.2f, Z: %.2f", event.values[0], event.values[1], event.values[2]);
-            sensorValues.getValue().put(sensorName, values);
-            sensorValues.postValue(sensorValues.getValue());
 
-
-            // Verificar si es acelerómetro, giroscopio o velocidad y almacenar los datos
-            switch (event.sensor.getType()) {
-                case Sensor.TYPE_ACCELEROMETER:
-                    storeAccelerometerData(values);
-                    break;
-
-                case Sensor.TYPE_GYROSCOPE:
-                    storeGyroscopeData(values);
-                    break;
-
-            }
-
-        }
-    }*/
    @Override
    public void onSensorChanged(SensorEvent event) {
        long currentTime = System.currentTimeMillis();  // Obtiene el tiempo actual en milisegundos
@@ -202,6 +206,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
                        lastAccelerometerUpdate = currentTime;
                        storeAccelerometerData(values);  // Procesa y almacena los datos del acelerómetro
+                       storeValuesAccelerometer(event);
                    }
                    break;
 
@@ -210,6 +215,8 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
                    if (currentTime - lastGyroscopeUpdate >=UPDATE_INTERVAL_MS ) {
                        lastGyroscopeUpdate = currentTime;
                        storeGyroscopeData(values);  // Procesa y almacena los datos del giroscopio
+                       storeValuesGyroscope(event);
+
                    }
                    break;
            }
@@ -260,7 +267,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         }
     }
     public void clearSensorData() {
-        sensorData.clearAllData();  // Limpiar los datos almacenados en la cola
+        sensorValuesAccelerometer.clearAllData();  // Limpiar los datos almacenados en la cola
     }
 
     private String getSensorName(int type) {

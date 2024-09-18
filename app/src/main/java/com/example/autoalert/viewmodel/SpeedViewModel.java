@@ -24,7 +24,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.autoalert.repository.SensorQueueRepository;
+//import com.example.autoalert.repository.SensorQueueRepository;
+import com.example.autoalert.repository.SpeedQueueRepository;
 import com.example.autoalert.view.activities.MainActivity;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationRequest;
@@ -45,7 +46,7 @@ public class SpeedViewModel extends AndroidViewModel {
 
     private LocationManager locationManager;
     private LocationListener locationListener;
-    private SensorQueueRepository sensorData;
+    private SpeedQueueRepository sensorData;
     private long lastSpeedUpdate = 0;
 
     private static final long UPDATE_INTERVAL_MS = 100;  // 100 ms para 10 datos por segundo
@@ -53,7 +54,7 @@ public class SpeedViewModel extends AndroidViewModel {
     public SpeedViewModel(@NonNull Application application) {
         super(application);
         locationManager = (LocationManager) application.getSystemService(Context.LOCATION_SERVICE);
-        sensorData = new SensorQueueRepository(application.getApplicationContext());
+        sensorData = new SpeedQueueRepository(application.getApplicationContext());
 
         locationListener = new LocationListener() {
             @Override
@@ -99,8 +100,7 @@ public class SpeedViewModel extends AndroidViewModel {
             speedKmh.setValue(speedKmhValue);
             this.location.setValue(location);
 
-            String speedString = String.format("%.2f km/h", speedKmhValue);
-            sensorData.addSpeedData(speedString);  // Almacenar datos
+            sensorData.addSpeedData(speedKmhValue);  // Almacenar datos
 
 
             // Obtener la dirección a partir de las coordenadas
