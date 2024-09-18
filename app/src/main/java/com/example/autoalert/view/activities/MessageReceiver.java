@@ -1,5 +1,6 @@
 package com.example.autoalert.view.activities;
 
+import android.content.Context;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -9,6 +10,13 @@ import java.net.Socket;
 
 public class MessageReceiver {
     private static final int SERVER_PORT = 8889;  // Puerto en el que el servidor está escuchando
+
+    private Context context;
+
+    // Constructor que recibe el contexto de la actividad
+    public MessageReceiver(Context context) {
+        this.context = context;
+    }
 
     public void startListening(int port) {
         new Thread(() -> {
@@ -21,9 +29,17 @@ public class MessageReceiver {
                     Socket clientSocket = serverSocket.accept();
                     BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 
+                    // Obtener la IP del cliente
+                    String clientIp = clientSocket.getInetAddress().getHostAddress();
+
+
                     // Leer el mensaje que envió el cliente
                     String message = input.readLine();
                     System.out.println("Mensaje recibido: " + message);
+
+                    // Almacenar la IP y el mensaje recibido en el HashMap
+                    ((MainActivity)context).storeMessageFromIp(clientIp, message);
+
 
                     // Cerrar la conexión con el cliente
                     input.close();

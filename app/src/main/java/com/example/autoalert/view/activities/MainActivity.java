@@ -22,7 +22,11 @@ import androidx.core.content.ContextCompat;
 
 import com.example.autoalert.R;
 
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{
@@ -35,19 +39,15 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private TextView ssidTextView;
     private TextView passwordTextView;
     private EditText ssidEditText;
-    private WifiHotspot wifiHotspotManager;
     private EditText passwordEditText;
-
     private TextView ipTextView;
     private BroadcastSender broadcastSender;
     private ResponseListener responseListener;
     private BroadcastReceiver broadcastReceiver;
-
     private Handler handler = new Handler(Looper.getMainLooper());
-
     private MessageSender messageSender;
-
     public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast
+    private HashMap<String, String> ipMessageMap;
 
 
 
@@ -57,37 +57,54 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Log.d("MainActivity", "Inicio de componentes visuales.");
+
         ssidTextView = findViewById(R.id.ssidTextView);
         passwordTextView = findViewById(R.id.passwordTextView);
         ssidEditText = findViewById(R.id.ssidEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         Button btnSendMessages = findViewById(R.id.btnSendMessages);
-
         ipTextView = findViewById(R.id.ipTextView);
         Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);
+        statusTextView = findViewById(R.id.statusTextView);
+        toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
+        Log.e("MainActivity", "Componentes inicializados.");
+
 
         // Inicializar los componentes
+        Log.e("MainActivity", "Inicio de hilos");
         broadcastSender = new BroadcastSender();
-
-        broadcastReceiver = new BroadcastReceiver();
-
-
-
+        broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
         responseListener = new ResponseListener(this);
 
+        // Inicializamos el HashMap
+        ipMessageMap = new HashMap<>();
 
+        Log.e("MainActivity", "Inicio de Gestionador de Red.");
         // Inicializar el administrador del hotspot
         hotspotManager = new WifiHotspot(this, this);
 
-        // Enlazar las vistas de la interfaz de usuario
-        statusTextView = findViewById(R.id.statusTextView);
-        toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
+        // Obtener y mostrar la IP del dispositivo
+        Log.e("MainActivity", "Mostrando IP....");
+        String deviceIpAddress = getDeviceIpAddress();
+        ipTextView.setText("Mi IP: " + deviceIpAddress);
+
+        // Iniciar la recepción de broadcasts y respuestas
+        Log.e("MainActivity", "Escuchando mensajes de broadcast.");
+        broadcastReceiver.startListening();
+        //responseListener.listenForResponses();
+
+        // Enviar mensaje de broadcast cuando se haga clic en el botón
+        btnSendBroadcast.setOnClickListener(view -> {
+            broadcastSender.sendBroadcast();
+        });
 
         // Verificar y solicitar permisos necesarios
+        Log.e("MainActivity", "Verificando permisos....");
         checkPermissions();
 
-        MessageReceiver messageReceiver = new MessageReceiver();
+        MessageReceiver messageReceiver = new MessageReceiver(this);
         int listenPort = 12345; // Puerto donde escuchar los mensajes
         messageReceiver.startListening(listenPort);
 
@@ -100,6 +117,13 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
                 Toast.makeText(MainActivity.this, "Ingrese un SSID y una contraseña", Toast.LENGTH_SHORT).show();
                 return;
             }
+
+            // Validar la longitud de la contraseña
+            if (password.length() < 8 || password.length() > 63) {
+                Toast.makeText(MainActivity.this, "La contraseña debe tener entre 8 y 63 caracteres", Toast.LENGTH_LONG).show();
+                return;
+            }
+
             if (!ssid.isEmpty() && !password.isEmpty()) {
                 // Verificar si el sistema operativo es Android 10 o superior
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -112,17 +136,6 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
             }
         });
 
-        // Iniciar la recepción de broadcasts y respuestas
-        broadcastReceiver.startListening();
-        responseListener.listenForResponses();
-
-        // Enviar mensaje de broadcast cuando se haga clic en el botón
-        btnSendBroadcast.setOnClickListener(view -> {
-            broadcastSender.sendBroadcast();
-        });
-
-        // Escuchar las respuestas de broadcast y actualizar la lista de IPs
-        responseListener.listenForResponses();
 
         btnSendMessages.setOnClickListener(view -> {
             String message = "Este es un mensaje predefinido";
@@ -143,17 +156,35 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
     // Método para actualizar la lista de IPs en el TextView
     public void updateIpList(List<String> ipList) {
+        Log.e("Actualizacion de lista", "Actualizando lista de IP's.");
         handler.post(() -> {
             StringBuilder ips = new StringBuilder("IPs recibidas:\n");
             for (String ip : ipList) {
                 ips.append(ip).append("\n");
             }
             ipTextView.setText(ips.toString());
+            Log.e("Actualizacion de lista", "Lista actualizada.");
+        });
+
+    }
+
+    public void storeMessageFromIp(String ip, String message) {
+        ipMessageMap.put(ip, message);
+        // Actualizar la lista de IPs también, si es necesario
+        if (!ipList.contains(ip)) {
+            ipList.add(ip);
+            updateIpList(ipList); // Actualizar la UI con la nueva lista de IPs
+        }
+
+        // Mostrar el mensaje recibido en la interfaz
+        runOnUiThread(() -> {
+            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + message, Toast.LENGTH_SHORT).show();
         });
     }
 
     // Método para alternar el estado del Hotspot
     private void toggleHotspot(String ssid, String password) {
+        Log.e("Red Hotspot", "Cambiando estado de Hotspot.");
         if (!isHotspotActive) {
             // Iniciar el Hotspot con Wi-Fi Direct
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -219,7 +250,29 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Mostrar SSID y contraseña en los TextViews
         ssidTextView.setText("SSID: " + ssid);
         passwordTextView.setText("Contraseña: " + password);
+
+        // Obtener y mostrar la IP del dispositivo al crear el hotspot
+        String deviceIpAddress = getDeviceIpAddress();
+        ipTextView.setText("Mi IP: " + deviceIpAddress);
     }
+
+    private String getDeviceIpAddress() {
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
+                        return inetAddress.getHostAddress();
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "IP no disponible";
+    }
+
 
 
 }
