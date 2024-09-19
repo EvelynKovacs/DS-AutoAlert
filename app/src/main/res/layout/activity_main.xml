@@ -13,13 +13,14 @@
         android:text="SSID:"
         android:textSize="18sp" />
 
+    <!-- Campo para ingresar la contraseña -->
+
     <EditText
         android:id="@+id/ssidEditText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Ingrese el nombre del SSID" />
 
-    <!-- Campo para ingresar la contraseña -->
     <TextView
         android:id="@+id/passwordLabel"
         android:layout_width="wrap_content"
@@ -44,14 +45,16 @@
         android:paddingTop="16dp" />
 
     <!-- Botón para alternar el estado del Hotspot -->
+
+    <!-- Mostrar el SSID y la contraseña del Hotspot activo -->
+
     <Button
         android:id="@+id/toggleHotspotButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Activar Hotspot"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="16dp"
+        android:text="Activar Hotspot" />
 
-    <!-- Mostrar el SSID y la contraseña del Hotspot activo -->
     <TextView
         android:id="@+id/ssidTextView"
         android:layout_width="wrap_content"
@@ -83,9 +86,18 @@
 
     <Button
         android:id="@+id/btnSendMessages"
-        android:layout_width="wrap_content"
+        android:layout_width="256dp"
         android:layout_height="wrap_content"
         android:text="Enviar Mensaje a IPs" />
+
+    <TextView
+        android:id="@+id/ipMessageTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Mensajes recibidos:"
+        android:layout_below="@id/ipTextView"
+        android:layout_marginTop="20dp"
+        android:textSize="16sp"/>
 
 
 </LinearLayout>

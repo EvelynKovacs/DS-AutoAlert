@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private MessageSender messageSender;
     public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast
     private HashMap<String, String> ipMessageMap;
+    private TextView ipMessageTextView;
 
 
 
@@ -68,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);
         statusTextView = findViewById(R.id.statusTextView);
         toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
+        ipMessageTextView = findViewById(R.id.ipMessageTextView);
         Log.e("MainActivity", "Componentes inicializados.");
 
 
@@ -76,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         broadcastSender = new BroadcastSender();
         broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
-        responseListener = new ResponseListener(this);
+        //responseListener = new ResponseListener(this);
 
         // Inicializamos el HashMap
         ipMessageMap = new HashMap<>();
@@ -143,9 +145,12 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
             // Supongamos que quieres enviar el mensaje a la primera IP de la lista
             if (!ipList.isEmpty()) {
-                String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
-                messageSender.sendMessage(targetIp, port, message);
-                Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
+                //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
+                for(String targetIp : ipList) {
+                    messageSender.sendMessage(targetIp, port, message);
+                    Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
+
+                }
             } else {
                 Toast.makeText(MainActivity.this, "No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
             }
@@ -155,12 +160,14 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     }
 
     // Método para actualizar la lista de IPs en el TextView
-    public void updateIpList(List<String> ipList) {
+    public void updateIpList(String ip) {
         Log.e("Actualizacion de lista", "Actualizando lista de IP's.");
         handler.post(() -> {
             StringBuilder ips = new StringBuilder("IPs recibidas:\n");
-            for (String ip : ipList) {
+            if (!ipList.contains(ip)) {
+                ipList.add(ip);
                 ips.append(ip).append("\n");
+
             }
             ipTextView.setText(ips.toString());
             Log.e("Actualizacion de lista", "Lista actualizada.");
@@ -170,16 +177,23 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
     public void storeMessageFromIp(String ip, String message) {
         ipMessageMap.put(ip, message);
-        // Actualizar la lista de IPs también, si es necesario
-        if (!ipList.contains(ip)) {
-            ipList.add(ip);
-            updateIpList(ipList); // Actualizar la UI con la nueva lista de IPs
-        }
-
         // Mostrar el mensaje recibido en la interfaz
+        // Actualizar la interfaz con el contenido del HashMap
+        updateIpMessageView();
         runOnUiThread(() -> {
             Toast.makeText(this, "Mensaje recibido de " + ip + ": " + message, Toast.LENGTH_SHORT).show();
         });
+    }
+
+    // Método para actualizar el TextView con el contenido del HashMap
+    private void updateIpMessageView() {
+        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+        for (String ip : ipMessageMap.keySet()) {
+            displayText.append("IP: ").append(ip).append(" - Mensaje: ").append(ipMessageMap.get(ip)).append("\n");
+        }
+
+        // Actualizar el TextView en el hilo de la UI
+        runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
     }
 
     // Método para alternar el estado del Hotspot

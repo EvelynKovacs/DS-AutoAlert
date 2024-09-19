@@ -37,7 +37,7 @@ public class ResponseListener {
                         // Agregar la IP a la lista si no está presente
                         mainActivity.ipList.add(senderIp);
                         // Actualizar el TextView en la interfaz de usuario
-                        mainActivity.updateIpList(mainActivity.ipList);
+                        //mainActivity.updateIpList(mainActivity.ipList);
                     }
                 }
             } catch (Exception e) {

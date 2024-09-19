@@ -41,7 +41,9 @@ public class BroadcastReceiver {
                     if (message.equals("DISCOVER_IP_REQUEST")) {
                         String senderIp = receivePacket.getAddress().getHostAddress();
 
-                        mainActivity.ipList.add(senderIp);
+                        //mainActivity.ipList.add(senderIp);
+                        mainActivity.updateIpList(senderIp);
+
                         // Guardar la IP del emisor
                         mainActivity.storeMessageFromIp(senderIp, message);
 
@@ -52,7 +54,8 @@ public class BroadcastReceiver {
 
                     if (message.equals(BROADCAST_RESPONSE)){
                         String senderIp = receivePacket.getAddress().getHostAddress();
-                        mainActivity.ipList.add(senderIp);
+                        //mainActivity.ipList.add(senderIp);
+                        mainActivity.updateIpList(senderIp);
                         // Guardar la IP del emisor
                         mainActivity.storeMessageFromIp(senderIp, message);
                     }
