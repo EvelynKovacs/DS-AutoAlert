@@ -46,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
          graphGyro = findViewById(R.id.graphGyro);
          graphAccel = findViewById(R.id.graphAcelerometer);
 
+        sensorViewModel = new ViewModelProvider(this).get(SensorViewModel.class);
+
 
         // Configurar gráficos (colores, series, etc.) como antes...
         // Gráfico del giroscopio
@@ -119,18 +121,32 @@ public class MainActivity extends AppCompatActivity {
 
         });
 
-        TextView warningTextView = findViewById(R.id.sensor_warning);
-
+        // Verificar la disponibilidad de los sensores y ocultar gráficos si no están disponibles
         sensorViewModel.getMissingSensors().observe(this, missingSensors -> {
-            sensorAdapter.notifyDataSetChanged(); // Actualiza la lista de sensores.
+            if (sensorViewModel.isGyroscopeAvailable()) {
+                graphGyro.setVisibility(View.VISIBLE);
+            } else {
+                graphGyro.setVisibility(View.GONE); // Oculta el gráfico si no hay giroscopio
+            }
+
+            if (sensorViewModel.isAccelerometerAvailable()) {
+                graphAccel.setVisibility(View.VISIBLE);
+            } else {
+                graphAccel.setVisibility(View.GONE); // Oculta el gráfico si no hay acelerómetro
+            }
+
+            // Mostrar advertencias si faltan sensores
+            TextView warningTextView = findViewById(R.id.sensor_warning);
             if (!missingSensors.isEmpty()) {
                 warningTextView.setVisibility(View.VISIBLE);
                 warningTextView.setText("Advertencia: Faltan los siguientes sensores: " + missingSensors);
             } else {
                 warningTextView.setVisibility(View.GONE);
             }
+
             sensorViewModel.showSensorNotification(); // Muestra la notificación si hay sensores faltantes.
         });
+
 
 
         sensorViewModel.detectSensors();
@@ -151,35 +167,38 @@ public class MainActivity extends AppCompatActivity {
 
     // Actualizar el gráfico con datos para los ejes X, Y, Z
     private void updateGraph(Map<String, String> sensorValues) {
-        String sensorName = "Giroscopio"; // Cambiar por el nombre del sensor de giroscopio
-        if (sensorValues.containsKey(sensorName)) {
-            String[] values = sensorValues.get(sensorName).split(", ");
-            double xValue = Double.parseDouble(values[0].split(": ")[1]);
-            double yValue = Double.parseDouble(values[1].split(": ")[1]);
-            double zValue = Double.parseDouble(values[2].split(": ")[1]);
+        if (sensorViewModel.isGyroscopeAvailable()) {
+            String sensorName = "Giroscopio";
+            if (sensorValues.containsKey(sensorName)) {
+                String[] values = sensorValues.get(sensorName).split(", ");
+                double xValue = Double.parseDouble(values[0].split(": ")[1]);
+                double yValue = Double.parseDouble(values[1].split(": ")[1]);
+                double zValue = Double.parseDouble(values[2].split(": ")[1]);
 
-            // Usar el handler para retrasar la actualización
-            handler.postDelayed(() -> {
-                pointsPlotted++;
-                seriesGyroX.appendData(new DataPoint(pointsPlotted, xValue), true, 50); // Graficar el eje X
-                seriesGyroY.appendData(new DataPoint(pointsPlotted, yValue), true, 50); // Graficar el eje Y
-                seriesGyroZ.appendData(new DataPoint(pointsPlotted, zValue), true, 50); // Graficar el eje Z
-            }, GRAPH_UPDATE_DELAY_MS); // Retrasar la actualización
+                handler.postDelayed(() -> {
+                    pointsPlotted++;
+                    seriesGyroX.appendData(new DataPoint(pointsPlotted, xValue), true, 50);
+                    seriesGyroY.appendData(new DataPoint(pointsPlotted, yValue), true, 50);
+                    seriesGyroZ.appendData(new DataPoint(pointsPlotted, zValue), true, 50);
+                }, GRAPH_UPDATE_DELAY_MS);
+            }
         }
-        // Actualizar gráfico del acelerómetro
-        String accelSensor = "Acelerómetro";
-        if (sensorValues.containsKey(accelSensor)) {
-            String[] values = sensorValues.get(accelSensor).split(", ");
-            double xValue = Double.parseDouble(values[0].split(": ")[1]);
-            double yValue = Double.parseDouble(values[1].split(": ")[1]);
-            double zValue = Double.parseDouble(values[2].split(": ")[1]);
 
-            handler.postDelayed(() -> {
-                pointsPlotted++;
-                seriesAccelX.appendData(new DataPoint(pointsPlotted, xValue), true, 50);
-                seriesAccelY.appendData(new DataPoint(pointsPlotted, yValue), true, 50);
-                seriesAccelZ.appendData(new DataPoint(pointsPlotted, zValue), true, 50);
-            }, GRAPH_UPDATE_DELAY_MS);
+        if (sensorViewModel.isAccelerometerAvailable()) {
+            String accelSensor = "Acelerómetro";
+            if (sensorValues.containsKey(accelSensor)) {
+                String[] values = sensorValues.get(accelSensor).split(", ");
+                double xValue = Double.parseDouble(values[0].split(": ")[1]);
+                double yValue = Double.parseDouble(values[1].split(": ")[1]);
+                double zValue = Double.parseDouble(values[2].split(": ")[1]);
+
+                handler.postDelayed(() -> {
+                    pointsPlotted++;
+                    seriesAccelX.appendData(new DataPoint(pointsPlotted, xValue), true, 50);
+                    seriesAccelY.appendData(new DataPoint(pointsPlotted, yValue), true, 50);
+                    seriesAccelZ.appendData(new DataPoint(pointsPlotted, zValue), true, 50);
+                }, GRAPH_UPDATE_DELAY_MS);
+            }
         }
     }
 }

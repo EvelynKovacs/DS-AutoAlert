@@ -22,7 +22,6 @@
             android:gravity="center"/>
     </LinearLayout>
 
-
     <!-- ListView para mostrar la lista de sensores -->
     <ListView
         android:id="@+id/listView1"
@@ -64,12 +63,29 @@
             android:textSize="18sp" />
     </LinearLayout>
 
+    <!-- Encabezado para gráfico de giroscopio -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Giroscopio"
+        android:textSize="20sp"
+        android:padding="8dp"
+        android:gravity="center"/>
 
     <!-- Gráfico para giroscopio -->
     <com.jjoe64.graphview.GraphView
         android:id="@+id/graphGyro"
         android:layout_width="match_parent"
         android:layout_height="200dp" />
+
+    <!-- Encabezado para gráfico de acelerómetro -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Acelerómetro"
+        android:textSize="20sp"
+        android:padding="8dp"
+        android:gravity="center"/>
 
     <!-- Gráfico para acelerómetro -->
     <com.jjoe64.graphview.GraphView
