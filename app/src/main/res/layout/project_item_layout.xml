@@ -52,7 +52,6 @@
                 android:text="@{String.valueOf(projectModel.edad) ,default=Edad}"
                 android:textSize="15dp"
                 android:textStyle="bold"
-                app:drawableEndCompat="@drawable/ic_eye"
                 app:drawableTint="#000000" />
 
 

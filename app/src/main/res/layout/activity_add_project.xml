@@ -43,7 +43,7 @@
                 android:id="@+id/edtNombreUsuario"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Nombre de Usuario"
+                android:hint="Nombre de Usuario *"
                 android:inputType="text|textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -60,7 +60,7 @@
                 android:id="@+id/edtApellidoUsuario"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Apellido de Usuario"
+                android:hint="Apellido del Usuario *"
                 android:inputType="text|textCapSentences" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -80,7 +80,7 @@
                 android:id="@+id/edtDni"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="DNI"
+                android:hint="DNI *"
                 android:inputType="number" />
         </com.google.android.material.textfield.TextInputLayout>
 
@@ -92,41 +92,47 @@
             android:weightSum="2"
             android:layout_marginHorizontal="20dp">
 
-            <!-- Edad -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
-                android:layout_width="0dp"
+            <!-- Edad y Grupo Sanguíneo -->
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="2dp"
-                app:hintAnimationEnabled="true">
+                android:orientation="horizontal"
+                android:layout_marginHorizontal="20dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/edtEdad"
-                    android:layout_width="match_parent"
+                <!-- Edad -->
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:hint="Edad"
-                    android:inputType="number" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_weight="1"
+                    app:boxBackgroundMode="outline"
+                    app:boxStrokeWidth="2dp"
+                    app:hintAnimationEnabled="true">
 
-            <!-- Grupo Sanguíneo -->
-            <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.Dense.ExposedDropdownMenu"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:boxBackgroundMode="outline"
-                app:boxStrokeWidth="2dp"
-                app:hintAnimationEnabled="true">
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edtEdad"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="Edad *"
+                        android:inputType="number" />
+                </com.google.android.material.textfield.TextInputLayout>
 
-                <AutoCompleteTextView
-                    android:id="@+id/edtGrupoSanguineo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Grupo Sanguíneo" />
-            </com.google.android.material.textfield.TextInputLayout>
+                <!-- Grupo Sanguíneo -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    app:boxBackgroundMode="outline"
+                    app:boxStrokeWidth="2dp"
+                    app:hintAnimationEnabled="true">
 
+                    <Spinner
+                        android:id="@+id/edtGrupoSanguineo"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+            </LinearLayout>
         </LinearLayout>
 
 
@@ -163,8 +169,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="16dp"
-            android:text="Contactos seleccionados"
+            android:text=""
             android:textSize="16sp" />
+
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEliminarContacto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Eliminar Todos los Contactos"
+            app:cornerRadius="10dp"
+            app:elevation="10dp" />
 
         <LinearLayout
             android:layout_width="match_parent"

@@ -10,12 +10,15 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
+import android.text.InputFilter;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,6 +33,7 @@ import com.example.autoalert.R;
 import com.example.autoalert.databinding.ActivityAddProjectBinding;
 import com.example.autoalert.model.entities.ProjectModel;
 import com.example.autoalert.viewmodel.ProjectViewModel;
+import com.google.android.material.button.MaterialButton;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -58,14 +62,22 @@ public class AddProjectActivity extends AppCompatActivity {
     private List<String> contactNamesList;
     private TextView tvContactNames;
 
+
+
     // Para guardar y obtener los usuarios
     private ActivityAddProjectBinding binding;
     private ProjectViewModel projectViewModel;
     private ProjectModel projectModel;
     private boolean isEdit = false;
 
+    private Button btnDeleteAllContacts;
+    MaterialButton btnAddProject;
+
+
     private final String[] grupoSanguineo = {"A+", "B+", "O+", "AB+", "A-", "B-", "O-", "AB-"};
     private String selectedGrupoSanguineo;
+    Spinner spinnerGrupoSanguineo;
+
 
     // Launchers for contacts and images
     private final ActivityResultLauncher<String> requestContactPermissionLauncher =
@@ -85,14 +97,21 @@ public class AddProjectActivity extends AppCompatActivity {
         setContentView(binding.getRoot());
         initDropDown();
 
+        // Referencia al botón
+        btnAddProject = findViewById(R.id.btnAddProject);
+        spinnerGrupoSanguineo = findViewById(R.id.edtGrupoSanguineo); // Initialize Spinner
+        btnDeleteAllContacts = findViewById(R.id.btnEliminarContacto);
         projectViewModel = ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication()).create(ProjectViewModel.class);
 
         contactNamesSet = new HashSet<>();
         contactNamesList = new ArrayList<>();
 
         tvContactNames = findViewById(R.id.edtContactNames);
-
         profileImg =findViewById(R.id.profile_img);
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, grupoSanguineo);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerGrupoSanguineo.setAdapter(adapter);
 
         // Recibir URI de la imagen si está disponible
         if (getIntent().hasExtra("image_uri")) {
@@ -111,14 +130,7 @@ public class AddProjectActivity extends AppCompatActivity {
                 binding.edtDni.setText(projectModel.getDni());
                 binding.edtEdad.setText(String.valueOf(projectModel.getEdad()));
                 binding.edtDatosMedicos.setText(projectModel.getDatosMedicos());
-                binding.edtGrupoSanguineo.setText(projectModel.getGrupoSanguineo());
-
-                // Obtener la lista de contactos del projectModel
-                List<String> contactosList = projectModel.getContactos();
-                // Unir los contactos en un solo String con saltos de línea
-                String contactosString = TextUtils.join("\n", contactosList);
-                // Establecer el texto en el EditText
-                binding.edtContactNames.setText(contactosString);
+                spinnerGrupoSanguineo.setSelection(Arrays.asList(grupoSanguineo).indexOf(projectModel.getGrupoSanguineo()));
 
                 // Decodificar y mostrar la imagen si existe
                 String base64Image = projectModel.getFoto();
@@ -127,11 +139,29 @@ public class AddProjectActivity extends AppCompatActivity {
                     profileImg.setImageBitmap(bitmap);
                 }
 
+                // Obtener la lista de contactos del projectModel
+                List<String> contactosList = projectModel.getContactos();
+                contactNamesList.addAll(contactosList); // Agregar los contactos existentes a la lista
+                contactNamesSet.addAll(contactosList); // Asegurarse de no duplicarlos
+                updateContactNames(); // Mostrar los contactos existentes
+                /*
+                // Unir los contactos en un solo String con saltos de línea
+                String contactosString = TextUtils.join("\n", contactosList);
+                // Establecer el texto en el EditText
+                binding.edtContactNames.setText(contactosString);*/
 
+                // Cambiar el texto del botón a "Actualizar"
+                btnAddProject.setText("Actualizar");
                 isEdit = true;
 
             }
+        }else {
+            // Si no es edición, configurar el texto del botón como "Agregar"
+            btnAddProject.setText("Agregar");
         }
+
+        // Limitar la longitud del DNI a 9 caracteres (solo dígitos)
+        binding.edtDni.setFilters(new InputFilter[] {new InputFilter.LengthFilter(9)});
 
         // Configura la visibilidad del botón de eliminar
         binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
@@ -141,6 +171,10 @@ public class AddProjectActivity extends AppCompatActivity {
         binding.btnAddProject.setOnClickListener(view -> handleSaveProject());
         binding.btnDeleteProject.setOnClickListener(view -> showDeleteConfirmationDialog());
         binding.btnAddContact.setOnClickListener(view -> showContacts());
+        // Configura la visibilidad del botón de eliminar
+        binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
+
+        btnDeleteAllContacts.setOnClickListener(view -> deleteAllContacts());
         binding.profileImg.setOnClickListener(view -> clickImage());
     }
 
@@ -158,6 +192,24 @@ public class AddProjectActivity extends AppCompatActivity {
     }
 
     private void handleSaveProject() {
+        boolean isValid = true;
+
+        // Obtener valores de los campos
+        String nombreUsuario = binding.edtNombreUsuario.getText().toString().trim();
+        String apellidoUsuario = binding.edtApellidoUsuario.getText().toString().trim();
+        String dni = binding.edtDni.getText().toString().trim();
+        String edadStr = binding.edtEdad.getText().toString().trim();
+        String datosMedicos = binding.edtDatosMedicos.getText().toString().trim();
+        String contactos = binding.edtContactNames.getText().toString();
+        String grupoSanguineo = spinnerGrupoSanguineo.getSelectedItem().toString();
+
+
+        // Separar los contactos por salto de línea
+        String[] contactosArray = contactos.split("\n");
+        List<String> contactosList = Arrays.asList(contactosArray);
+
+        Set<String> uniqueContactsSet = new HashSet<>(contactosList); // Elimina duplicados
+
         Uri imageUri = getImageUriFromProfileImg(); // Obtener URI actualizada
         String base64Image = encodeImageToBase64(imageUri); // Codificar la imagen en base64
 
@@ -169,24 +221,12 @@ public class AddProjectActivity extends AppCompatActivity {
         }
 
 
-        // Obtener valores de los campos
-        String nombreUsuario = binding.edtNombreUsuario.getText().toString().trim();
-        String apellidoUsuario = binding.edtApellidoUsuario.getText().toString().trim();
-        String dni = binding.edtDni.getText().toString().trim();
-        String edadStr = binding.edtEdad.getText().toString().trim();
-        String datosMedicos = binding.edtDatosMedicos.getText().toString().trim();
-        String contactos = binding.edtContactNames.getText().toString();
-        String grupoSanguineo = binding.edtGrupoSanguineo.getText().toString();
+        if (uniqueContactsSet.size() != contactosList.size()) {
+            Toast.makeText(this, "No se permiten contactos duplicados", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-
-
-        Log.d("Sangre","Aca lo tiene "+grupoSanguineo);
-
-        // Separar los contactos por salto de línea
-        String[] contactosArray = contactos.split("\n");
-        List<String> contactosList = Arrays.asList(contactosArray);
-
-        if (nombreUsuario.isEmpty() || apellidoUsuario.isEmpty()  || edadStr.isEmpty() || dni.isEmpty()) {
+        if (nombreUsuario.isEmpty() || apellidoUsuario.isEmpty()  || edadStr.isEmpty() || dni.isEmpty() || grupoSanguineo.isEmpty()) {
             Toast.makeText(this, "Por favor, complete todos los campos obligatorios", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -194,43 +234,79 @@ public class AddProjectActivity extends AppCompatActivity {
         int edad;
         try {
             edad = Integer.parseInt(edadStr);
-            if (edad < 0 || edad > 100) {
-                Toast.makeText(this, "La edad debe ser un número entre 0 y 100", Toast.LENGTH_SHORT).show();
+            if (edad < 0 || edad > 110) {
+                isValid = false;
+                binding.edtEdad.setBackgroundResource(R.drawable.error_border);
+                Toast.makeText(this, "La edad debe ser un número entre 0 y 110", Toast.LENGTH_SHORT).show();
                 return;
+            }else {
+                binding.edtEdad.setBackgroundResource(R.drawable.normal_border);
             }
         } catch (NumberFormatException e) {
+            isValid = false;
+            binding.edtEdad.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(this, "Edad inválida", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (!isValidName(nombreUsuario)) {
+            isValid = false;
+            binding.edtNombreUsuario.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(this, "El nombre no puede contener numeros o caracteres especiales", Toast.LENGTH_SHORT).show();
             return;
-        }
+        } else {
+            binding.edtNombreUsuario.setBackgroundResource(R.drawable.normal_border);
+            }
 
         if (!isValidName(apellidoUsuario)) {
+            binding.edtApellidoUsuario.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(this, "El apellido no puede contener numeros o caracteres especiales", Toast.LENGTH_SHORT).show();
             return;
-        }
+            } else {
+            binding.edtApellidoUsuario.setBackgroundResource(R.drawable.normal_border);
+            }
 
 
 
         if (!dni.matches("\\d+")) {
+            isValid = false;
+            binding.edtDni.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(this, "El DNI debe contener solo números", Toast.LENGTH_SHORT).show();
             return;
+            }else {
+            binding.edtDni.setBackgroundResource(R.drawable.normal_border);
         }
+
+        if (dni.length() == 9 && Long.parseLong(dni) > 999999999) {
+            Toast.makeText(this, "El DNI debe ser un número válido menor a 999999999", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
 
         boolean usuarioExiste = projectViewModel.userExists(nombreUsuario, apellidoUsuario, dni, projectModel);
         if (!isEdit && usuarioExiste) {
-            Toast.makeText(this, "Este usuario ya está registrado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Este usuario ya está registrado con ese DNI", Toast.LENGTH_SHORT).show();
+            binding.edtDni.setBackgroundResource(R.drawable.error_border);
             return;
+        }else {
+            binding.edtDni.setBackgroundResource(R.drawable.normal_border);
+        }
+
+        // Validación del grupo sanguíneo
+        if (grupoSanguineo.isEmpty()) {
+            isValid = false;
+            spinnerGrupoSanguineo.setBackgroundResource(R.drawable.error_border);
+            Toast.makeText(this, "No selecciono grupo sanguineo", Toast.LENGTH_SHORT).show();
+            return;
+        } else {
+            spinnerGrupoSanguineo.setBackgroundResource(R.drawable.normal_border);
         }
 
         if (isEdit) {
-
+            btnAddProject.setText("Actualizar");
             updateProject(nombreUsuario, apellidoUsuario, dni, edad,datosMedicos,grupoSanguineo, base64Image, contactosList);
-
         } else {
+            btnAddProject.setText("Agregar");
             createProject(nombreUsuario, apellidoUsuario, dni, edad,datosMedicos,grupoSanguineo, base64Image, contactosList);
         }
     }
@@ -243,6 +319,8 @@ public class AddProjectActivity extends AppCompatActivity {
             projectModel.setEdad(edad);
             projectModel.setDatosMedicos(datosMedicos);
 
+            // LIMITE DNI, EDAD MAX 110, QUE SALTE UNA NOTIFICACION CUANDO LA PERSONA, PONE UNA EDAD IMPOSIBLE, EL GRUPO SANGUINEO QUE SEA OBLIGATORIO, PONER * A LADO DE LAS COSAS OBLIGATORIAS
+            // PODER ELIMINAR CONTACTOS, QUE NO PERMITA ESCRIBIR EN EL GRUPO SANGUINEO, SACAR EL OJO DE LA PRIMERA PANTALLA.
             projectModel.setGrupoSanguineo(grupoSanguineo); // Asegúrate de que esto se establezca correctamente
 
             projectModel.setFoto(base64Image); // Establecer la nueva imagen codificada
@@ -310,7 +388,7 @@ public class AddProjectActivity extends AppCompatActivity {
                 selectedImageUri = data.getData();
                 profileImg.setImageURI(selectedImageUri);
             }
-            // Manejo de selección de contacto...
+
         }
 
         if (requestCode == REQUEST_CONTACT && data != null) {
@@ -376,15 +454,13 @@ public class AddProjectActivity extends AppCompatActivity {
     }
 
     // Actualiza el TextView con los nombres y números de los contactos seleccionados
-    private void updateContactNames()
-    {
-        StringBuilder namesBuilder = new StringBuilder();
-        for (String contact : contactNamesList)
-        {
-            namesBuilder.append(contact).append("\n");
-        }
-        tvContactNames.setText(namesBuilder.toString());
+    private void updateContactNames() {
+        // Unir los nombres y números de los contactos con saltos de línea
+        String contactosString = TextUtils.join("\n", contactNamesList);
+        // Actualizar el TextView con los contactos
+        tvContactNames.setText(contactosString);
     }
+
 
     // Solicitud de permisos
     @Override
@@ -408,7 +484,8 @@ public class AddProjectActivity extends AppCompatActivity {
 
     private String encodeImageToBase64(Uri imageUri) {
         if (imageUri == null) {
-            Toast.makeText(this, "No se ha seleccionado ninguna imagen", Toast.LENGTH_SHORT).show();
+            // Handle the case where the URI is null (you could return a default value or an error)
+            Log.e("AddProjectActivity", "Image URI is null");
             return null;
         }
         try {
@@ -479,12 +556,12 @@ public class AddProjectActivity extends AppCompatActivity {
     }
 
     private void initDropDown() {
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.select_dialog_item, grupoSanguineo);
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, grupoSanguineo);
         binding.edtGrupoSanguineo.setAdapter(arrayAdapter);
         binding.edtGrupoSanguineo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-                selectedGrupoSanguineo = (String) adapterView.getItemAtPosition(position); // Update member variable
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                selectedGrupoSanguineo = grupoSanguineo[position];
                 Log.d("GrupoSanguineo", "Grupo sanguíneo seleccionado: " + selectedGrupoSanguineo);
             }
 
@@ -494,4 +571,12 @@ public class AddProjectActivity extends AppCompatActivity {
             }
         });
     }
+
+    private void deleteAllContacts() {
+        contactNamesSet.clear();
+        contactNamesList.clear();
+        updateContactNames();
+        Toast.makeText(this, "Todos los contactos han sido eliminados", Toast.LENGTH_SHORT).show();
+    }
+
 }
