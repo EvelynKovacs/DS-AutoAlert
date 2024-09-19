@@ -3,6 +3,7 @@ package com.example.autoalert.repository;
 import android.content.Context;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import android.content.Context;
 import android.hardware.SensorEvent;
@@ -28,8 +29,8 @@ public class SpeedQueueRepository {
         }
 
         // Métodos para el Acelerómetro
-    public void addSpeedData(Double data) {
-        manageSpeedQueue(speedDataQueue);
+    public void addSpeedData(Double data,double deltaTime) {
+        manageSpeedQueue(speedDataQueue,deltaTime);
         speedDataQueue.add(data);
         System.out.println("Se agregó un dato a la velocidad: " + data);
         SensorDataWriter.writeDataToFile(context,"Velocidad: " + data);
@@ -40,8 +41,12 @@ public class SpeedQueueRepository {
     public Queue<Double> getAllSpeedData() {
         return new LinkedList<>(speedDataQueue);
     }
-    private void manageSpeedQueue(Queue<Double> queue) {
+    private void manageSpeedQueue(Queue<Double> queue,double deltaTime) {
         if (queue.size() == MAX_SIZE) {
+            List<Double> dataList = new LinkedList<>(queue);
+            double slope = LinearRegression.calculateLinearRegressionSlope(dataList, deltaTime);
+            System.out.println("pendiente de la velocidad: "+slope);
+            SlopeDataWriter.writeSlopeToFile(context,"v","pendiente de la velocidad: "+slope);
             Double removedData = queue.poll();
             System.out.println("Se eliminó un dato de la Velocidad: " + removedData);
             SensorDataWriter.writeDataToFile(context,"Se eliminó un dato de la Velocidad: " + removedData);

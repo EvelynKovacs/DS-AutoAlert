@@ -49,8 +49,7 @@ public class SpeedViewModel extends AndroidViewModel {
     private SpeedQueueRepository sensorData;
     private long lastSpeedUpdate = 0;
 
-    private static final long UPDATE_INTERVAL_MS = 100;  // 100 ms para 10 datos por segundo
-
+    private static final long UPDATE_INTERVAL_MS = 1000;
     public SpeedViewModel(@NonNull Application application) {
         super(application);
         locationManager = (LocationManager) application.getSystemService(Context.LOCATION_SERVICE);
@@ -100,7 +99,7 @@ public class SpeedViewModel extends AndroidViewModel {
             speedKmh.setValue(speedKmhValue);
             this.location.setValue(location);
 
-            sensorData.addSpeedData(speedKmhValue);  // Almacenar datos
+            sensorData.addSpeedData(speedKmhValue,UPDATE_INTERVAL_MS);  // Almacenar datos
 
 
             // Obtener la dirección a partir de las coordenadas

@@ -165,9 +165,9 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
     public void storeValuesGyroscope(SensorEvent event) {
         if (this.isAccelerometerAvailable()) {
-            sensorValuesGyroscope.xValueAdd((double) event.values[0]);
-            sensorValuesGyroscope.yValueAdd((double)event.values[1]);
-            sensorValuesGyroscope.zValueAdd((double)event.values[2]);
+            sensorValuesGyroscope.xValueAdd((double) event.values[0],UPDATE_INTERVAL_MS);
+            sensorValuesGyroscope.yValueAdd((double)event.values[1],UPDATE_INTERVAL_MS);
+            sensorValuesGyroscope.zValueAdd((double)event.values[2],UPDATE_INTERVAL_MS);
 
             //SensorDataWriter.writeDataToFile(getApplication(),"Giroscopio: " + gyroscopeData);
         }
