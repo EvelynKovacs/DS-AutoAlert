@@ -2,6 +2,7 @@ package com.example.autoalert.model.entities;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import androidx.room.ColumnInfo;
 import androidx.room.Entity;
@@ -19,9 +20,13 @@ public class ProjectModel implements Parcelable {
     @ColumnInfo(name = "p_title")
     private String nombreUsuario;
     private String apellidoUsuario;
+
+    @ColumnInfo(name = "contactos")  // La lista de contactos se almacenará como un String
     private List<String> contactos;
+
     private String dni;
-    private int edad;
+    //private int edad;
+    private String fechaNacimiento;
     private String datosMedicos;
     public String grupoSanguineo;
     private String foto;
@@ -35,9 +40,16 @@ public class ProjectModel implements Parcelable {
         nombreUsuario = in.readString();
         apellidoUsuario = in.readString();
         contactos = new ArrayList<>();
-        in.readStringList(contactos);  // Lee la lista de contactos correctamente
+        Log.d("ProjectModel", "Contactos asignados: " + contactos.size());
+        in.readStringList(contactos);
+
+        // Elimina entradas vacías de la lista de contactos
+        contactos.removeIf(contacto -> contacto == null || contacto.isEmpty());
+
+        Log.d("ProjectModel", "Contactos asignados después de eliminar vacíos: " + contactos.size());
         dni = in.readString();
-        edad = in.readInt();
+        //edad = in.readInt();
+        fechaNacimiento = in.readString();
         datosMedicos = in.readString();
         grupoSanguineo = in.readString();
         foto = in.readString();  // Para leer el array de bytes correctamente
@@ -83,13 +95,21 @@ public class ProjectModel implements Parcelable {
     public void setDni(String dni) {
         this.dni = dni;
     }
-
+/*
     public int getEdad() {
         return edad;
     }
 
     public void setEdad(int edad) {
         this.edad = edad;
+    }*/
+
+    public String getFechaNacimiento() {
+        return fechaNacimiento;
+    }
+
+    public void setFechaNacimiento(String fechaNacimiento) {
+        this.fechaNacimiento = fechaNacimiento;
     }
 
     public String getDatosMedicos() {
@@ -124,7 +144,8 @@ public class ProjectModel implements Parcelable {
         dest.writeString(apellidoUsuario);
         dest.writeStringList(contactos);  // Escribe la lista de contactos correctamente
         dest.writeString(dni);
-        dest.writeInt(edad);
+        //dest.writeInt(edad);
+        dest.writeString(fechaNacimiento);
         dest.writeString(datosMedicos);
         dest.writeString(grupoSanguineo);
         dest.writeString(foto);  // Para escribir el array de bytes correctamente

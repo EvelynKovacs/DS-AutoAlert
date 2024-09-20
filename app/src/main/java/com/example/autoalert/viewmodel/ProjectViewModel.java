@@ -52,7 +52,9 @@ public class ProjectViewModel extends AndroidViewModel {
                 Log.d("UserExistsDebug", "Usuario: " + project.getNombreUsuario() +
                         ", Apellido: " + project.getApellidoUsuario() +
                         ", DNI: " + project.getDni() +
-                        ", UsuarioID: " + project.getUsuarioId());
+                        ", UsuarioID: " + project.getUsuarioId() +
+                        ", Grupo Sanguineo: " + project.getGrupoSanguineo()+
+                        ", Contactos: "+ project.getContactos());
             }
 
             Log.d("Actualizando Usuario", "Usuario: " + nombreUsuario +

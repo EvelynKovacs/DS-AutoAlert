@@ -2,6 +2,8 @@ package com.example.autoalert.view.activities;
 
 
 import android.app.Activity;
+import android.app.DatePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -28,28 +30,40 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.autoalert.R;
 import com.example.autoalert.databinding.ActivityAddProjectBinding;
 import com.example.autoalert.model.entities.ProjectModel;
+import com.example.autoalert.view.adapters.ContactAdapter;
 import com.example.autoalert.viewmodel.ProjectViewModel;
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
 public class AddProjectActivity extends AppCompatActivity {
+
+    private RecyclerView recyclerViewContacts;
+    private ContactAdapter contactAdapter; // Asegúrate de tener un adaptador para tus contactos
 
     // Imagen
     CircleImageView profileImg;
@@ -60,9 +74,7 @@ public class AddProjectActivity extends AppCompatActivity {
     private static final int REQUEST_CONTACT = 1;
     private Set<String> contactNamesSet;
     private List<String> contactNamesList;
-    private TextView tvContactNames;
-
-
+    //private TextView tvContactNames;
 
     // Para guardar y obtener los usuarios
     private ActivityAddProjectBinding binding;
@@ -70,13 +82,17 @@ public class AddProjectActivity extends AppCompatActivity {
     private ProjectModel projectModel;
     private boolean isEdit = false;
 
-    private Button btnDeleteAllContacts;
+
     MaterialButton btnAddProject;
 
 
     private final String[] grupoSanguineo = {"A+", "B+", "O+", "AB+", "A-", "B-", "O-", "AB-"};
     private String selectedGrupoSanguineo;
     Spinner spinnerGrupoSanguineo;
+
+    // Variables para el TextInputEditText y el Calendar
+    TextInputEditText edtFechaNacimiento;
+    Calendar calendar;
 
 
     // Launchers for contacts and images
@@ -95,23 +111,49 @@ public class AddProjectActivity extends AppCompatActivity {
 
         binding = ActivityAddProjectBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
-        initDropDown();
+
+        // Inicializa el RecyclerView
+        recyclerViewContacts = findViewById(R.id.recyclerViewContacts);
+        recyclerViewContacts.setLayoutManager(new LinearLayoutManager(this));
+
+        edtFechaNacimiento = findViewById(R.id.edtFechaNacimiento);
+        calendar = Calendar.getInstance();
+
+        // Inicializa la lista de contactos
+        contactNamesList = new ArrayList<>();  // O carga los contactos desde tu base de datos
+
+        // Inicializa el adaptador con el listener
+        contactAdapter = new ContactAdapter(contactNamesList, position -> {
+            if (position >= 0 && position < contactNamesList.size()) {
+                // Remover el contacto de la lista y del set
+                contactNamesSet.remove(contactNamesList.get(position).split(" - ")[0]);
+                contactNamesList.remove(position);
+
+                // Notificar al adapter del cambio
+                contactAdapter.notifyItemRemoved(position);
+            } else {
+                Toast.makeText(this, "Índice fuera de límites", Toast.LENGTH_SHORT).show();
+            }
+        });
+        recyclerViewContacts.setAdapter(contactAdapter);
+        contactAdapter.notifyDataSetChanged();
 
         // Referencia al botón
         btnAddProject = findViewById(R.id.btnAddProject);
         spinnerGrupoSanguineo = findViewById(R.id.edtGrupoSanguineo); // Initialize Spinner
-        btnDeleteAllContacts = findViewById(R.id.btnEliminarContacto);
+
+
         projectViewModel = ViewModelProvider.AndroidViewModelFactory.getInstance(getApplication()).create(ProjectViewModel.class);
 
         contactNamesSet = new HashSet<>();
-        contactNamesList = new ArrayList<>();
-
-        tvContactNames = findViewById(R.id.edtContactNames);
+        //tvContactNames = findViewById(R.id.edtContactNames);
         profileImg =findViewById(R.id.profile_img);
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, grupoSanguineo);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerGrupoSanguineo.setAdapter(adapter);
+
+        initDropDown();
 
         // Recibir URI de la imagen si está disponible
         if (getIntent().hasExtra("image_uri")) {
@@ -128,7 +170,8 @@ public class AddProjectActivity extends AppCompatActivity {
                 binding.edtNombreUsuario.setText(projectModel.getNombreUsuario());
                 binding.edtApellidoUsuario.setText(projectModel.getApellidoUsuario());
                 binding.edtDni.setText(projectModel.getDni());
-                binding.edtEdad.setText(String.valueOf(projectModel.getEdad()));
+                //binding.edtEdad.setText(String.valueOf(projectModel.getEdad()));
+                binding.edtFechaNacimiento.setText(projectModel.getFechaNacimiento());
                 binding.edtDatosMedicos.setText(projectModel.getDatosMedicos());
                 spinnerGrupoSanguineo.setSelection(Arrays.asList(grupoSanguineo).indexOf(projectModel.getGrupoSanguineo()));
 
@@ -141,15 +184,13 @@ public class AddProjectActivity extends AppCompatActivity {
 
                 // Obtener la lista de contactos del projectModel
                 List<String> contactosList = projectModel.getContactos();
-                contactNamesList.addAll(contactosList); // Agregar los contactos existentes a la lista
-                contactNamesSet.addAll(contactosList); // Asegurarse de no duplicarlos
-                updateContactNames(); // Mostrar los contactos existentes
-                /*
-                // Unir los contactos en un solo String con saltos de línea
-                String contactosString = TextUtils.join("\n", contactosList);
-                // Establecer el texto en el EditText
-                binding.edtContactNames.setText(contactosString);*/
-
+                // Verificar si la lista no está vacía antes de agregar
+                if (contactosList != null && !contactosList.isEmpty()) {
+                    contactNamesList.addAll(contactosList); // Agregar los contactos existentes a la lista
+                    contactNamesSet.addAll(contactosList);  // Asegurarse de no duplicarlos
+                } else {
+                    Log.e("Contactos", "La lista de contactos está vacía. No se agregan elementos.");
+                }
                 // Cambiar el texto del botón a "Actualizar"
                 btnAddProject.setText("Actualizar");
                 isEdit = true;
@@ -159,7 +200,6 @@ public class AddProjectActivity extends AppCompatActivity {
             // Si no es edición, configurar el texto del botón como "Agregar"
             btnAddProject.setText("Agregar");
         }
-
         // Limitar la longitud del DNI a 9 caracteres (solo dígitos)
         binding.edtDni.setFilters(new InputFilter[] {new InputFilter.LengthFilter(9)});
 
@@ -173,9 +213,8 @@ public class AddProjectActivity extends AppCompatActivity {
         binding.btnAddContact.setOnClickListener(view -> showContacts());
         // Configura la visibilidad del botón de eliminar
         binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
-
-        btnDeleteAllContacts.setOnClickListener(view -> deleteAllContacts());
         binding.profileImg.setOnClickListener(view -> clickImage());
+        edtFechaNacimiento.setOnClickListener(v -> showDatePickerDialog());
     }
 
     private void showContacts() {
@@ -194,21 +233,23 @@ public class AddProjectActivity extends AppCompatActivity {
     private void handleSaveProject() {
         boolean isValid = true;
 
+
         // Obtener valores de los campos
         String nombreUsuario = binding.edtNombreUsuario.getText().toString().trim();
         String apellidoUsuario = binding.edtApellidoUsuario.getText().toString().trim();
         String dni = binding.edtDni.getText().toString().trim();
-        String edadStr = binding.edtEdad.getText().toString().trim();
+        String edadStr = binding.edtFechaNacimiento.getText().toString().trim();
         String datosMedicos = binding.edtDatosMedicos.getText().toString().trim();
-        String contactos = binding.edtContactNames.getText().toString();
+        //String contactos = binding.edtContactNames.getText().toString();
+        String fechaNacimientoStr = binding.edtFechaNacimiento.getText().toString().trim();
         String grupoSanguineo = spinnerGrupoSanguineo.getSelectedItem().toString();
 
-
+/*
         // Separar los contactos por salto de línea
         String[] contactosArray = contactos.split("\n");
-        List<String> contactosList = Arrays.asList(contactosArray);
+        List<String> contactosList = Arrays.asList(contactosArray);*/
 
-        Set<String> uniqueContactsSet = new HashSet<>(contactosList); // Elimina duplicados
+       // Set<String> uniqueContactsSet = new HashSet<>(contactosList); // Elimina duplicados
 
         Uri imageUri = getImageUriFromProfileImg(); // Obtener URI actualizada
         String base64Image = encodeImageToBase64(imageUri); // Codificar la imagen en base64
@@ -219,35 +260,48 @@ public class AddProjectActivity extends AppCompatActivity {
             // Si no se selecciona una nueva imagen, mantener la imagen existente
             base64Image = projectModel != null ? projectModel.getFoto() : null;
         }
-
-
+/*
         if (uniqueContactsSet.size() != contactosList.size()) {
             Toast.makeText(this, "No se permiten contactos duplicados", Toast.LENGTH_SHORT).show();
             return;
-        }
+        }*/
 
         if (nombreUsuario.isEmpty() || apellidoUsuario.isEmpty()  || edadStr.isEmpty() || dni.isEmpty() || grupoSanguineo.isEmpty()) {
             Toast.makeText(this, "Por favor, complete todos los campos obligatorios", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        int edad;
+        // Validar formato de fecha de nacimiento
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+        sdf.setLenient(false);  // Deshabilitar la tolerancia a fechas inválidas
+        Date fechaNacimiento;
         try {
-            edad = Integer.parseInt(edadStr);
-            if (edad < 0 || edad > 110) {
-                isValid = false;
-                binding.edtEdad.setBackgroundResource(R.drawable.error_border);
-                Toast.makeText(this, "La edad debe ser un número entre 0 y 110", Toast.LENGTH_SHORT).show();
-                return;
-            }else {
-                binding.edtEdad.setBackgroundResource(R.drawable.normal_border);
-            }
-        } catch (NumberFormatException e) {
-            isValid = false;
-            binding.edtEdad.setBackgroundResource(R.drawable.error_border);
-            Toast.makeText(this, "Edad inválida", Toast.LENGTH_SHORT).show();
+            fechaNacimiento = sdf.parse(fechaNacimientoStr); // Convertir String a Date
+        } catch (ParseException e) {
+            Toast.makeText(this, "Formato de fecha de nacimiento inválido", Toast.LENGTH_SHORT).show();
+            binding.edtFechaNacimiento.setBackgroundResource(R.drawable.error_border);
             return;
         }
+
+        // Calcular la edad a partir de la fecha
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(fechaNacimiento);
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        int edad = calculateAge(year, month, day);
+
+        // Validar que la edad esté entre 10 y 110 años
+        if (edad < 10 || edad > 110) {
+            Toast.makeText(this, "La edad debe estar entre 10 y 110 años", Toast.LENGTH_SHORT).show();
+            binding.edtFechaNacimiento.setBackgroundResource(R.drawable.error_border);
+            return;
+        } else {
+            binding.edtFechaNacimiento.setBackgroundResource(R.drawable.normal_border);
+        }
+
+
 
         if (!isValidName(nombreUsuario)) {
             isValid = false;
@@ -283,6 +337,7 @@ public class AddProjectActivity extends AppCompatActivity {
         }
 
 
+
         boolean usuarioExiste = projectViewModel.userExists(nombreUsuario, apellidoUsuario, dni, projectModel);
         if (!isEdit && usuarioExiste) {
             Toast.makeText(this, "Este usuario ya está registrado con ese DNI", Toast.LENGTH_SHORT).show();
@@ -304,19 +359,19 @@ public class AddProjectActivity extends AppCompatActivity {
 
         if (isEdit) {
             btnAddProject.setText("Actualizar");
-            updateProject(nombreUsuario, apellidoUsuario, dni, edad,datosMedicos,grupoSanguineo, base64Image, contactosList);
+            updateProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr,datosMedicos,grupoSanguineo, base64Image, contactNamesList);
         } else {
             btnAddProject.setText("Agregar");
-            createProject(nombreUsuario, apellidoUsuario, dni, edad,datosMedicos,grupoSanguineo, base64Image, contactosList);
+            createProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr,datosMedicos,grupoSanguineo, base64Image, contactNamesList);
         }
     }
 
-    private void updateProject(String nombreUsuario, String apellidoUsuario, String dni, int edad,String datosMedicos, String grupoSanguineo , String base64Image, List<String> contactosList) {
+    private void updateProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,String datosMedicos, String grupoSanguineo , String base64Image, List<String> contactosList) {
         if (projectModel != null) {
             projectModel.setNombreUsuario(nombreUsuario);
             projectModel.setApellidoUsuario(apellidoUsuario);
             projectModel.setDni(dni);
-            projectModel.setEdad(edad);
+            projectModel.setFechaNacimiento(fechaNacimiento);
             projectModel.setDatosMedicos(datosMedicos);
 
             // LIMITE DNI, EDAD MAX 110, QUE SALTE UNA NOTIFICACION CUANDO LA PERSONA, PONE UNA EDAD IMPOSIBLE, EL GRUPO SANGUINEO QUE SEA OBLIGATORIO, PONER * A LADO DE LAS COSAS OBLIGATORIAS
@@ -326,18 +381,19 @@ public class AddProjectActivity extends AppCompatActivity {
             projectModel.setFoto(base64Image); // Establecer la nueva imagen codificada
             projectModel.setContactos(contactosList);
             projectViewModel.updateProject(projectModel);
+            Log.d("ContactoActualizado", "Despues de Actualizar " + contactosList);
             Toast.makeText(this, "Actualizado", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
 
 
-    private void createProject(String nombreUsuario, String apellidoUsuario, String dni, int edad,String datosMedicos, String grupoSanguineo , String base64Image, List<String> contactosList) {
+    private void createProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,String datosMedicos, String grupoSanguineo , String base64Image, List<String> contactosList) {
         projectModel = new ProjectModel();
         projectModel.setNombreUsuario(nombreUsuario);
         projectModel.setApellidoUsuario(apellidoUsuario);
         projectModel.setDni(dni);
-        projectModel.setEdad(edad);
+        projectModel.setFechaNacimiento(fechaNacimiento);
         projectModel.setDatosMedicos(datosMedicos);
 
         projectModel.setGrupoSanguineo(grupoSanguineo);
@@ -345,6 +401,7 @@ public class AddProjectActivity extends AppCompatActivity {
         projectModel.setFoto(base64Image); // Establecer la imagen codificada
         projectModel.setContactos(contactosList);
         projectViewModel.insertProject(projectModel);
+        Log.d("ContactoInsertado", "Despues de Insertar " + contactosList);
         Toast.makeText(this, "Insertado", Toast.LENGTH_SHORT).show();
         finish();
     }
@@ -383,47 +440,56 @@ public class AddProjectActivity extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
+
         if (resultCode == Activity.RESULT_OK) {
+
             if (requestCode == 33 && data != null && data.getData() != null) {
                 selectedImageUri = data.getData();
                 profileImg.setImageURI(selectedImageUri);
             }
 
-        }
+            if (requestCode == REQUEST_CONTACT && data != null) {
+                Uri contactUri = data.getData();
 
-        if (requestCode == REQUEST_CONTACT && data != null) {
-            Uri contactUri = data.getData();
+                String[] queryFields = new String[]{ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME};
+                Cursor cursor = getContentResolver().query(contactUri, queryFields, null, null, null);
 
-            String[] queryFields = new String[]{ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME};
-            Cursor cursor = getContentResolver().query(contactUri, queryFields, null, null, null);
+                try {
+                    if (cursor != null && cursor.moveToFirst()) {
+                        int idIndex = cursor.getColumnIndex(ContactsContract.Contacts._ID);
+                        int nameIndex = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
 
-            try {
-                if (cursor != null && cursor.moveToFirst()) {
-                    int idIndex = cursor.getColumnIndex(ContactsContract.Contacts._ID);
-                    int nameIndex = cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME);
+                        if (idIndex != -1 && nameIndex != -1) {
+                            String contactId = cursor.getString(idIndex);
+                            String name = cursor.getString(nameIndex);
 
-                    if (idIndex != -1 && nameIndex != -1) {
-                        String contactId = cursor.getString(idIndex);
-                        String name = cursor.getString(nameIndex);
+                            if (contactNamesSet.contains(name)) {
+                                Toast.makeText(this, "Este contacto ya ha sido seleccionado", Toast.LENGTH_SHORT).show();
+                            } else {
+                                String phoneNumber = getPhoneNumber(contactId);
+                                String contactInfo = name + " - " + phoneNumber;
 
-                        if (contactNamesSet.contains(name)) {
-                            Toast.makeText(this, "Este contacto ya ha sido seleccionado", Toast.LENGTH_SHORT).show();
-                        } else {
-                            String phoneNumber = getPhoneNumber(contactId);
-                            String contactInfo = name + " - " + phoneNumber;
-                            contactNamesSet.add(name);
-                            contactNamesList.add(contactInfo);
-                            updateContactNames();
+                                Log.d("Dentro de Activity","phoneNumber: "+phoneNumber);
+
+                                // Agregar el contacto a la lista y al set
+                                contactNamesSet.add(name);
+                                contactNamesList.add(contactInfo);
+
+                                // Actualizar el RecyclerView
+                                contactAdapter.notifyItemInserted(contactNamesList.size() - 1);
+
+                                contactAdapter.notifyDataSetChanged(); // Llama a esto después de actualizar contactNamesList
+
+                            }
                         }
                     }
-                }
-            } finally {
-                if (cursor != null) {
-                    cursor.close();
+                } finally {
+                    if (cursor != null) {
+                        cursor.close();
+                    }
                 }
             }
         }
-
         // Manejo de selección de imagen
         if (requestCode == 33 && data != null && data.getData() != null) {
             Uri selectedImageUri = data.getData();
@@ -452,15 +518,6 @@ public class AddProjectActivity extends AppCompatActivity {
         }
         return phoneNumber;
     }
-
-    // Actualiza el TextView con los nombres y números de los contactos seleccionados
-    private void updateContactNames() {
-        // Unir los nombres y números de los contactos con saltos de línea
-        String contactosString = TextUtils.join("\n", contactNamesList);
-        // Actualizar el TextView con los contactos
-        tvContactNames.setText(contactosString);
-    }
-
 
     // Solicitud de permisos
     @Override
@@ -516,15 +573,12 @@ public class AddProjectActivity extends AppCompatActivity {
         return outputStream.toByteArray();
     }
 
-
-
     private Uri getImageUriFromProfileImg() {
         if (selectedImageUri != null) {
             return saveImageToFile(selectedImageUri);
         }
         return null;
     }
-
 
     private Uri saveImageToFile(Uri imageUri) {
         File file = null;
@@ -572,11 +626,39 @@ public class AddProjectActivity extends AppCompatActivity {
         });
     }
 
-    private void deleteAllContacts() {
-        contactNamesSet.clear();
-        contactNamesList.clear();
-        updateContactNames();
-        Toast.makeText(this, "Todos los contactos han sido eliminados", Toast.LENGTH_SHORT).show();
+    private void showDatePickerDialog() {
+        final Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+                (view, selectedYear, selectedMonth, selectedDay) -> {
+                    // Actualizar el campo con la fecha seleccionada
+                    calendar.set(selectedYear, selectedMonth, selectedDay);
+                    edtFechaNacimiento.setText(selectedDay + "/" + (selectedMonth + 1) + "/" + selectedYear);
+
+                    // Calcular la edad
+                    int age = calculateAge(selectedYear, selectedMonth, selectedDay);
+                    // Aquí puedes usar la edad como prefieras
+                    Log.d("Edad Calculada", "Edad: " + age);
+                }, year, month, day);
+        datePickerDialog.show();
+    }
+
+    private int calculateAge(int year, int month, int day) {
+        Calendar dob = Calendar.getInstance();
+        dob.set(year, month, day);
+
+        Calendar today = Calendar.getInstance();
+
+        int age = today.get(Calendar.YEAR) - dob.get(Calendar.YEAR);
+
+        if (today.get(Calendar.DAY_OF_YEAR) < dob.get(Calendar.DAY_OF_YEAR)) {
+            age--;
+        }
+
+        return age;
     }
 
 }

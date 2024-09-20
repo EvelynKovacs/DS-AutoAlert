@@ -11,7 +11,7 @@ import com.example.autoalert.data.local.dao.ProjectDao;
 import com.example.autoalert.model.Converters;
 import com.example.autoalert.model.entities.ProjectModel;
 
-@Database(entities = {ProjectModel.class}, exportSchema = false, version = 5)
+@Database(entities = {ProjectModel.class}, exportSchema = false, version = 6)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
 
