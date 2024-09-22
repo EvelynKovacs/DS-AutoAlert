@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private EditText ssidEditText;
     private EditText passwordEditText;
     private TextView ipTextView;
+    private TextView myIpTextView;
     private BroadcastSender broadcastSender;
     private ResponseListener responseListener;
     private BroadcastReceiver broadcastReceiver;
@@ -49,6 +50,14 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast
     private HashMap<String, String> ipMessageMap;
     private TextView ipMessageTextView;
+    private Button btnYes;
+    private Button btnNo;
+    private TextView statusBtnTextView;
+    private TextView responseTextView;
+
+    private int cont = 0;
+    //private int contPositivo = 0;
+    //private int contNegativo = 0;
 
 
 
@@ -70,6 +79,11 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         statusTextView = findViewById(R.id.statusTextView);
         toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
         ipMessageTextView = findViewById(R.id.ipMessageTextView);
+        myIpTextView = findViewById(R.id.myIpTextView);
+        btnYes = findViewById(R.id.btnYes);
+        btnNo = findViewById(R.id.btnNo);
+        statusBtnTextView = findViewById(R.id.statusBtnTextView);
+        responseTextView = findViewById(R.id.responseTextView);
         Log.e("MainActivity", "Componentes inicializados.");
 
 
@@ -92,6 +106,9 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         String deviceIpAddress = getDeviceIpAddress();
         ipTextView.setText("Mi IP: " + deviceIpAddress);
 
+        String myDeviceIpAddress = getDeviceIpAddress();
+        myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
+
         // Iniciar la recepción de broadcasts y respuestas
         Log.e("MainActivity", "Escuchando mensajes de broadcast.");
         broadcastReceiver.startListening();
@@ -100,6 +117,14 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Enviar mensaje de broadcast cuando se haga clic en el botón
         btnSendBroadcast.setOnClickListener(view -> {
             broadcastSender.sendBroadcast();
+        });
+
+        btnYes.setOnClickListener(view -> {
+            setStatusTextViewOnYes();
+        });
+
+        btnNo.setOnClickListener(view -> {
+            setStatusTextViewOnNo();
         });
 
         // Verificar y solicitar permisos necesarios
@@ -140,7 +165,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
 
         btnSendMessages.setOnClickListener(view -> {
-            String message = "Este es un mensaje predefinido";
+            String message = responseTextView.getText().toString();
             int port = 12345; // Puedes definir el puerto a utilizar
 
             // Supongamos que quieres enviar el mensaje a la primera IP de la lista
@@ -175,6 +200,15 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
     }
 
+    public void setStatusTextViewOnYes() {
+        responseTextView.setText("SI");
+    }
+
+
+    public void setStatusTextViewOnNo() {
+        responseTextView.setText("NO");
+    }
+
     public void storeMessageFromIp(String ip, String message) {
         ipMessageMap.put(ip, message);
         // Mostrar el mensaje recibido en la interfaz
@@ -194,6 +228,80 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         // Actualizar el TextView en el hilo de la UI
         runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
+    }
+
+
+    public void guardarVoto(String ip, String voto){
+        Log.e("Guardado de votos", "Se inicia el guardado de votos.");
+        String[] votoArray = voto.split(":");
+        String resultadoVoto = votoArray[1];
+        Log.e("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
+
+        ipMessageMap.put(ip, resultadoVoto);
+        // Mostrar el mensaje recibido en la interfaz
+        // Actualizar la interfaz con el contenido del HashMap
+        updateIpMessageView();
+        runOnUiThread(() -> {
+            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + resultadoVoto, Toast.LENGTH_SHORT).show();
+        });
+        cont = cont + 1;
+        if(ipList.size() == cont) {
+            Log.e("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
+            iniciarConteo();
+            cont = 0;
+        }
+    }
+
+    public void iniciarConteo(){
+        int contPositivo = 0;
+        int contNegativo = 0;
+        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+        Log.e("Conteo de votos", "Conteo de votos iniciado.");
+
+        for (String ip : ipMessageMap.keySet()) {
+            String voto = ipMessageMap.get(ip);
+            if ("SI".equals(voto)) {
+                contPositivo++;
+                Log.e("Conteo de votos", "VOTO:SI");
+            } else if ("NO".equals(voto)) {
+                contNegativo++;
+                Log.e("Conteo de votos", "VOTO:NO");
+            }
+        }
+
+        // Mostrar resultado basado en la cantidad de votos
+        if (contPositivo >= contNegativo) {
+            displayText.append("ACCIDENTE").append("\n");
+            ipMessageTextView.setText(displayText.toString());
+        } else {
+            ipMessageTextView.setText("NO HUBO ACCIDENTE");
+        }
+    }
+
+    public void enviarEstado(){
+        String message;
+        Log.e("Envio de Estado", "Enviando estado");
+        if(responseTextView.getText() == "SI"){
+            message = "VOTO:SI";
+            Log.e("Envio de Estado", "Enviando mensaje: VOTO:SI");
+
+        } else {
+            message = "VOTO:NO";
+            Log.e("Envio de Estado", "Enviando mensaje: VOTO:NO");
+
+        }
+
+        int port = 12345; // Puedes definir el puerto a utilizar
+
+        // Supongamos que quieres enviar el mensaje a la primera IP de la lista
+        if (!ipList.isEmpty()) {
+            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
+            for(String targetIp : ipList) {
+                messageSender.sendMessage(targetIp, port, message);
+                Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
+
+            }
+        }
     }
 
     // Método para alternar el estado del Hotspot
@@ -267,7 +375,9 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         // Obtener y mostrar la IP del dispositivo al crear el hotspot
         String deviceIpAddress = getDeviceIpAddress();
-        ipTextView.setText("Mi IP: " + deviceIpAddress);
+        //ipTextView.setText("Mi IP: " + deviceIpAddress);
+
+        myIpTextView.setText("Mi IP: " + deviceIpAddress);
     }
 
     private String getDeviceIpAddress() {

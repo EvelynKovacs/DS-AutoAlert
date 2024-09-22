@@ -9,7 +9,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class MessageReceiver {
-    private static final int SERVER_PORT = 8889;  // Puerto en el que el servidor está escuchando
 
     private Context context;
 
@@ -35,10 +34,28 @@ public class MessageReceiver {
 
                     // Leer el mensaje que envió el cliente
                     String message = input.readLine();
-                    System.out.println("Mensaje recibido: " + message);
 
                     // Almacenar la IP y el mensaje recibido en el HashMap
                     ((MainActivity)context).storeMessageFromIp(clientIp, message);
+
+//                    if(message=="ACCIDENTE"){
+//                        ((MainActivity)context).iniciarVotacion();
+//                    }
+
+                    if (message.startsWith("VOTO:")) {
+                        ((MainActivity)context).guardarVoto(clientIp, message);
+                    }
+
+
+
+                    if(message.equals("SI")) {
+                        ((MainActivity)context).enviarEstado();
+                    }
+
+
+                    System.out.println("Mensaje recibido: " + message);
+
+
 
 
                     // Cerrar la conexión con el cliente

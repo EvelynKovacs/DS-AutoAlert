@@ -1,103 +1,187 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    tools:context=".MainActivity">
 
-    <!-- Campo para ingresar el SSID -->
     <TextView
         android:id="@+id/ssidLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="51dp"
+        android:layout_height="25dp"
+        android:layout_marginTop="32dp"
         android:text="SSID:"
-        android:textSize="18sp" />
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.038"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Campo para ingresar la contraseña -->
-
-    <EditText
+    <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/ssidEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Ingrese el nombre del SSID" />
+        android:layout_width="325dp"
+        android:layout_height="40dp"
+        android:layout_marginTop="4dp"
+        android:hint="Nombre"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.29"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ssidLabel" />
 
     <TextView
         android:id="@+id/passwordLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
         android:text="Contraseña:"
-        android:textSize="18sp" />
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.046"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ssidEditText" />
 
-    <EditText
+    <com.google.android.material.textfield.TextInputEditText
         android:id="@+id/passwordEditText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:hint="Ingrese la contraseña"
-        android:inputType="textPassword" />
+        android:layout_width="333dp"
+        android:layout_height="42dp"
+        android:hint="contraseña"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.32"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/passwordLabel" />
 
-    <!-- Texto de estado del hotspot -->
     <TextView
         android:id="@+id/statusTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Estado del Hotspot"
-        android:textSize="16sp"
-        android:paddingTop="16dp" />
-
-    <!-- Botón para alternar el estado del Hotspot -->
-
-    <!-- Mostrar el SSID y la contraseña del Hotspot activo -->
+        android:layout_marginStart="156dp"
+        android:layout_marginTop="4dp"
+        android:text="Estado de la Red:"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.287"
+        app:layout_constraintStart_toEndOf="@+id/ssidTextView"
+        app:layout_constraintTop_toBottomOf="@+id/toggleHotspotButton" />
 
     <Button
         android:id="@+id/toggleHotspotButton"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Activar Hotspot" />
+        android:layout_marginTop="8dp"
+        android:text="Activar Red"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/passwordEditText" />
 
     <TextView
         android:id="@+id/ssidTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="4dp"
         android:text="SSID:"
-        android:textSize="16sp"
-        android:layout_marginTop="24dp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toggleHotspotButton" />
 
     <TextView
         android:id="@+id/passwordTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="4dp"
         android:text="Contraseña:"
-        android:textSize="16sp" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ssidTextView" />
 
     <Button
         android:id="@+id/btnSendBroadcast"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enviar Broadcast" />
+        android:layout_marginTop="92dp"
+        android:text="Enviar mensaje de broadcast"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toggleHotspotButton" />
+
+    <TextView
+        android:id="@+id/myIpTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:text="Mi ip:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnSendBroadcast" />
 
     <TextView
         android:id="@+id/ipTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="193dp"
+        android:layout_height="98dp"
+        android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
-        android:text="IPs recibidas:"
-        android:textSize="18sp" />
+        android:text="IP's recibidas:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/myIpTextView" />
 
     <Button
         android:id="@+id/btnSendMessages"
-        android:layout_width="256dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Enviar Mensaje a IPs" />
+        android:text="Enviar mensaje a dispositivos"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ipTextView" />
 
     <TextView
         android:id="@+id/ipMessageTextView"
+        android:layout_width="271dp"
+        android:layout_height="119dp"
+        android:layout_marginTop="12dp"
+        android:text="Mensajes recibidos:"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.114"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnSendMessages" />
+
+    <Button
+        android:id="@+id/btnYes"
+        android:layout_width="69dp"
+        android:layout_height="54dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="SI"
+        app:layout_constraintStart_toEndOf="@+id/ipTextView"
+        app:layout_constraintTop_toBottomOf="@+id/statusBtnTextView" />
+
+    <Button
+        android:id="@+id/btnNo"
+        android:layout_width="69dp"
+        android:layout_height="55dp"
+        android:layout_marginStart="28dp"
+        android:layout_marginTop="8dp"
+        android:text="NO"
+        app:layout_constraintStart_toEndOf="@+id/btnYes"
+        app:layout_constraintTop_toBottomOf="@+id/statusBtnTextView" />
+
+    <TextView
+        android:id="@+id/responseTextView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Mensajes recibidos:"
-        android:layout_below="@id/ipTextView"
-        android:layout_marginTop="20dp"
-        android:textSize="16sp"/>
+        android:layout_marginTop="60dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.44"
+        app:layout_constraintStart_toEndOf="@+id/ipTextView"
+        app:layout_constraintTop_toBottomOf="@+id/statusBtnTextView" />
 
+    <TextView
+        android:id="@+id/statusBtnTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="64dp"
+        android:text="Nicky Nicole"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnSendBroadcast" />
 
-</LinearLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

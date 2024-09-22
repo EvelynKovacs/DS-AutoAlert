@@ -8,12 +8,12 @@
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=LMX520VCAMFA9TMVZT" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY32BRNDZZ" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY32BRNDZZ" />
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=LMX520VCAMFA9TMVZT" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
