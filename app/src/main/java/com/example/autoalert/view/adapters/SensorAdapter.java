@@ -56,8 +56,6 @@ public class SensorAdapter extends ArrayAdapter<Sensor> {
         switch (type) {
             case Sensor.TYPE_GYROSCOPE:
                 return "Gyroscope";
-            case Sensor.TYPE_LINEAR_ACCELERATION:
-                return "Linear Acceleration";
             case Sensor.TYPE_ACCELEROMETER:
                 return "Accelerometer";
             default:

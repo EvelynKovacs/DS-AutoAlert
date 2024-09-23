@@ -2,15 +2,14 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical">
+    android:orientation="vertical"
+    android:background="@android:color/background_dark">
 
-    <!-- Encabezado con fondo verde y texto blanco -->
+    <!-- Encabezado con información de velocidad, ubicación y sensores -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/holo_green_dark"
         android:padding="16dp"
-        android:gravity="center_vertical"
         android:orientation="vertical">
 
         <TextView
@@ -50,13 +49,69 @@
             android:layout_marginTop="16dp"/>
     </LinearLayout>
 
+    <!-- Línea blanca para separar las secciones -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/white"/>
+
     <!-- ListView para mostrar la lista de sensores -->
     <ListView
         android:id="@+id/listView1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:divider="@android:color/black"
+        android:divider="@android:color/white"
         android:dividerHeight="1dp"
         android:padding="16dp"
         android:layout_marginTop="16dp"/>
+
+    <LinearLayout
+        android:id="@+id/red_alert_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_red_light"
+        android:orientation="vertical"
+        android:padding="30dp"
+        android:visibility="gone"> <!-- Inicialmente oculta -->
+
+        <TextView
+            android:id="@+id/accident_message"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Se detectó un accidente"
+            android:textColor="@android:color/white"
+            android:textSize="20sp" />
+
+        <TextView
+            android:id="@+id/countdown_timer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="30"
+            android:textColor="@android:color/white"
+            android:textSize="20sp"
+            android:layout_marginTop="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp">
+
+            <Button
+                android:id="@+id/button_send_message"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Enviar mensaje" />
+
+            <Button
+                android:id="@+id/button_all_ok"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Todo ok" />
+        </LinearLayout>
+    </LinearLayout>
+
+
 </LinearLayout>

@@ -2,6 +2,7 @@ package com.example.autoalert.view.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -10,26 +11,46 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.autoalert.R;
+import com.example.autoalert.repository.AccelerometerQueueRepository;
+import com.example.autoalert.utils.SmsUtils;
 import com.example.autoalert.view.adapters.SensorAdapter;
 import com.example.autoalert.viewmodel.SensorViewModel;
 import com.example.autoalert.viewmodel.SpeedViewModel;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import  com.example.autoalert.utils.AccidentDetector;
 
 public class MainActivity extends AppCompatActivity {
     private SensorViewModel sensorViewModel;
     private SensorAdapter sensorAdapter;
     private SpeedViewModel speedViewModel;
     private TextView tvSpeed, tvLocation, tvAddress;  // Nuevo TextView para la dirección
+    private boolean isMessageSent = false;  // Bandera para controlar el envío del mensaje
+    private AccidentDetector accidentDetector; // Instancia de AccidentDetector
+    private AccelerometerQueueRepository accelerometerQueueRepository;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         tvSpeed = findViewById(R.id.tvSpeed);
         tvLocation = findViewById(R.id.tvLocation);
         tvAddress = findViewById(R.id.tvAddress);  // TextView para la dirección
+        // Inicializa las vistas
+        LinearLayout redAlertLayout = findViewById(R.id.red_alert_layout);
+        TextView countdownTimer = findViewById(R.id.countdown_timer);
+        // Crea y configura AccidentDetector
+        accidentDetector = new AccidentDetector(redAlertLayout, countdownTimer);
+
+        accelerometerQueueRepository = new AccelerometerQueueRepository(getApplicationContext());
+
+
+        //SmsUtils.checkAndSendSms(this, new String[]{"2804405851", "2804611882", "2804992455"}, "Mensaje de emergencia");
+
+        // SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, "Mensaje de emergencia");
 
         sensorViewModel = new ViewModelProvider(this).get(SensorViewModel.class);
         ListView listView = findViewById(R.id.listView1);
@@ -71,6 +92,23 @@ public class MainActivity extends AppCompatActivity {
         // Observar los cambios de dirección
         speedViewModel.getAddress().observe(this, address -> {
             tvAddress.setText("Dirección: " + address);  // Actualizar el TextView de la dirección
+            System.out.println("DIRECCION: " + address);
+            String emergencyMessage = "Emergencia. Dirección: " + address;
+            System.out.println(emergencyMessage);
+            String sanitizedAddress = " Mensaje de Emergencia. La siguiente direccion podria no ser exacta, aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + address.replaceAll("[^a-zA-Z0-9\\s,.]", "");
+
+
+//
+            //SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, sanitizedAddress);
+
+            if (!isMessageSent) {
+                //String emergencyMessage = "Mensaje de emergencia. Dirección: " + address;
+
+                //SmsUtils.checkAndSendSms(this, new String[]{ "2804559405"}, sanitizedAddress);
+                SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, sanitizedAddress);
+
+                isMessageSent = true;  // Marcar como enviado
+            }
         });
 
         // Observar el estado de los permisos
@@ -82,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Iniciar la configuración de ubicación
         speedViewModel.checkLocationSettings(this);
+
+
     }
 
     @Override

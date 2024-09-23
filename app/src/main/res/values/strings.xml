@@ -3,4 +3,7 @@
     <string name="speed_label">Velocidad:</string>
     <string name="waiting_signal">Esperando señal...</string>
     <string name="speed_unit">m/s</string>
+    <string name="mediaPlay">Inicio Simulacro</string>
+    <string name="msg_accidente">SE DETECTÓ ACCIDENTE</string>
+    <string name="envio_msg_accidente">ENVIAR MENSAJES DE EMERGENCIA</string>
 </resources>

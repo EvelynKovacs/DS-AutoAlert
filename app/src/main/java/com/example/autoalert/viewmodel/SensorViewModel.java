@@ -21,14 +21,12 @@ import androidx.lifecycle.MutableLiveData;
 import com.example.autoalert.R;
 import com.example.autoalert.repository.AccelerometerQueueRepository;
 import com.example.autoalert.repository.GyroscopeQueueRepository;
-import com.example.autoalert.repository.SensorDataWriter;
 //import com.example.autoalert.repository.SensorQueueRepository;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 
 public class SensorViewModel extends AndroidViewModel implements SensorEventListener {
 
@@ -68,7 +66,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         // Inicializar los booleanos como falsos
         isGyroscopeAvailable = false;
         isAccelerometerAvailable = false;
-        sensorValuesAccelerometer= new AccelerometerQueueRepository(application.getApplicationContext());
+        sensorValuesAccelerometer= new AccelerometerQueueRepository(application.getApplicationContext() );
 
         sensorValuesGyroscope= new GyroscopeQueueRepository(application.getApplicationContext());
     }
