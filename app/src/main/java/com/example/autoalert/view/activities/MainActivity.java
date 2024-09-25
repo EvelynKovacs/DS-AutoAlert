@@ -167,16 +167,19 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         btnSendMessages.setOnClickListener(view -> {
             String message = responseTextView.getText().toString();
             int port = 12345; // Puedes definir el puerto a utilizar
+            Log.e("MainActivity", "Enviando mensajes.");
 
             // Supongamos que quieres enviar el mensaje a la primera IP de la lista
             if (!ipList.isEmpty()) {
                 //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
                 for(String targetIp : ipList) {
                     messageSender.sendMessage(targetIp, port, message);
+                    Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp);
                     Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
 
                 }
             } else {
+                Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
                 Toast.makeText(MainActivity.this, "No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
             }
         });
@@ -190,9 +193,9 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         handler.post(() -> {
             StringBuilder ips = new StringBuilder("IPs recibidas:\n");
             if (!ipList.contains(ip)) {
+                Log.e("Actualizacion de lista", "IP agregada: " + ip);
                 ipList.add(ip);
                 ips.append(ip).append("\n");
-
             }
             ipTextView.setText(ips.toString());
             Log.e("Actualizacion de lista", "Lista actualizada.");
@@ -221,6 +224,8 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
     // Método para actualizar el TextView con el contenido del HashMap
     private void updateIpMessageView() {
+        Log.e("Actualizar IP-Mensaje", "Se actualiza lista de mensajes.");
+
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
         for (String ip : ipMessageMap.keySet()) {
             displayText.append("IP: ").append(ip).append(" - Mensaje: ").append(ipMessageMap.get(ip)).append("\n");
@@ -244,6 +249,8 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         runOnUiThread(() -> {
             Toast.makeText(this, "Mensaje recibido de " + ip + ": " + resultadoVoto, Toast.LENGTH_SHORT).show();
         });
+        Log.e("Guardado de votos", "El contador esta en " + cont);
+
         cont = cont + 1;
         if(ipList.size() == cont) {
             Log.e("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
@@ -271,9 +278,12 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         // Mostrar resultado basado en la cantidad de votos
         if (contPositivo >= contNegativo) {
+            Log.e("Conteo de votos", "Hay Accidente");
             displayText.append("ACCIDENTE").append("\n");
             ipMessageTextView.setText(displayText.toString());
         } else {
+            Log.e("Conteo de votos", "No hubo accidente");
+
             ipMessageTextView.setText("NO HUBO ACCIDENTE");
         }
     }
@@ -298,7 +308,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
             for(String targetIp : ipList) {
                 messageSender.sendMessage(targetIp, port, message);
-                Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
+                //Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
 
             }
         }

@@ -20,6 +20,8 @@ public class MessageReceiver {
     public void startListening(int port) {
         new Thread(() -> {
             try {
+                Log.i("Recepcion de mensajes", "Se creo hilo de recepcion de mensajes en el puerto: " + port);
+
                 // Crear un socket servidor que escucha en el puerto definido
                 ServerSocket serverSocket = new ServerSocket(port);
 
@@ -35,6 +37,9 @@ public class MessageReceiver {
                     // Leer el mensaje que envió el cliente
                     String message = input.readLine();
 
+                    Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " con " + message);
+
+
                     // Almacenar la IP y el mensaje recibido en el HashMap
                     ((MainActivity)context).storeMessageFromIp(clientIp, message);
 
@@ -43,12 +48,14 @@ public class MessageReceiver {
 //                    }
 
                     if (message.startsWith("VOTO:")) {
+                        Log.i("Recepción de mensajes", "Es un mensaje de ESTADO. Mensaje: " + message);
                         ((MainActivity)context).guardarVoto(clientIp, message);
                     }
 
 
 
                     if(message.equals("SI")) {
+                        Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
                         ((MainActivity)context).enviarEstado();
                     }
 

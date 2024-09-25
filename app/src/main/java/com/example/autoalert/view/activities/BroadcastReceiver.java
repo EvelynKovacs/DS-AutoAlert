@@ -27,6 +27,7 @@ public class BroadcastReceiver {
     public void startListening() {
         new Thread(() -> {
             try {
+                Log.i("Hilo BroadcastReceiver", "Se creo hilo de BroadcastReceiver.");
                 DatagramSocket socket = new DatagramSocket(BROADCAST_PORT);
                 socket.setBroadcast(true);
                 byte[] receiveBuffer = new byte[1024];
@@ -41,7 +42,7 @@ public class BroadcastReceiver {
                     if (message.equals("DISCOVER_IP_REQUEST")) {
                         String senderIp = receivePacket.getAddress().getHostAddress();
 
-                        //mainActivity.ipList.add(senderIp);
+                        mainActivity.ipList.add(senderIp);
                         mainActivity.updateIpList(senderIp);
 
                         // Guardar la IP del emisor

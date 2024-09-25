@@ -11,6 +11,8 @@ public class MessageSender {
     public void sendMessage(String ipAddress, int port, String message) {
         new Thread(() -> {
             try {
+                Log.e("Envio de mensaje", "Se envia mensaje a " + ipAddress + " con " + message);
+
                 // Crear un socket TCP para enviar el mensaje al dispositivo con la IP recibida
                 Socket socket = new Socket(ipAddress, port);
                 OutputStream outputStream = socket.getOutputStream();
