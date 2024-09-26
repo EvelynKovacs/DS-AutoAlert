@@ -38,28 +38,30 @@ public class BroadcastReceiver {
                     socket.receive(receivePacket);
 
                     String message = new String(receivePacket.getData(), 0, receivePacket.getLength());
+                    String myIpAddress = getDeviceIpAddress(); // Método para obtener la IP del dispositivo
+                    String senderIp = receivePacket.getAddress().getHostAddress();
+                    if(!senderIp.equals(myIpAddress)){
+                        if (message.equals("DISCOVER_IP_REQUEST")) {
+                            mainActivity.ipList.add(senderIp);
+                            mainActivity.updateIpList(senderIp);
 
-                    if (message.equals("DISCOVER_IP_REQUEST")) {
-                        String senderIp = receivePacket.getAddress().getHostAddress();
+                            // Guardar la IP del emisor
+                            mainActivity.storeMessageFromIp(senderIp, message);
 
-                        mainActivity.ipList.add(senderIp);
-                        mainActivity.updateIpList(senderIp);
+                            // Enviar respuesta con la IP del receptor
 
-                        // Guardar la IP del emisor
-                        mainActivity.storeMessageFromIp(senderIp, message);
+                            sendResponse(senderIp, RESPONSE_PORT, myIpAddress);
+                        }
 
-                        // Enviar respuesta con la IP del receptor
-                        String myIpAddress = getDeviceIpAddress(); // Método para obtener la IP del dispositivo
-                        sendResponse(senderIp, RESPONSE_PORT, myIpAddress);
+                        if (message.equals(BROADCAST_RESPONSE)){
+                            senderIp = receivePacket.getAddress().getHostAddress();
+                            //mainActivity.ipList.add(senderIp);
+                            mainActivity.updateIpList(senderIp);
+                            // Guardar la IP del emisor
+                            mainActivity.storeMessageFromIp(senderIp, message);
+                        }
                     }
 
-                    if (message.equals(BROADCAST_RESPONSE)){
-                        String senderIp = receivePacket.getAddress().getHostAddress();
-                        //mainActivity.ipList.add(senderIp);
-                        mainActivity.updateIpList(senderIp);
-                        // Guardar la IP del emisor
-                        mainActivity.storeMessageFromIp(senderIp, message);
-                    }
 
                     // Si el mensaje es el de descubrimiento, responder con la IP
 //                    if (message.equals("DISCOVER_IP_REQUEST")) {
@@ -85,6 +87,8 @@ public class BroadcastReceiver {
     private void sendResponse(String senderIp, int port, String myIpAddress) {
         new Thread(() -> {
             try {
+                Log.e("BroadcastReceiver", "Preparando mensaje de respuesta.");
+
                 // Crear el socket para enviar la respuesta
                 DatagramSocket socket = new DatagramSocket();
                 InetAddress receiverAddress = InetAddress.getByName(senderIp);

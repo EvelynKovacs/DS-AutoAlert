@@ -84,11 +84,11 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         btnNo = findViewById(R.id.btnNo);
         statusBtnTextView = findViewById(R.id.statusBtnTextView);
         responseTextView = findViewById(R.id.responseTextView);
-        Log.e("MainActivity", "Componentes inicializados.");
+        Log.i("MainActivity", "Componentes inicializados.");
 
 
         // Inicializar los componentes
-        Log.e("MainActivity", "Inicio de hilos");
+        Log.i("MainActivity", "Inicio de hilos");
         broadcastSender = new BroadcastSender();
         broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
@@ -97,12 +97,12 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Inicializamos el HashMap
         ipMessageMap = new HashMap<>();
 
-        Log.e("MainActivity", "Inicio de Gestionador de Red.");
+        Log.i("MainActivity", "Inicio de Gestionador de Red.");
         // Inicializar el administrador del hotspot
         hotspotManager = new WifiHotspot(this, this);
 
         // Obtener y mostrar la IP del dispositivo
-        Log.e("MainActivity", "Mostrando IP....");
+        Log.i("MainActivity", "Mostrando IP....");
         String deviceIpAddress = getDeviceIpAddress();
         ipTextView.setText("Mi IP: " + deviceIpAddress);
 
@@ -110,7 +110,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
 
         // Iniciar la recepción de broadcasts y respuestas
-        Log.e("MainActivity", "Escuchando mensajes de broadcast.");
+        Log.i("MainActivity", "Escuchando mensajes de broadcast.");
         broadcastReceiver.startListening();
         //responseListener.listenForResponses();
 
@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         });
 
         // Verificar y solicitar permisos necesarios
-        Log.e("MainActivity", "Verificando permisos....");
+        Log.i("MainActivity", "Verificando permisos....");
         checkPermissions();
 
         MessageReceiver messageReceiver = new MessageReceiver(this);
@@ -167,7 +167,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         btnSendMessages.setOnClickListener(view -> {
             String message = responseTextView.getText().toString();
             int port = 12345; // Puedes definir el puerto a utilizar
-            Log.e("MainActivity", "Enviando mensajes.");
+            Log.i("MainActivity", "Enviando mensajes.");
 
             // Supongamos que quieres enviar el mensaje a la primera IP de la lista
             if (!ipList.isEmpty()) {
@@ -177,6 +177,10 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
                     Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp);
                     Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
 
+                }
+
+                if(responseTextView.getText().equals("SI")){
+                    enviarEstado();
                 }
             } else {
                 Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
@@ -189,16 +193,16 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
     // Método para actualizar la lista de IPs en el TextView
     public void updateIpList(String ip) {
-        Log.e("Actualizacion de lista", "Actualizando lista de IP's.");
+        Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
         handler.post(() -> {
             StringBuilder ips = new StringBuilder("IPs recibidas:\n");
             if (!ipList.contains(ip)) {
-                Log.e("Actualizacion de lista", "IP agregada: " + ip);
+                Log.i("Actualizacion de lista", "IP agregada: " + ip);
                 ipList.add(ip);
                 ips.append(ip).append("\n");
             }
             ipTextView.setText(ips.toString());
-            Log.e("Actualizacion de lista", "Lista actualizada.");
+            Log.i("Actualizacion de lista", "Lista actualizada.");
         });
 
     }
@@ -224,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
     // Método para actualizar el TextView con el contenido del HashMap
     private void updateIpMessageView() {
-        Log.e("Actualizar IP-Mensaje", "Se actualiza lista de mensajes.");
+        Log.i("Actualizar IP-Mensaje", "Se actualiza lista de mensajes.");
 
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
         for (String ip : ipMessageMap.keySet()) {
@@ -237,10 +241,10 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
 
     public void guardarVoto(String ip, String voto){
-        Log.e("Guardado de votos", "Se inicia el guardado de votos.");
+        Log.i("Guardado de votos", "Se inicia el guardado de votos.");
         String[] votoArray = voto.split(":");
         String resultadoVoto = votoArray[1];
-        Log.e("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
+        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
 
         ipMessageMap.put(ip, resultadoVoto);
         // Mostrar el mensaje recibido en la interfaz
@@ -249,11 +253,11 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         runOnUiThread(() -> {
             Toast.makeText(this, "Mensaje recibido de " + ip + ": " + resultadoVoto, Toast.LENGTH_SHORT).show();
         });
-        Log.e("Guardado de votos", "El contador esta en " + cont);
-
         cont = cont + 1;
+        Log.i("Guardado de votos", "El contador esta en " + cont);
+
         if(ipList.size() == cont) {
-            Log.e("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
+            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
             iniciarConteo();
             cont = 0;
         }
@@ -263,41 +267,49 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         int contPositivo = 0;
         int contNegativo = 0;
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
-        Log.e("Conteo de votos", "Conteo de votos iniciado.");
+        Log.i("Conteo de votos", "Conteo de votos iniciado.");
 
         for (String ip : ipMessageMap.keySet()) {
             String voto = ipMessageMap.get(ip);
             if ("SI".equals(voto)) {
                 contPositivo++;
-                Log.e("Conteo de votos", "VOTO:SI");
+                Log.i("Conteo de votos", "VOTO:SI");
             } else if ("NO".equals(voto)) {
                 contNegativo++;
-                Log.e("Conteo de votos", "VOTO:NO");
+                Log.i("Conteo de votos", "VOTO:NO");
             }
+        }
+
+        Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
+        if(responseTextView.getText().equals("SI")){
+            Log.i("Conteo de votos", "Se añade un VOTO:SI");
+            contPositivo++;
+        } else {
+            Log.i("Conteo de votos", "Se añade un VOTO:NO");
+            contNegativo++;
         }
 
         // Mostrar resultado basado en la cantidad de votos
         if (contPositivo >= contNegativo) {
-            Log.e("Conteo de votos", "Hay Accidente");
+            Log.i("Conteo de votos", "Hay Accidente");
             displayText.append("ACCIDENTE").append("\n");
-            ipMessageTextView.setText(displayText.toString());
+            ipMessageTextView.setText("ACCIDENTE");
         } else {
-            Log.e("Conteo de votos", "No hubo accidente");
-
+            Log.i("Conteo de votos", "No hubo accidente");
             ipMessageTextView.setText("NO HUBO ACCIDENTE");
         }
     }
 
     public void enviarEstado(){
         String message;
-        Log.e("Envio de Estado", "Enviando estado");
-        if(responseTextView.getText() == "SI"){
+        Log.i("Envio de Estado", "Enviando estado");
+        if(responseTextView.getText().equals("SI")){
             message = "VOTO:SI";
-            Log.e("Envio de Estado", "Enviando mensaje: VOTO:SI");
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
 
         } else {
             message = "VOTO:NO";
-            Log.e("Envio de Estado", "Enviando mensaje: VOTO:NO");
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
 
         }
 
@@ -308,15 +320,14 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
             for(String targetIp : ipList) {
                 messageSender.sendMessage(targetIp, port, message);
-                //Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
-
+                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
             }
         }
     }
 
     // Método para alternar el estado del Hotspot
     private void toggleHotspot(String ssid, String password) {
-        Log.e("Red Hotspot", "Cambiando estado de Hotspot.");
+        Log.i("Red Hotspot", "Cambiando estado de Hotspot.");
         if (!isHotspotActive) {
             // Iniciar el Hotspot con Wi-Fi Direct
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -368,7 +379,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Permisos concedidos, puedes iniciar el hotspot
-                Log.e("PermissionSuccesfull", "Permiso de ubicación habilitados. Se puede iniciar el hotspot.");
+                Log.i("PermissionSuccesfull", "Permiso de ubicación habilitados. Se puede iniciar el hotspot.");
             } else {
                 // Permisos no concedidos, manejar el caso según tu lógica
                 Log.e("PermissionError", "Permiso de ubicación denegado. No se puede iniciar el hotspot.");
@@ -379,6 +390,8 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     public void onHotspotStarted(String ssid, String password) {
+        Log.i("Creacion de Hotspot", "Red creada.");
+
         // Mostrar SSID y contraseña en los TextViews
         ssidTextView.setText("SSID: " + ssid);
         passwordTextView.setText("Contraseña: " + password);

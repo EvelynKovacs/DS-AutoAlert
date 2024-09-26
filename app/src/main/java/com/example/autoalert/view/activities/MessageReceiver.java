@@ -33,7 +33,6 @@ public class MessageReceiver {
                     // Obtener la IP del cliente
                     String clientIp = clientSocket.getInetAddress().getHostAddress();
 
-
                     // Leer el mensaje que envió el cliente
                     String message = input.readLine();
 
@@ -43,35 +42,24 @@ public class MessageReceiver {
                     // Almacenar la IP y el mensaje recibido en el HashMap
                     ((MainActivity)context).storeMessageFromIp(clientIp, message);
 
-//                    if(message=="ACCIDENTE"){
-//                        ((MainActivity)context).iniciarVotacion();
-//                    }
-
                     if (message.startsWith("VOTO:")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ESTADO. Mensaje: " + message);
                         ((MainActivity)context).guardarVoto(clientIp, message);
                     }
-
-
 
                     if(message.equals("SI")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
                         ((MainActivity)context).enviarEstado();
                     }
 
-
-                    System.out.println("Mensaje recibido: " + message);
-
-
-
-
                     // Cerrar la conexión con el cliente
                     input.close();
                     clientSocket.close();
-                    Log.d("MessageReceiver", "Mensaje recibido: " + message);
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+                Log.e("Recepción de mensajes", "Error en el hilo.");
             }
         }).start();
     }
