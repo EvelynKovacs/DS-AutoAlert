@@ -56,7 +56,7 @@ public class WifiHotspot {
             public void onFailure(int reason) {
                 Log.e("HotspotError", "Error al iniciar el hotspot. Razón: " + reason);
                 Context context = null;
-                Toast.makeText(context, "Error al iniciar el hotspot", Toast.LENGTH_SHORT).show();
+                //Toast.makeText(context, "Error al iniciar el hotspot", Toast.LENGTH_SHORT).show();
             }
         });
     }

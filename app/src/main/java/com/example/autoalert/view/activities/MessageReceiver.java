@@ -11,19 +11,21 @@ import java.net.Socket;
 public class MessageReceiver {
 
     private Context context;
+    private final int LISTEN_PORT = 12345; // Puerto donde escuchar los mensajes
+
 
     // Constructor que recibe el contexto de la actividad
     public MessageReceiver(Context context) {
         this.context = context;
     }
 
-    public void startListening(int port) {
+    public void startListening() {
         new Thread(() -> {
             try {
-                Log.i("Recepcion de mensajes", "Se creo hilo de recepcion de mensajes en el puerto: " + port);
+                Log.i("Recepcion de mensajes", "Se creo hilo de recepcion de mensajes en el puerto: " + LISTEN_PORT);
 
                 // Crear un socket servidor que escucha en el puerto definido
-                ServerSocket serverSocket = new ServerSocket(port);
+                ServerSocket serverSocket = new ServerSocket(LISTEN_PORT);
 
                 while (true) {
                     // Esperar a que un cliente se conecte
