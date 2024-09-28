@@ -95,14 +95,6 @@ public class ProjectModel implements Parcelable {
     public void setDni(String dni) {
         this.dni = dni;
     }
-/*
-    public int getEdad() {
-        return edad;
-    }
-
-    public void setEdad(int edad) {
-        this.edad = edad;
-    }*/
 
     public String getFechaNacimiento() {
         return fechaNacimiento;
@@ -167,6 +159,5 @@ public class ProjectModel implements Parcelable {
             return new ProjectModel[size];
         }
     };
-
 
 }

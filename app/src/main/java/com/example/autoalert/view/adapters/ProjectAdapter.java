@@ -34,16 +34,14 @@ public class ProjectAdapter extends RecyclerView.Adapter<ProjectAdapter.ViewHold
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
-        if (projectModelList != null) {
+        if (projectModelList != null && position < projectModelList.size()) {
             ProjectModel projectModel = projectModelList.get(position);
-
             holder.binding.setProjectModel(projectModel);
             holder.binding.setListener(onClickItemInterface);
+            holder.binding.executePendingBindings(); // Asegúrate de que los bindings se ejecuten.
         }
-
-
     }
+
 
     @Override
     public int getItemCount() {

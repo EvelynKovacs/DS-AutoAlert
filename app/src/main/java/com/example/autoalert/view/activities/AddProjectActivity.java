@@ -40,12 +40,15 @@ import com.example.autoalert.view.adapters.ContactAdapter;
 import com.example.autoalert.viewmodel.ProjectViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
+import com.google.gson.Gson;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -86,7 +89,7 @@ public class AddProjectActivity extends AppCompatActivity {
     MaterialButton btnAddProject;
 
 
-    private final String[] grupoSanguineo = {"A+", "B+", "O+", "AB+", "A-", "B-", "O-", "AB-"};
+    private final String[] grupoSanguineo = {"Seleccionar Grupo","A+", "B+", "O+", "AB+", "A-", "B-", "O-", "AB-"};
     private String selectedGrupoSanguineo;
     Spinner spinnerGrupoSanguineo;
 
@@ -165,40 +168,34 @@ public class AddProjectActivity extends AppCompatActivity {
         }
 
         if (getIntent().hasExtra("model")) {
-            projectModel = getIntent().getParcelableExtra("model");
+            projectModel = loadProjectFromFile(); // Cargar los datos desde el archivo
             if (projectModel != null) {
+                // Aquí cargas los datos en los campos
                 binding.edtNombreUsuario.setText(projectModel.getNombreUsuario());
                 binding.edtApellidoUsuario.setText(projectModel.getApellidoUsuario());
                 binding.edtDni.setText(projectModel.getDni());
-                //binding.edtEdad.setText(String.valueOf(projectModel.getEdad()));
                 binding.edtFechaNacimiento.setText(projectModel.getFechaNacimiento());
                 binding.edtDatosMedicos.setText(projectModel.getDatosMedicos());
                 spinnerGrupoSanguineo.setSelection(Arrays.asList(grupoSanguineo).indexOf(projectModel.getGrupoSanguineo()));
 
-                // Decodificar y mostrar la imagen si existe
+                // Decodificar y mostrar la imagen
                 String base64Image = projectModel.getFoto();
                 if (base64Image != null && !base64Image.isEmpty()) {
                     Bitmap bitmap = decodeBase64ToBitmap(base64Image);
                     profileImg.setImageBitmap(bitmap);
                 }
 
-                // Obtener la lista de contactos del projectModel
-                List<String> contactosList = projectModel.getContactos();
-                // Verificar si la lista no está vacía antes de agregar
-                if (contactosList != null && !contactosList.isEmpty()) {
-                    contactNamesList.addAll(contactosList); // Agregar los contactos existentes a la lista
-                    contactNamesSet.addAll(contactosList);  // Asegurarse de no duplicarlos
-                } else {
-                    Log.e("Contactos", "La lista de contactos está vacía. No se agregan elementos.");
-                }
-                // Cambiar el texto del botón a "Actualizar"
+                // Cargar contactos
+                contactNamesList.addAll(projectModel.getContactos());
+                contactNamesSet.addAll(projectModel.getContactos());
+
+                // Cambiar el botón a "Actualizar"
                 btnAddProject.setText("Actualizar");
                 isEdit = true;
-
             }
         }else {
             // Si no es edición, configurar el texto del botón como "Agregar"
-            btnAddProject.setText("Agregar");
+            btnAddProject.setText("Finalizar");
         }
         // Limitar la longitud del DNI a 9 caracteres (solo dígitos)
         binding.edtDni.setFilters(new InputFilter[] {new InputFilter.LengthFilter(9)});
@@ -244,13 +241,6 @@ public class AddProjectActivity extends AppCompatActivity {
         String fechaNacimientoStr = binding.edtFechaNacimiento.getText().toString().trim();
         String grupoSanguineo = spinnerGrupoSanguineo.getSelectedItem().toString();
 
-/*
-        // Separar los contactos por salto de línea
-        String[] contactosArray = contactos.split("\n");
-        List<String> contactosList = Arrays.asList(contactosArray);*/
-
-       // Set<String> uniqueContactsSet = new HashSet<>(contactosList); // Elimina duplicados
-
         Uri imageUri = getImageUriFromProfileImg(); // Obtener URI actualizada
         String base64Image = encodeImageToBase64(imageUri); // Codificar la imagen en base64
 
@@ -260,11 +250,6 @@ public class AddProjectActivity extends AppCompatActivity {
             // Si no se selecciona una nueva imagen, mantener la imagen existente
             base64Image = projectModel != null ? projectModel.getFoto() : null;
         }
-/*
-        if (uniqueContactsSet.size() != contactosList.size()) {
-            Toast.makeText(this, "No se permiten contactos duplicados", Toast.LENGTH_SHORT).show();
-            return;
-        }*/
 
         if (nombreUsuario.isEmpty() || apellidoUsuario.isEmpty()  || edadStr.isEmpty() || dni.isEmpty() || grupoSanguineo.isEmpty()) {
             Toast.makeText(this, "Por favor, complete todos los campos obligatorios", Toast.LENGTH_SHORT).show();
@@ -301,8 +286,6 @@ public class AddProjectActivity extends AppCompatActivity {
             binding.edtFechaNacimiento.setBackgroundResource(R.drawable.normal_border);
         }
 
-
-
         if (!isValidName(nombreUsuario)) {
             isValid = false;
             binding.edtNombreUsuario.setBackgroundResource(R.drawable.error_border);
@@ -310,24 +293,22 @@ public class AddProjectActivity extends AppCompatActivity {
             return;
         } else {
             binding.edtNombreUsuario.setBackgroundResource(R.drawable.normal_border);
-            }
+        }
 
         if (!isValidName(apellidoUsuario)) {
             binding.edtApellidoUsuario.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(this, "El apellido no puede contener numeros o caracteres especiales", Toast.LENGTH_SHORT).show();
             return;
-            } else {
+        } else {
             binding.edtApellidoUsuario.setBackgroundResource(R.drawable.normal_border);
-            }
-
-
+        }
 
         if (!dni.matches("\\d+")) {
             isValid = false;
             binding.edtDni.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(this, "El DNI debe contener solo números", Toast.LENGTH_SHORT).show();
             return;
-            }else {
+        }else {
             binding.edtDni.setBackgroundResource(R.drawable.normal_border);
         }
 
@@ -357,6 +338,16 @@ public class AddProjectActivity extends AppCompatActivity {
             spinnerGrupoSanguineo.setBackgroundResource(R.drawable.normal_border);
         }
 
+        // Validación del grupo sanguíneo
+        if (grupoSanguineo.equals("Seleccionar Grupo")) {
+            isValid = false;
+            spinnerGrupoSanguineo.setBackgroundResource(R.drawable.error_border);
+            Toast.makeText(this, "Por favor, seleccione un grupo sanguíneo", Toast.LENGTH_SHORT).show();
+            return;
+        } else {
+            spinnerGrupoSanguineo.setBackgroundResource(R.drawable.normal_border);
+        }
+
         if (isEdit) {
             btnAddProject.setText("Actualizar");
             updateProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr,datosMedicos,grupoSanguineo, base64Image, contactNamesList);
@@ -366,44 +357,75 @@ public class AddProjectActivity extends AppCompatActivity {
         }
     }
 
-    private void updateProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,String datosMedicos, String grupoSanguineo , String base64Image, List<String> contactosList) {
+    private void updateProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,
+                               String datosMedicos, String grupoSanguineo, String base64Image, List<String> contactosList) {
         if (projectModel != null) {
+            projectModel.setUsuarioId(1);
             projectModel.setNombreUsuario(nombreUsuario);
             projectModel.setApellidoUsuario(apellidoUsuario);
             projectModel.setDni(dni);
             projectModel.setFechaNacimiento(fechaNacimiento);
             projectModel.setDatosMedicos(datosMedicos);
-
-            // LIMITE DNI, EDAD MAX 110, QUE SALTE UNA NOTIFICACION CUANDO LA PERSONA, PONE UNA EDAD IMPOSIBLE, EL GRUPO SANGUINEO QUE SEA OBLIGATORIO, PONER * A LADO DE LAS COSAS OBLIGATORIAS
-            // PODER ELIMINAR CONTACTOS, QUE NO PERMITA ESCRIBIR EN EL GRUPO SANGUINEO, SACAR EL OJO DE LA PRIMERA PANTALLA.
-            projectModel.setGrupoSanguineo(grupoSanguineo); // Asegúrate de que esto se establezca correctamente
-
+            projectModel.setGrupoSanguineo(grupoSanguineo);
             projectModel.setFoto(base64Image); // Establecer la nueva imagen codificada
             projectModel.setContactos(contactosList);
-            projectViewModel.updateProject(projectModel);
-            Log.d("ContactoActualizado", "Despues de Actualizar " + contactosList);
+
+            // Actualizar archivo JSON
+            saveProjectToFile(projectModel);
             Toast.makeText(this, "Actualizado", Toast.LENGTH_SHORT).show();
             finish();
         }
     }
 
 
-    private void createProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,String datosMedicos, String grupoSanguineo , String base64Image, List<String> contactosList) {
+    private void createProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,
+                               String datosMedicos, String grupoSanguineo, String base64Image, List<String> contactosList) {
         projectModel = new ProjectModel();
+        projectModel.setUsuarioId(1);
         projectModel.setNombreUsuario(nombreUsuario);
         projectModel.setApellidoUsuario(apellidoUsuario);
         projectModel.setDni(dni);
         projectModel.setFechaNacimiento(fechaNacimiento);
         projectModel.setDatosMedicos(datosMedicos);
-
         projectModel.setGrupoSanguineo(grupoSanguineo);
-
-        projectModel.setFoto(base64Image); // Establecer la imagen codificada
+        projectModel.setFoto(base64Image); // Set the encoded image
         projectModel.setContactos(contactosList);
-        projectViewModel.insertProject(projectModel);
-        Log.d("ContactoInsertado", "Despues de Insertar " + contactosList);
-        Toast.makeText(this, "Insertado", Toast.LENGTH_SHORT).show();
+
+        // Save to JSON file
+        saveProjectToFile(projectModel);
+        Toast.makeText(this, "Inserted", Toast.LENGTH_SHORT).show();
         finish();
+    }
+
+
+    private void saveProjectToFile(ProjectModel project) {
+        Gson gson = new Gson();
+        String projectJson = gson.toJson(project); // Convertir el objeto en JSON
+        try {
+            // Guardar en el directorio interno de la app
+            FileOutputStream fos = openFileOutput("user_data.json", Context.MODE_PRIVATE);
+            fos.write(projectJson.getBytes());
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error al guardar datos", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+
+    private ProjectModel loadProjectFromFile() {
+        Gson gson = new Gson();
+        ProjectModel project = null;
+        try {
+            FileInputStream fis = openFileInput("user_data.json");
+            InputStreamReader isr = new InputStreamReader(fis);
+            project = gson.fromJson(isr, ProjectModel.class); // Convertir JSON a objeto
+            fis.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error al cargar datos", Toast.LENGTH_SHORT).show();
+        }
+        return project;
     }
 
 
@@ -423,7 +445,6 @@ public class AddProjectActivity extends AppCompatActivity {
             finish();
         }
     }
-
 
     @Override
     public boolean onSupportNavigateUp() {
