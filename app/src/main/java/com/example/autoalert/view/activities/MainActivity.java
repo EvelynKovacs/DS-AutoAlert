@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -200,7 +201,11 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
 
         btnSendMessages.setOnClickListener(view -> {
-            enviarMensaje();
+            if (isConnectedToWifi()){
+                enviarMensaje();
+            } else if (responseTextView.getText().equals("SI")){
+                iniciarConteo();
+            }
 //            String message = responseTextView.getText().toString();
 //            int port = 12345; // Puedes definir el puerto a utilizar
 //            Log.i("MainActivity", "Enviando mensajes.");
@@ -562,6 +567,14 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         }
         return "IP no disponible";
     }
+
+    public boolean isConnectedToWifi() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+
+        return networkInfo != null && networkInfo.isConnected();
+    }
+
 
     @Override
     protected void onDestroy() {
