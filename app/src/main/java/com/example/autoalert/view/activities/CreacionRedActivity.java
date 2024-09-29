@@ -1,6 +1,7 @@
 package com.example.autoalert.view.activities;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
@@ -32,6 +33,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 
+
+
 public class CreacionRedActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{
 
     private WifiHotspot hotspotManager;
@@ -44,6 +47,8 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
     private EditText passwordEditText;
     private TextView myIpTextView;
     private TextView estadoRedTextView;
+
+    private boolean redCreada;
 
 
 
@@ -61,17 +66,36 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
             return insets;
         });
 
+        redCreada = false;
+
         ssidTextView = findViewById(R.id.ssidTextView);
         passwordTextView = findViewById(R.id.passwordTextView);
         ssidEditText = findViewById(R.id.ssidEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         statusTextView = findViewById(R.id.statusTextView);
         toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
+        estadoRedTextView = findViewById(R.id.redStatusTextView);
 
         hotspotManager = new WifiHotspot(this, this);
         // Inicializamos wifiManager
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+        redCreada = sharedPref.getBoolean("redCreada", false);
+
+        if(redCreada){
+            Log.i("Verificacion de Red", "Ya existe una red. Obteniendo datos de SharedPreferences.");
+            String nombreRed = sharedPref.getString("nombreRed", "Nombre no encontrado");
+            String contrasenia = sharedPref.getString("contraseña", "Contraseña no encontrada"); // El segundo valor es el valor por defecto
+            Log.i("Verificacion de red", "La red existente es " + nombreRed + " con password " + contrasenia);
+            ssidTextView.setText(nombreRed);
+            ssidEditText.setText(nombreRed);
+            passwordEditText.setText(contrasenia);
+            passwordTextView.setText(contrasenia);
+            toggleHotspotButton.setText("Desactivar Hotspot");
+            isHotspotActive = true;
+        }
 
         toggleHotspotButton.setOnClickListener(view -> {
             crearRed();
@@ -139,6 +163,16 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         ssidTextView.setText("SSID: " + ssid);
         passwordTextView.setText("Contraseña: " + password);
 
+        // Guardar los datos en SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        // Guardar nombre y edad
+        editor.putString("nombreRed", ssid);
+        editor.putString("contraseña", password);
+        editor.putBoolean("redCreada", true);
+        editor.apply(); // Guardar los cambios
+
         // Obtener y mostrar la IP del dispositivo al crear el hotspot
         String deviceIpAddress = getDeviceIpAddress();
         //ipTextView.setText("Mi IP: " + deviceIpAddress);
@@ -147,36 +181,36 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
     }
 
     private String getDeviceIpAddress() {
-            try {
-                for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
-                    NetworkInterface intf = en.nextElement();
-                    for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                        InetAddress inetAddress = enumIpAddr.nextElement();
-                        if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
-                            return inetAddress.getHostAddress();
-                        }
+        try {
+            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+                NetworkInterface intf = en.nextElement();
+                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+                    InetAddress inetAddress = enumIpAddr.nextElement();
+                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
+                        return inetAddress.getHostAddress();
                     }
                 }
-            } catch (Exception ex) {
-                ex.printStackTrace();
             }
-            return "IP no disponible";
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return "IP no disponible";
     }
 
     public boolean isConnectedToWifi() {
-            ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
-            return networkInfo != null && networkInfo.isConnected();
+        return networkInfo != null && networkInfo.isConnected();
     }
 
 
     @Override
     protected void onDestroy() {
-            super.onDestroy();
+        super.onDestroy();
 
-            // Detener el hotspot al cerrar la aplicación
-            hotspotManager.stopHotspot();
+        // Detener el hotspot al cerrar la aplicación
+        //hotspotManager.stopHotspot();
     }
 
 
@@ -223,6 +257,11 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         } else {
             // Detener el Hotspot
             hotspotManager.stopHotspot();
+            // Guardar los datos en SharedPreferences
+            SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putBoolean("redCreada", false);
+            editor.apply(); // Guardar los cambios
         }
 
         isHotspotActive = !isHotspotActive; // Cambiar el estado

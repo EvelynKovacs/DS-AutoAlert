@@ -143,8 +143,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         btnNo.setOnClickListener(view -> {
             setStatusTextViewOnNo();
         });
-
-
+        
         btnCreacionRed.setOnClickListener(view -> {
             irACrecionRed(view);
         });
@@ -158,53 +157,6 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         // Configuramos el botón para activar el hotspot
         toggleHotspotButton.setOnClickListener(view -> {
-//            Log.i("Gestion de Red", "Creando o desactivando red.");
-//            String ssid = ssidEditText.getText().toString().trim();
-//            String password = passwordEditText.getText().toString().trim();
-//            // Validar que el usuario haya ingresado el SSID y la contraseña
-//            if (ssid.isEmpty() || password.isEmpty()) {
-//                Log.i("Gestion de red", "No se pudo crear red. Debe ingresar un Nombre y/o una contraseña.");
-//                estadoRedTextView.setText("Estado: No se pudo crear red. Ingresar nombre y/o contraseña.");
-//                //Toast.makeText(MainActivity.this, "Ingrese un SSID y una contraseña", Toast.LENGTH_SHORT).show();
-//                return;
-//            }
-//
-//            // Validar la longitud de la contraseña
-//            if (password.length() < 8 || password.length() > 63) {
-//                Log.i("Gestion de red", "No se pudo crear red. La contraseña debe tener al menos 8 carácteres.");
-//                estadoRedTextView.setText("Estado: No se puedo crear. La contraseña debe tener al menos 8 carácteres.");
-//                //Toast.makeText(MainActivity.this, "La contraseña debe tener entre 8 y 63 caracteres", Toast.LENGTH_LONG).show();
-//                return;
-//            }
-//
-//            boolean isHotspotActive;
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//                isHotspotActive = isHotspotActiveForAndroid10();
-//            } else {
-//                isHotspotActive = checkHotspotStatus();
-//            }
-//
-//
-//            if (isHotspotActive) {
-//                Log.i("HotspotStatus", "El Hotspot está activado.");
-//                // Actualiza la UI o haz lo que sea necesario
-//            } else {
-//                Log.i("HotspotStatus", "El Hotspot está desactivado.");
-//            }
-//
-//            if (!ssid.isEmpty() && !password.isEmpty()) {
-//                // Verificar si el sistema operativo es Android 10 o superior
-//                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-//                    // Activar el Hotspot (Wi-Fi Direct) con el SSID y la contraseña ingresados por el usuario
-//                    toggleHotspot(ssid, password);
-//
-//                } else {
-//                    Log.i("Gestion de red", "No se pudo crear red. Wifi Direct Hotspot requiere Android 10 o superior");
-//                    estadoRedTextView.setText("Estado: No se pudo crear la red. Wifi Direct Hotspot requiere Android 10 o superior.");
-//                    // Mostrar mensaje de error si la versión es inferior a Android 10
-//                    //Toast.makeText(MainActivity.this, "Wi-Fi Direct Hotspot requiere Android 10 o superior", Toast.LENGTH_SHORT).show();
-//                }
-//            }
             crearRed();
         });
 
@@ -215,27 +167,6 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
             } else if (responseTextView.getText().equals("SI")){
                 iniciarConteo();
             }
-//            String message = responseTextView.getText().toString();
-//            int port = 12345; // Puedes definir el puerto a utilizar
-//            Log.i("MainActivity", "Enviando mensajes.");
-//
-//            // Supongamos que quieres enviar el mensaje a la primera IP de la lista
-//            if (!ipList.isEmpty()) {
-//                //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
-//                for(String targetIp : ipList) {
-//                    messageSender.sendMessage(targetIp, port, message);
-//                    Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp);
-//                    Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
-//
-//                }
-//
-//                if(responseTextView.getText().equals("SI")){
-//                    enviarEstado();
-//                }
-//            } else {
-//                Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
-//                Toast.makeText(MainActivity.this, "No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
-//            }
         });
 
 
