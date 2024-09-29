@@ -3,6 +3,7 @@ package com.example.autoalert.view.activities;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -14,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -60,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private TextView statusBtnTextView;
     private TextView responseTextView;
     private TextView estadoRedTextView;
+    private Button btnCreacionRed;
 
     private int cont = 0;
 
@@ -92,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         statusBtnTextView = findViewById(R.id.statusBtnTextView);
         responseTextView = findViewById(R.id.responseTextView);
         estadoRedTextView = findViewById(R.id.redStatusTextView);
+        btnCreacionRed = findViewById(R.id.creacionRedbutton);
         Log.i("MainActivity", "Componentes inicializados.");
 
 
@@ -138,6 +142,11 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         btnNo.setOnClickListener(view -> {
             setStatusTextViewOnNo();
+        });
+
+
+        btnCreacionRed.setOnClickListener(view -> {
+            irACrecionRed(view);
         });
 
         // Verificar y solicitar permisos necesarios
@@ -230,6 +239,11 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         });
 
 
+    }
+
+    public void irACrecionRed(View view){
+        Intent i = new Intent(this, CreacionRedActivity.class);
+        startActivity(i);
     }
 
     public void enviarMensaje(){
