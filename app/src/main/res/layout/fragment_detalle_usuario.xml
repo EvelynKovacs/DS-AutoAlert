@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:gravity="center">
+
+    <!-- Imagen de Perfil (si está disponible) -->
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/imgProfile"
+        android:layout_width="150dp"
+        android:layout_height="150dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="20dp"
+        android:src="@drawable/profile"
+        app:civ_border_color="#FF000000"
+        app:civ_border_width="2dp" />
+
+    <!-- Nombre de Usuario -->
+
+    <TextView
+        android:id="@+id/tvNombreUsuario"
+        android:layout_width="209dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="Nombre: Juan"
+        android:textAlignment="center"
+        android:textSize="18sp" />
+
+    <!-- Apellido de Usuario -->
+    <TextView
+        android:id="@+id/tvApellidoUsuario"
+        android:layout_width="212dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="Apellido: Pérez"
+        android:textAlignment="center"
+        android:textSize="18sp" />
+
+    <!-- Documento de Identidad -->
+    <TextView
+        android:id="@+id/tvDni"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="DNI: 12345678"
+        android:textAlignment="center"
+        android:textSize="18sp" />
+
+    <!-- Fecha de Nacimiento -->
+    <TextView
+        android:id="@+id/tvFechaNacimiento"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="Fecha de Nacimiento: 01/01/1990"
+        android:textAlignment="center"
+        android:textSize="18sp" />
+
+    <!-- Grupo Sanguíneo -->
+    <TextView
+        android:id="@+id/tvGrupoSanguineo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:text="Grupo Sanguíneo: O+"
+        android:textAlignment="center"
+        android:textSize="18sp" />
+
+    <!-- Datos Médicos (si los hay) -->
+    <TextView
+        android:id="@+id/tvDatosMedicos"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Datos Médicos: Alergia a penicilina"
+        android:textSize="18sp"
+        android:layout_marginBottom="10dp"
+        android:visibility="gone"/> <!-- Hacer visible si hay datos médicos -->
+
+
+
+</LinearLayout>
