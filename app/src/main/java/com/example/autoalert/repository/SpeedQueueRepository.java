@@ -18,7 +18,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class SpeedQueueRepository {
 
 
-        private static final int MAX_SIZE = 10;
+        private static final int MAX_SIZE = 2;
         private static final int MAX_SIZE_SLOPE = 2;
 
 
@@ -54,20 +54,26 @@ public class SpeedQueueRepository {
     private void manageSpeedQueue(Queue<Double> queue,Queue<Double> slopeQueue,double deltaTime) {
         if (queue.size() == MAX_SIZE) {
             List<Double> dataList = new LinkedList<>(queue);
-//            double slope = LinearRegression.calculateLinearRegressionSlope(dataList, deltaTime);
+
+           if (SlopeComparator.isAccidentDetectedSpeed(dataList.get(1), dataList.get(0))){
+               System.out.println("POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en Velocidad ");
+                SensorDataWriter.writeDataToFile(context,"POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en Velocidad"+" VA: "+ dataList.get(0)+ " VI: "+dataList.get(1));
+
+           }
+
             // Calcular la nueva pendiente
-            double newSlope = LinearRegression.calculateLinearRegressionSlope(dataList, deltaTime);
+           // double newSlope = LinearRegression.calculateLinearRegressionSlope(dataList, deltaTime);
 
-            Double previousSlope = slopeQueue.isEmpty() ? 0.0 : slopeQueue.peek();
+            //Double previousSlope = slopeQueue.isEmpty() ? 0.0 : slopeQueue.peek();
 
-            if (SlopeComparator.isAccidentDetectedSpeed(previousSlope, newSlope)) {
-                System.out.println("POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en Velocidad ");
-                SensorDataWriter.writeDataToFile(context,"POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en Velocidad");
-            }
+//            if (SlopeComparator.isAccidentDetectedSpeed(previousSlope, newSlope)) {
+//                System.out.println("POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en Velocidad ");
+//                SensorDataWriter.writeDataToFile(context,"POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en Velocidad"+" V: "+ previousSlope+ " N: "+newSlope+ " DIF="+  Math.floor(Math.abs(newSlope - previousSlope)* 100000) / 100000);
+//            }
 
-            manageSlopeQueue(slopeQueue, newSlope);
-            System.out.println("pendiente de la velocidad: "+newSlope);
-            SlopeDataWriter.writeSlopeToFile(context,"v","pendiente de la velocidad: "+newSlope);
+            //manageSlopeQueue(slopeQueue, newSlope);
+            //System.out.println("pendiente de la velocidad: "+newSlope);
+           // SlopeDataWriter.writeSlopeToFile(context,"v","pendiente de la velocidad: "+newSlope);
             Double removedData = queue.poll();
             System.out.println("Se eliminó un dato de la Velocidad: " + removedData);
             SensorDataWriter.writeDataToFile(context,"Se eliminó un dato de la Velocidad: " + removedData);

@@ -136,7 +136,7 @@ public class GyroscopeQueueRepository {
 
             if (SlopeComparator.isAccidentDetectedGyroscope(previousSlope, newSlope)) {
                 System.out.println("POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en el eje " + axisLabel);
-                SensorDataWriter.writeDataToFile(context,"POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en el eje " + axisLabel);
+                SensorDataWriter.writeDataToFile(context,"POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en el eje " + axisLabel +" V: "+ previousSlope+ " N: "+newSlope+" DIF="+Math.floor(Math.abs(newSlope - previousSlope)* 100000) / 100000);
 
             }
 

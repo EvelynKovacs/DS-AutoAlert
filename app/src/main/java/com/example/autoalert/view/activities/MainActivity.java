@@ -43,14 +43,14 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout redAlertLayout = findViewById(R.id.red_alert_layout);
         TextView countdownTimer = findViewById(R.id.countdown_timer);
         // Crea y configura AccidentDetector
-        accidentDetector = new AccidentDetector(redAlertLayout, countdownTimer);
+        accidentDetector = new AccidentDetector(getApplicationContext());
 
         accelerometerQueueRepository = new AccelerometerQueueRepository(getApplicationContext());
 
 
         //SmsUtils.checkAndSendSms(this, new String[]{"2804405851", "2804611882", "2804992455"}, "Mensaje de emergencia");
 
-        // SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, "Mensaje de emergencia");
+       //SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, "Mensaje de emergencia");
 
         sensorViewModel = new ViewModelProvider(this).get(SensorViewModel.class);
         ListView listView = findViewById(R.id.listView1);
@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
             System.out.println("DIRECCION: " + address);
             String emergencyMessage = "Emergencia. Dirección: " + address;
             System.out.println(emergencyMessage);
-            String sanitizedAddress = " Mensaje de Emergencia. La siguiente direccion podria no ser exacta, aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + address.replaceAll("[^a-zA-Z0-9\\s,.]", "");
+            String sanitizedAddress = " Mensaje de Emergencia. La siguiente direccion podria no ser exacta. " + address.replaceAll("[^a-zA-Z0-9\\s,.]", "");
 
 
 //
@@ -104,8 +104,7 @@ public class MainActivity extends AppCompatActivity {
             if (!isMessageSent) {
                 //String emergencyMessage = "Mensaje de emergencia. Dirección: " + address;
 
-                //SmsUtils.checkAndSendSms(this, new String[]{ "2804559405"}, sanitizedAddress);
-                SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, sanitizedAddress);
+                SmsUtils.checkAndSendSms(this, new String[]{"2804992455", "2804611882", "2804405851"}, sanitizedAddress);
 
                 isMessageSent = true;  // Marcar como enviado
             }
