@@ -51,7 +51,7 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
     private boolean redCreada;
 
 
-
+    private Context context;
 
     private WifiManager wifiManager;
 
@@ -172,6 +172,12 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         editor.putString("contraseña", password);
         editor.putBoolean("redCreada", true);
         editor.apply(); // Guardar los cambios
+
+        MainActivity mainActivity = (MainActivity) context;
+
+        // Llamar a un método en MainActivity o acceder a variables
+        mainActivity.setMyIpTextView("Mi IP:" + getDeviceIpAddress());
+
 
         // Obtener y mostrar la IP del dispositivo al crear el hotspot
         String deviceIpAddress = getDeviceIpAddress();

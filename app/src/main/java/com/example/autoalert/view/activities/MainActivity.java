@@ -4,6 +4,7 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -63,10 +64,12 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private TextView responseTextView;
     private TextView estadoRedTextView;
     private Button btnCreacionRed;
-
+    private BroadcastTimer broadcastTimer;
     private int cont = 0;
 
     private WifiManager wifiManager;
+
+    private NetworkChangeReceiver networkChangeReceiver = new NetworkChangeReceiver();
 
 
 
@@ -102,6 +105,9 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Inicializamos wifiManager
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
+        // Registro del BroadcastReceiver dinámicamente
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        registerReceiver(networkChangeReceiver, filter);
 
 
         // Inicializar los componentes
@@ -109,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         broadcastSender = new BroadcastSender();
         broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
+        broadcastTimer = new BroadcastTimer();
         //responseListener = new ResponseListener(this);
 
         // Inicializamos el HashMap
@@ -131,6 +138,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         broadcastReceiver.startListening();
         //responseListener.listenForResponses();
 
+        broadcastTimer.startBroadcastTimer();
         // Enviar mensaje de broadcast cuando se haga clic en el botón
         btnSendBroadcast.setOnClickListener(view -> {
             broadcastSender.sendBroadcast();
@@ -143,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         btnNo.setOnClickListener(view -> {
             setStatusTextViewOnNo();
         });
-        
+
         btnCreacionRed.setOnClickListener(view -> {
             irACrecionRed(view);
         });
@@ -211,12 +219,24 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
                 ipList.add(ip);
                 ips.append(ip).append("\n");
             }
-            ipTextView.setText(ips.toString());
+            //ipTextView.setText(ips.toString());
+            runOnUiThread(() -> ipTextView.setText(ips.toString()));
             Log.i("Actualizacion de lista", "Lista actualizada.");
         });
 
     }
 
+    public void setMyIpTextView(String newIp) {
+        myIpTextView.setText(newIp);
+    }
+
+    public void limpiarListasIp(){
+        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+        // Actualizar el TextView en el hilo de la UI
+        runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
+        ipList.clear();
+        ipMessageMap.clear();
+    }
     public void crearRed(){
         String ssid = ssidEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString().trim();

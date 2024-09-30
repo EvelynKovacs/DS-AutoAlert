@@ -16,11 +16,6 @@
                 <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY32D5S5BG" />
               </handle>
             </Target>
-            <Target type="DEFAULT_BOOT">
-              <handle>
-                <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY32BRNDZZ" />
-              </handle>
-            </Target>
           </targets>
         </DialogSelection>
       </SelectionState>
