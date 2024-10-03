@@ -13,7 +13,7 @@ import com.example.autoalert.repository.LinesAngleDataWriter;
 public class AccidentDetector {
      private Context context; // Agregar contexto para el archivo
 
-     public  AccidentDetector(Context context){
+     public   AccidentDetector(Context context){
           this.context=context;
      }
 

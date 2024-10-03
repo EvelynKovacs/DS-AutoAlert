@@ -186,15 +186,15 @@ public class AccelerometerQueueRepository {
             List<Double> dataList = new LinkedList<>(valueQueue);
 
             // Calcular la nueva pendiente
-            double newSlope = LinearRegression.calculateLinearRegressionSlope(dataList, deltaTime);
+            //double newSlope = LinearRegression.calculateLinearRegressionSlope(dataList, deltaTime);
 
             Double previousSlope = slopeQueue.isEmpty() ? 0.0 : slopeQueue.peek();
 
-            if (SlopeComparator.isAccidentDetectedAccelerometer(previousSlope, newSlope)) {
-                System.out.println("POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en el eje " + axisLabel);
-                SensorDataWriter.writeDataToFile(context,"POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en el eje " + axisLabel + " V: "+ previousSlope+ " N: "+newSlope+" DIF="+Math.floor(Math.abs(newSlope - previousSlope)* 100000) / 100000);
-
-            }
+//            if (SlopeComparator.isAccidentDetectedAccelerometer(previousSlope, newSlope)) {
+//                System.out.println("POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en el eje " + axisLabel);
+//                SensorDataWriter.writeDataToFile(context,"POSIBLE ACCIDENTEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE en el eje " + axisLabel + " V: "+ previousSlope+ " N: "+newSlope+" DIF="+Math.floor(Math.abs(newSlope - previousSlope)* 100000) / 100000);
+//
+//            }
             // Dentro de `manageValue`, después de detectar un posible accidente en un eje
 //           boolean isAccidentDetected = SlopeComparator.isAccidentDetected(previousSlope, newSlope);
 //           if(isAccidentDetected){}
@@ -213,10 +213,10 @@ public class AccelerometerQueueRepository {
 
 // Reiniciar el detector después de la evaluación
 
-            manageSlopeQueue(slopeQueue, newSlope);
+            //manageSlopeQueue(slopeQueue, newSlope);
 
-            System.out.println("pendiente del acelerometro en " + axisLabel + ": " + newSlope);
-           SlopeDataWriter.writeSlopeToFile(context, axisLabel, "pendiente del acelerometro en " + axisLabel + ": " + newSlope);
+            //System.out.println("pendiente del acelerometro en " + axisLabel + ": " + newSlope);
+           //SlopeDataWriter.writeSlopeToFile(context, axisLabel, "pendiente del acelerometro en " + axisLabel + ": " + newSlope);
 
             Double removedData = valueQueue.poll();
             System.out.println("Se eliminó valor " + axisLabel + " del acelerómetro: " + removedData);

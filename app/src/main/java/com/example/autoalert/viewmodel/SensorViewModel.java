@@ -20,7 +20,6 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.example.autoalert.R;
 import com.example.autoalert.repository.AccelerometerQueueRepository;
-import com.example.autoalert.repository.GyroscopeQueueRepository;
 //import com.example.autoalert.repository.SensorQueueRepository;
 
 import java.util.ArrayList;
@@ -52,7 +51,6 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
 
     //private SensorQueueRepository sensorData;
     private AccelerometerQueueRepository sensorValuesAccelerometer;
-    private GyroscopeQueueRepository sensorValuesGyroscope;
 
 
     public SensorViewModel(@NonNull Application application) {
@@ -68,7 +66,6 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         isAccelerometerAvailable = false;
         sensorValuesAccelerometer= new AccelerometerQueueRepository(application.getApplicationContext() );
 
-        sensorValuesGyroscope= new GyroscopeQueueRepository(application.getApplicationContext());
     }
 
     // Métodos para obtener el estado de los sensores
@@ -144,12 +141,6 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         }
     }
 
-    public void storeGyroscopeData(String gyroscopeData) {
-        if (this.isGyroscopeAvailable()) {
-            sensorValuesGyroscope.addGyroscopeData(gyroscopeData);
-            //SensorDataWriter.writeDataToFile(getApplication(),"Giroscopio: " + gyroscopeData);
-        }
-    }
 
     public void storeValuesAccelerometer(SensorEvent event) {
         if (this.isAccelerometerAvailable()) {
@@ -161,15 +152,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
         }
     }
 
-    public void storeValuesGyroscope(SensorEvent event) {
-        if (this.isAccelerometerAvailable()) {
-            sensorValuesGyroscope.xValueAdd((double) event.values[0],UPDATE_INTERVAL_MS);
-            sensorValuesGyroscope.yValueAdd((double)event.values[1],UPDATE_INTERVAL_MS);
-            sensorValuesGyroscope.zValueAdd((double)event.values[2],UPDATE_INTERVAL_MS);
 
-            //SensorDataWriter.writeDataToFile(getApplication(),"Giroscopio: " + gyroscopeData);
-        }
-    }
 
 
 
@@ -208,15 +191,7 @@ public class SensorViewModel extends AndroidViewModel implements SensorEventList
                    }
                    break;
 
-               case Sensor.TYPE_GYROSCOPE:
-                   // Si ha pasado más de un segundo desde la última actualización
-                   if (currentTime - lastGyroscopeUpdate >=UPDATE_INTERVAL_MS ) {
-                       lastGyroscopeUpdate = currentTime;
-                       storeGyroscopeData(values);  // Procesa y almacena los datos del giroscopio
-                       storeValuesGyroscope(event);
 
-                   }
-                   break;
            }
        }
    }

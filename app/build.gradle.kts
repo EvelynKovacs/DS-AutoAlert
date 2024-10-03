@@ -41,5 +41,13 @@ dependencies {
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
     implementation ("com.google.android.gms:play-services-location:21.0.1")
+    implementation("androidx.test:core:1.5.0")
+    implementation("androidx.test.ext:junit:1.2.1")
+    implementation("androidx.test.espresso:espresso-core:3.6.1")
+    //implementation("org.mockito:mockito-core:4.6.1") // Verifica la última versión
+    implementation("org.mockito:mockito-android:5.0.0")
+    implementation("org.robolectric:robolectric:4.7.3")
+
+
 
 }

@@ -22,11 +22,13 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 //import com.example.autoalert.repository.SensorQueueRepository;
+import com.example.autoalert.model.entities.DatosMovimiento;
 import com.example.autoalert.repository.AccelerationDataWriter;
 import com.example.autoalert.repository.AccelerationQueueRepository;
 import com.example.autoalert.repository.CoordinateQueue;
+import com.example.autoalert.repository.DetectorAccidenteDataWriter;
 import com.example.autoalert.repository.SpeedQueueRepository;
-import com.example.autoalert.utils.SlopeComparator;
+import com.example.autoalert.utils.DetectorAccidenteLateral;
 import com.example.autoalert.view.activities.MainActivity;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.LocationRequest;
@@ -34,8 +36,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
 import com.google.android.gms.tasks.Task;
-
-import com.example.autoalert.utils.AccidentDetector;
 
 public class SpeedViewModel extends AndroidViewModel {
 
@@ -61,6 +61,8 @@ public class SpeedViewModel extends AndroidViewModel {
     private boolean isFirstCoordinate = true;
 
     private final CoordinateQueue coordinateQueue = new CoordinateQueue();
+    private DetectorAccidenteLateral accidente;
+
 
 
 
@@ -76,6 +78,8 @@ public class SpeedViewModel extends AndroidViewModel {
         locationManager = (LocationManager) application.getSystemService(Context.LOCATION_SERVICE);
         sensorData = new SpeedQueueRepository(application.getApplicationContext());
         accelerationQueueRepository = new AccelerationQueueRepository(application.getApplicationContext());
+
+        accidente = new DetectorAccidenteLateral(getApplication().getApplicationContext());
 
         locationListener = new LocationListener() {
             @Override
@@ -117,7 +121,7 @@ public class SpeedViewModel extends AndroidViewModel {
             lastSpeedUpdate = currentTime;
 
             float currentSpeed = location.getSpeed();  // Velocidad en m/s
-
+            DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(),"Velocidad en M/S:"+ currentSpeed);
             if (isFirstMeasurement) {
                 isFirstMeasurement = false;
                 previousSpeed = currentSpeed;
@@ -136,31 +140,36 @@ public class SpeedViewModel extends AndroidViewModel {
             speedKmh.setValue(speedKmhValue);
             this.location.setValue(location);
 
+            DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(),"Velocidad en KM/H:"+ speedKmhValue);
+
+
             sensorData.addSpeedData(speedKmhValue,UPDATE_INTERVAL_MS);  // Almacenar datos
 
 
             // Store coordinates and calculate direction changes
-            double currentLatitude = location.getLatitude();
-            double currentLongitude = location.getLongitude();
+//            double currentLatitude = location.getLatitude();
+//            double currentLongitude = location.getLongitude();
+//
+//            coordinateQueue.addCoordinates(currentLatitude, currentLongitude);
 
-            coordinateQueue.addCoordinates(currentLatitude, currentLongitude);
+            accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(),location.getLongitude(),currentSpeed,currentTime));
 
             // Solo actuar si ya tenemos 3 puntos
-            if (coordinateQueue.getCoordinateCount() == MAX_SIZE_COORD) {
-                AccidentDetector accidentDetector = new AccidentDetector(getApplication().getApplicationContext());
-
-                // Pasar las tres coordenadas para detectar un accidente
-                boolean accidentDetected = accidentDetector.detectAccident(
-                        coordinateQueue.getLongitude(0), coordinateQueue.getLatitude(0),  // Primer punto
-                        coordinateQueue.getLongitude(1), coordinateQueue.getLatitude(1),  // Segundo punto
-                        coordinateQueue.getLongitude(2), coordinateQueue.getLatitude(2)   // Tercer punto
-                );
-
-                if (accidentDetected) {
-                    // Manejar la detección de accidente
-                    System.out.println("Accident detected between coordinates!");
-                }
-            }
+//            if (coordinateQueue.getCoordinateCount() == MAX_SIZE_COORD) {
+//                AccidentDetector accidentDetector = new AccidentDetector(getApplication().getApplicationContext());
+//
+//                // Pasar las tres coordenadas para detectar un accidente
+//                boolean accidentDetected = accidentDetector.detectAccident(
+//                        coordinateQueue.getLongitude(0), coordinateQueue.getLatitude(0),  // Primer punto
+//                        coordinateQueue.getLongitude(1), coordinateQueue.getLatitude(1),  // Segundo punto
+//                        coordinateQueue.getLongitude(2), coordinateQueue.getLatitude(2)   // Tercer punto
+//                );
+//
+//                if (accidentDetected) {
+//                    // Manejar la detección de accidente
+//                    System.out.println("Accident detected between coordinates!");
+//                }
+//            }
 
 //            if (isFirstCoordinate) {
 //                // First coordinate: just store it, don't calculate angle yet
