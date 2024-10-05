@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -124,18 +125,6 @@ public class DetalleUsuarioFragment extends Fragment {
                 && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        if (requestCode == PERMISSION_REQUEST_CODE) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                captureScreenshot();
-            } else {
-                Toast.makeText(getContext(), "Permisos necesarios no otorgados", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
 
     private void captureScreenshot() {
         if (isScreenshotCaptured) return;
@@ -145,7 +134,13 @@ public class DetalleUsuarioFragment extends Fragment {
             rootView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
                 @Override
                 public void onGlobalLayout() {
-                    rootView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    // Remove the listener based on the API level
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        rootView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                    } else {
+                        rootView.getViewTreeObserver().removeGlobalOnLayoutListener(this);
+                    }
+
 
                     // Now the view is laid out, get the dimensions
                     int width = rootView.getWidth();

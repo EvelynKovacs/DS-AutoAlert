@@ -45,6 +45,14 @@ dependencies {
     val room_version = "2.6.1"
     val lifecycle_version = "2.8.5"
 
+    implementation(libs.appcompat)
+    implementation(libs.material)
+    implementation(libs.activity)
+    implementation(libs.constraintlayout)
+    testImplementation(libs.junit)
+    androidTestImplementation(libs.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("com.google.android.material:material:1.6.1")
     implementation("androidx.cardview:cardview:1.0.0")

@@ -1,5 +1,6 @@
 package com.example.autoalert.view.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
@@ -11,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.ImageButton;
 
 import com.example.autoalert.R;
+import com.example.autoalert.view.activities.RedActivity;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -72,6 +74,8 @@ public class PrincipalFragment extends Fragment {
         ImageButton btnSimulacion = view.findViewById(R.id.botonSimulacion);
         // Obtener referencia del botón de Usuario
         ImageButton btnUsuario = view.findViewById(R.id.botonUsuario);
+        // Obtener referencia del botón de Red
+        ImageButton btnRed = view.findViewById(R.id.botonRedes);
 
         // Configurar el clic en el botón
         btnSensores.setOnClickListener(v -> {
@@ -84,7 +88,7 @@ public class PrincipalFragment extends Fragment {
 
         // Configurar el clic en el botón
         btnSimulacion.setOnClickListener(v -> {
-            // Iniciar transacción para cambiar al SensoresFragment
+            // Iniciar transacción para cambiar al SimulacionFragment
             FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
             transaction.replace(R.id.fcv_main_container, new SimulacionFragment()); // Cambia a SensoresFragment
             transaction.addToBackStack(null); // Agregar a la pila de retroceso
@@ -93,12 +97,21 @@ public class PrincipalFragment extends Fragment {
 
         // Configurar el clic en el botón
         btnUsuario.setOnClickListener(v -> {
-            // Iniciar transacción para cambiar al SensoresFragment
+            // Iniciar transacción para cambiar al UsarioFragment
             FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
             transaction.replace(R.id.fcv_main_container, new VerUsuarioFragment()); // Cambia a SensoresFragment
             transaction.addToBackStack(null); // Agregar a la pila de retroceso
             transaction.commit(); // Asegúrate de llamar a commit()
         });
+
+        // Configurar el clic en el botón
+        btnRed.setOnClickListener(v -> {
+            // Iniciar transacción para cambiar al RedActivity
+            // Crear un intent para iniciar RedActivity
+            Intent intent = new Intent(getActivity(), RedActivity.class);
+            startActivity(intent); // Iniciar la actividad
+        });
+
 
         return view;
     }
