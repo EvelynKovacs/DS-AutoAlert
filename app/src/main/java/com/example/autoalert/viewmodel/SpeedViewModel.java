@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Locale;
 
+import com.example.autoalert.utils.DetectorAccidente;
+import com.example.autoalert.utils.KalmanFilter;
+
+
 import android.Manifest;
 import android.app.Application;
 import android.content.Context;
@@ -35,6 +39,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationSettingsRequest;
 import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.Priority;
 import com.google.android.gms.tasks.Task;
 
 public class SpeedViewModel extends AndroidViewModel {
@@ -61,7 +66,7 @@ public class SpeedViewModel extends AndroidViewModel {
     private boolean isFirstCoordinate = true;
 
     private final CoordinateQueue coordinateQueue = new CoordinateQueue();
-    private DetectorAccidenteLateral accidente;
+    private DetectorAccidente accidente;
 
 
 
@@ -79,7 +84,7 @@ public class SpeedViewModel extends AndroidViewModel {
         sensorData = new SpeedQueueRepository(application.getApplicationContext());
         accelerationQueueRepository = new AccelerationQueueRepository(application.getApplicationContext());
 
-        accidente = new DetectorAccidenteLateral(getApplication().getApplicationContext());
+        accidente = new DetectorAccidente(getApplication().getApplicationContext());
 
         locationListener = new LocationListener() {
             @Override
@@ -135,13 +140,22 @@ public class SpeedViewModel extends AndroidViewModel {
                 previousTime = currentTime;
             }
 
+            KalmanFilter kalmanFilter = new KalmanFilter(0.1, 0.1); // Configura los parámetros de ruido
+
+// En tu bucle de actualización de ubicación
+            //double measuredSpeed = location.getSpeed() * 3.6; // Velocidad en km/h
+
+
 
             double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
             speedKmh.setValue(speedKmhValue);
             this.location.setValue(location);
+            double smoothedSpeed = kalmanFilter.update(speedKmhValue);
 
-            DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(),"Velocidad en KM/H:"+ speedKmhValue);
 
+            DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(),"Velocidad en KM/H:"+ speedKmhValue );
+
+            //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(),"Velocidad en KM/H CON KALMAN:"+ smoothedSpeed );
 
             sensorData.addSpeedData(speedKmhValue,UPDATE_INTERVAL_MS);  // Almacenar datos
 
@@ -254,7 +268,12 @@ public class SpeedViewModel extends AndroidViewModel {
     }
 
     public void checkLocationSettings(Context context) {
-        LocationRequest locationRequest = LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 100)
+                .setIntervalMillis(100)             // Sets the interval for location updates
+                .setMinUpdateIntervalMillis(100/2)  // Sets the fastest allowed interval of location updates.
+                .setWaitForAccurateLocation(false)              // Want Accurate location updates make it true or you get approximate updates
+                .setMaxUpdateDelayMillis(100)                   // Sets the longest a location update may be delayed.
+                .build();
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
 
         Task<LocationSettingsResponse> task = LocationServices.getSettingsClient(context).checkLocationSettings(builder.build());

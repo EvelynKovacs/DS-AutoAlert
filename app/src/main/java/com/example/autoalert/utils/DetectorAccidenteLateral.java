@@ -37,42 +37,36 @@ public class DetectorAccidenteLateral {
     }
 
 
-    public  void registrarNuevoDato(DatosMovimiento nuevoDato) {
+    public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
         historialDatos.add(nuevoDato);
         if (historialDatos.size() > 3) {
             historialDatos.removeFirst();  // Mantén solo los últimos 3 datos
         }
 
-        // Si aún no se han detectado las condiciones previas, evaluamos
         if (!cambioBruscoDetectado && historialDatos.size() == 3) {
             if (analizarCondicionesPrevias()) {
-                cambioBruscoDetectado = true; // Se detectaron las condiciones, reiniciar cola para datos posteriores
-                historialDatos.clear(); // Limpiamos para comenzar a recolectar los 3 nuevos datos posteriores
-                System.out.println("Condiciones previas cumplidas. Recolectando 3 nuevos datos...");
+                cambioBruscoDetectado = true;
+                historialDatos.clear();
                 Log.i(TAG, "Condiciones previas cumplidas. Recolectando 3 nuevos datos...");
-
-                return ; // Salimos hasta que tengamos los nuevos datos
+                return false; // Aún no es accidente, pero se cumple la primera condición
             }
         }
-        // Si ya detectamos el cambio brusco, seguimos recolectando los nuevos datos
+
         if (cambioBruscoDetectado && historialDatos.size() == 3) {
             if (analizarMovimientoPosterior()) {
-                System.out.println("Posible accidente lateral detectado.");
-                Log.i(TAG,"Posible accidente lateral detectado.");
-
-
+                Log.i(TAG, "Posible accidente lateral detectado.");
                 DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTEEEEEEEEEEEEEEEEEEEEE LATERALLLLLLLLLLLLLLLLLLLL detectado.");
-                // Detener el ciclo o realizar acciones adicionales, como enviar alertas
+                cambioBruscoDetectado = false;
+                return true;  // Accidente detectado
             } else {
-                System.out.println("No se detecta accidente.");
-                 Log.i(TAG,"No se detecta accidente.");
-
-
+                Log.i(TAG, "No se detecta accidente.");
             }
-            cambioBruscoDetectado = false;  // Resetear el indicador para continuar el ciclo
+            cambioBruscoDetectado = false;
         }
 
+        return false;  // Por defecto, no se detecta accidente
     }
+
 
 
     private boolean analizarCondicionesPrevias() {
@@ -101,6 +95,9 @@ public class DetectorAccidenteLateral {
 
         boolean autoParado = elAutoEstaParado(punto1, punto2, punto3, UMBRAL_AUTO_PARADO);
         Log.i(TAG,"AUTO PARADO : "+ autoParado);
+
+        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"PARADO: "+ desaceleracionBrusca);
+
 
 
         if (cambioBrusco && (desaceleracionBrusca || autoParado)) {
