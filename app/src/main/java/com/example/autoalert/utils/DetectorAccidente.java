@@ -8,14 +8,14 @@ import com.example.autoalert.model.entities.DatosMovimiento;
 
         private DetectorAccidenteLateral detectorLateral;
         private DetectorAccidenteFrontal detectorFrontal;
-        //private DetectorAccidenteTrasero detectorTrasero;
-        //private DetectorAccidenteVuelco detectorVuelco;
+        private DetectorAccidenteTrasero detectorTrasero;
+        private DetectorAccidenteVuelco detectorVuelco;
 
         public DetectorAccidente(Context context) {
             detectorLateral = new DetectorAccidenteLateral(context);
             detectorFrontal = new DetectorAccidenteFrontal(context);
-            //detectorTrasero = new DetectorAccidenteTrasero(context);
-            //detectorVuelco = new DetectorAccidenteVuelco(context);
+            detectorTrasero = new DetectorAccidenteTrasero(context);
+            detectorVuelco = new DetectorAccidenteVuelco(context);
 
         }
 
@@ -27,12 +27,12 @@ import com.example.autoalert.model.entities.DatosMovimiento;
             if (detectorFrontal.registrarNuevoDato(nuevoDato)) {
                 NotificadorAccidente.getInstancia().notificarAccidente("Frontal");
             }
-//            if (detectorTrasero.registrarNuevoDato(nuevoDato)) {
-//                NotificadorAccidente.getInstancia().notificarAccidente("Trasero");
-//            }
-//            if (detectorVuelco.registrarNuevoDato(nuevoDato)) {
-//                NotificadorAccidente.getInstancia().notificarAccidente("Vuelco");
-//            }
+            if (detectorTrasero.registrarNuevoDato(nuevoDato)) {
+                NotificadorAccidente.getInstancia().notificarAccidente("Trasero");
+            }
+            if (detectorVuelco.registrarNuevoDato(nuevoDato)) {
+                NotificadorAccidente.getInstancia().notificarAccidente("Vuelco");
+            }
 
     }
 
