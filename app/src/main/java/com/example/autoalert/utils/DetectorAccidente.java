@@ -21,7 +21,7 @@ import com.example.autoalert.model.entities.DatosMovimiento;
 
         public void registrarNuevoDato(DatosMovimiento nuevoDato) {
             // Verificar todos los tipos de accidentes y notificar si ocurre uno
-            if (detectorLateral.registrarNuevoDato(nuevoDato) ) {
+            if (!detectorLateral.registrarNuevoDato(nuevoDato) ) {
                 NotificadorAccidente.getInstancia().notificarAccidente("Lateral");
             }
             if (detectorFrontal.registrarNuevoDato(nuevoDato)) {

@@ -32,6 +32,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.example.autoalert.R;
 import com.example.autoalert.repository.AccelerometerQueueRepository;
 import com.example.autoalert.utils.AccidentDetector;
+import com.example.autoalert.utils.DetectorAccidente;
 import com.example.autoalert.utils.NotificadorAccidente;
 import com.example.autoalert.utils.SmsUtils;
 import com.example.autoalert.view.adapters.SensorAdapter;
@@ -82,6 +83,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
     private AccidentViewModel accidentViewModel;
     private boolean huboAccidente = false; // Esta variable se actualizará desde el ViewModel
+    private boolean accidentt=false;
 
 
 
@@ -90,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private SpeedViewModel speedViewModel;
     private TextView  tvAddress;  // Nuevo TextView para la dirección
     private boolean isMessageSent = false;  // Bandera para controlar el envío del mensaje
-    private AccidentDetector accidentDetector; // Instancia de AccidentDetector
+    private DetectorAccidente accidentDetector; // Instancia de AccidentDetector
     private AccelerometerQueueRepository accelerometerQueueRepository;
 
 
@@ -122,7 +124,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         estadoRedTextView = findViewById(R.id.redStatusTextView);
         btnCreacionRed = findViewById(R.id.creacionRedbutton);
 
-        accidentDetector = new AccidentDetector(getApplicationContext());
+        accidentDetector = new DetectorAccidente(getApplicationContext());
         accelerometerQueueRepository = new AccelerometerQueueRepository(getApplicationContext());
 
         tvAddress = findViewById(R.id.tvAddress);  // TextView para la dirección
@@ -264,9 +266,9 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Observar los cambios en el estado del accidente
         accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
             huboAccidente = true;
-            if (isConnectedToWifi()){
+            if (isConnectedToWifi() && !accidentt){
                 enviarMensaje();
-            } else if (accidentDetected){
+            } else if (accidentDetected && !accidentt){
                 Log.i("Accidente", "Se ha detectado un accidente.");
                 // Aquí puedes iniciar acciones como iniciarConteo()
                 iniciarConteo();
@@ -535,6 +537,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         // Mostrar resultado basado en la cantidad de votos
         if (contPositivo >= contNegativo) {
+            accidentt=true;
             Log.i("Conteo de votos", "Hay Accidente");
             displayText.append("ACCIDENTE").append("\n");
             ipMessageTextView.setText("ACCIDENTE");
@@ -564,7 +567,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
             for(String targetIp : ipList) {
                 messageSender.sendMessage(targetIp, port, message);
-                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
+                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: " + message);
             }
         }
     }

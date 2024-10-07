@@ -49,7 +49,7 @@ public class MessageReceiver {
                         ((MainActivity)context).guardarVoto(clientIp, message);
                     }
 
-                    if(message.equals("SI")) {
+                    if(message.equals("accidente")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
                         ((MainActivity)context).enviarEstado();
                     }
