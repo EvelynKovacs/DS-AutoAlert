@@ -9,31 +9,36 @@ import android.net.NetworkInfo;
 import android.os.Build;
 import android.util.Log;
 
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
 public class NetworkChangeReceiver extends BroadcastReceiver {
 
-    Context context;
     private BroadcastSender broadcastSender;
+
     @Override
     public void onReceive(Context context, Intent intent) {
+
         if (intent.getAction().equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
             if (isConnectedToNetwork(context)) {
                 Log.i("NetworkChangeReceiver", "Dispositivo conectado a una red.");
                 // Cast seguro
                 MainActivity mainActivity = (MainActivity) context;
+                //mainActivity.limpiarListasIp();
 
                 // Llamar a un método en MainActivity o acceder a variables
                 mainActivity.setMyIpTextView("Mi IP:" + getDeviceIpAddress());
 
-
-                mainActivity.limpiarListasIp();
+                //mainActivity.getBtnCreacionRed().setEnabled(false);
+                //mainActivity.limpiarListasIp();
                 broadcastSender = new BroadcastSender();
                 broadcastSender.sendBroadcast();
 
             } else {
+                //mainActivity.getBtnCreacionRed().setEnabled(true);
                 Log.i("NetworkChangeReceiver", "Dispositivo desconectado de la red.");
             }
         }

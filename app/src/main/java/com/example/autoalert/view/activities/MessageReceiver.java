@@ -54,6 +54,12 @@ public class MessageReceiver {
                         ((MainActivity)context).enviarEstado();
                     }
 
+                    /*if(message.equals("Desconexion")) {
+                        Log.i("Recepción de mensajes", "Es un mensaje de DESCONEXION. Mensaje: " + message);
+                        ((MainActivity)context).eliminarIp(clientIp);
+                    }
+                    */
+
                     // Cerrar la conexión con el cliente
                     input.close();
                     clientSocket.close();

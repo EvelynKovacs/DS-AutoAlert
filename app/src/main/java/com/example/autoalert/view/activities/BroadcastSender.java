@@ -12,10 +12,27 @@ import java.util.Collections;
 public class BroadcastSender {
     private static final int BROADCAST_PORT = 8888;
     private static final String BROADCAST_MESSAGE = "DISCOVER_IP_REQUEST";
+    private MainActivity mainActivity;
 
     public void sendBroadcast() {
         new Thread(() -> {
             try {
+
+                // Obtener el alias desde MainActivity
+                /* String alias = mainActivity.getAlias(); // Asegúrate de que este método esté devolviendo el valor correcto
+                if (alias == null || alias.isEmpty()) {
+                    Log.e("BroadcastSender", "Alias está vacío o nulo.");
+                    return; // No continuar si el alias está vacío
+                }
+
+                 */
+
+                // Incorporar el alias en el mensaje
+                /*String messageWithAlias = BROADCAST_MESSAGE + ":" + alias;
+                Log.d("BroadCastSender", "El mensaje que envio: "+messageWithAlias);
+                byte[] sendData = messageWithAlias.getBytes();
+                 */
+
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);
                 InetAddress broadcastAddress = getBroadcastAddress();

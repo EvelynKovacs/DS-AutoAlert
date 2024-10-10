@@ -7,6 +7,7 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -176,7 +177,7 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         MainActivity mainActivity = (MainActivity) context;
 
         // Llamar a un método en MainActivity o acceder a variables
-        mainActivity.setMyIpTextView("Mi IP:" + getDeviceIpAddress());
+        //mainActivity.setMyIpTextView("Mi IP:" + getDeviceIpAddress());
 
 
         // Obtener y mostrar la IP del dispositivo al crear el hotspot
@@ -263,6 +264,10 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         } else {
             // Detener el Hotspot
             hotspotManager.stopHotspot();
+
+            // Detener el Hotspot con Wi-Fi Direct
+            stopWifiDirectHotspot();
+
             // Guardar los datos en SharedPreferences
             SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPref.edit();
@@ -280,6 +285,27 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         statusTextView.setText(statusMessage);
         toggleHotspotButton.setText(isHotspotActive ? "Desactivar Hotspot" : "Activar Hotspot");
 
+    }
+
+    // Método para detener la red Wi-Fi Direct
+    public void stopWifiDirectHotspot() {
+        WifiP2pManager wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        WifiP2pManager.Channel channel = wifiP2pManager.initialize(this, getMainLooper(), null);
+
+        wifiP2pManager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.i("WiFiDirect", "El grupo Wi-Fi Direct se ha detenido.");
+                isHotspotActive = false;
+                statusTextView.setText("Hotspot desactivado");
+                toggleHotspotButton.setText("Activar Hotspot");
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.e("WiFiDirect", "No se pudo detener el grupo Wi-Fi Direct. Razón: " + reason);
+            }
+        });
     }
 
 }

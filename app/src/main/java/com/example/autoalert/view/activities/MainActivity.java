@@ -10,7 +10,10 @@ import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pInfo;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -36,9 +39,11 @@ import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-public class MainActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{
+public class MainActivity extends AppCompatActivity{
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private WifiHotspot hotspotManager;
@@ -55,7 +60,8 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private BroadcastReceiver broadcastReceiver;
     private Handler handler = new Handler(Looper.getMainLooper());
     private MessageSender messageSender;
-    public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast
+    //public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast
+    public Set<String> ipList = new HashSet<>();
     private HashMap<String, String> ipMessageMap;
     private TextView ipMessageTextView;
     private Button btnYes;
@@ -65,12 +71,27 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
     private TextView estadoRedTextView;
     private Button btnCreacionRed;
     private BroadcastTimer broadcastTimer;
+    private TextView resultadoTextView;
     private int cont = 0;
 
+    private boolean isSendingMessage = false;
     private WifiManager wifiManager;
 
     private NetworkChangeReceiver networkChangeReceiver = new NetworkChangeReceiver();
 
+    private BroadcastReceiver networkReceiver;
+
+    private ConnectivityManager connectivityManager;
+    private ConnectivityManager.NetworkCallback networkCallback;
+
+    private WifiP2pManager wifiP2pManager;
+    private WifiP2pManager.Channel channel;
+    private WifiP2pInfo wifiP2pInfo;
+
+    //private EditText aliasEditText;
+
+    // HashMap para almacenar la asociación de IPs y alias
+    public HashMap<String, String> ipAliasMap = new HashMap<>();
 
 
 
@@ -99,8 +120,10 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         responseTextView = findViewById(R.id.responseTextView);
         estadoRedTextView = findViewById(R.id.redStatusTextView);
         btnCreacionRed = findViewById(R.id.creacionRedbutton);
+        resultadoTextView = findViewById(R.id.resultadoTextView);
+        // Inicializa el alias
+        //aliasEditText = findViewById(R.id.aliasEditText);
         Log.i("MainActivity", "Componentes inicializados.");
-
 
         // Inicializamos wifiManager
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -116,19 +139,16 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
         broadcastTimer = new BroadcastTimer();
-        //responseListener = new ResponseListener(this);
 
         // Inicializamos el HashMap
         ipMessageMap = new HashMap<>();
 
         Log.i("MainActivity", "Inicio de Gestionador de Red.");
-        // Inicializar el administrador del hotspot
-        hotspotManager = new WifiHotspot(this, this);
 
         // Obtener y mostrar la IP del dispositivo
         Log.i("MainActivity", "Mostrando IP....");
         String deviceIpAddress = getDeviceIpAddress();
-        ipTextView.setText("Mi IP: " + deviceIpAddress);
+        ipTextView.setText("Lista de IPs" + deviceIpAddress);
 
         String myDeviceIpAddress = getDeviceIpAddress();
         myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
@@ -136,7 +156,6 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Iniciar la recepción de broadcasts y respuestas
         Log.i("MainActivity", "Escuchando mensajes de broadcast.");
         broadcastReceiver.startListening();
-        //responseListener.listenForResponses();
 
         broadcastTimer.startBroadcastTimer();
         // Enviar mensaje de broadcast cuando se haga clic en el botón
@@ -163,38 +182,82 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         MessageReceiver messageReceiver = new MessageReceiver(this);
         messageReceiver.startListening();
 
-        // Configuramos el botón para activar el hotspot
-        toggleHotspotButton.setOnClickListener(view -> {
-            crearRed();
-        });
+        wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        channel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
-
-        btnSendMessages.setOnClickListener(view -> {
-            if (isConnectedToWifi()){
+       /* btnSendMessages.setOnClickListener(view -> {
+            if (isConnectedToWifi() || isWifiDirectGroupOwner()){
+                if (isSendingMessage) {
+                    // Si ya se está enviando un mensaje, no hacemos nada
+                    return;
+                }
+                Log.i("Envio de mensaje", "ESTOY POR ENVIAR UN MENSAJE. PERO UNO NOMAS");
+                isSendingMessage = false;
                 enviarMensaje();
+                isSendingMessage = true;  // Bloquear nuevos envíos
+
+
+                // Una vez que el mensaje se haya enviado, reiniciar el estado
             } else if (responseTextView.getText().equals("SI")){
                 iniciarConteo();
             }
         });
 
+        */
+
+        btnSendMessages.setOnClickListener(view -> {
+                Log.i("Envio de mensaje", "ESTOY POR ENVIAR UN MENSAJE. PERO UNO NOMAS");
+                enviarMensaje();
+                // Una vez que el mensaje se haya enviado, reiniciar el estado
+            if (responseTextView.getText().equals("SI") && ipList.isEmpty()){
+                iniciarConteo();
+            }
+        });
+
+
 
     }
+
+    private boolean isWifiDirectGroupOwner() {
+        // Suponiendo que tienes acceso al objeto WifiP2pInfo para verificar si este dispositivo es el propietario del grupo
+        if (wifiP2pInfo != null) {
+            return wifiP2pInfo.isGroupOwner;
+        }
+        return false;
+    }
+
+//    // Guardar la IP y el alias recibido
+//    public void storeAliasFromIp(String ip, String alias) {
+//        ipAliasMap.put(ip, alias);
+//        Log.d("MainActivity", "Guardado: IP " + ip + " con alias " + alias);
+//    }
+//
+//    // Método para obtener el alias
+//    public String getAlias() {
+//        return aliasEditText.getText().toString().trim(); // Devuelve el alias como un String
+//    }
 
     public void irACrecionRed(View view){
         Intent i = new Intent(this, CreacionRedActivity.class);
         startActivity(i);
     }
 
+    public void eliminarIp(String ip){
+        ipList.remove(ip);
+        ipMessageMap.remove(ip);
+        updateIpMessageView();
+    }
+
     public void enviarMensaje(){
         String message = responseTextView.getText().toString();
-        int port = 12345; // Puedes definir el puerto a utilizar
+
         Log.i("Enviar Mensaje", "Enviando mensaje.");
 
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
         if (!ipList.isEmpty()) {
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
             for(String targetIp : ipList) {
-                messageSender.sendMessage(targetIp, port, message);
+                messageSender.sendMessage(targetIp, message);
                 Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
                 Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
 
@@ -209,6 +272,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         }
     }
 
+    /*
     // Método para actualizar la lista de IPs en el TextView
     public void updateIpList(String ip) {
         Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
@@ -225,123 +289,53 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         });
 
     }
+     */
+
+    // Método para actualizar la lista de IPs en el TextView
+    public void updateIpList(String ip) {
+        Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
+
+        // Comprobar si la IP ya está en la lista
+        if (!ipList.contains(ip)) {
+            Log.i("Actualizacion de lista", "IP agregada: " + ip);
+            ipList.add(ip);  // Agregar IP a la lista interna
+
+            // Actualizar el TextView con todas las IPs acumuladas
+            runOnUiThread(() -> {
+                StringBuilder ips = new StringBuilder("IPs recibidas:\n");
+                for (String savedIp : ipList) {
+                    ips.append(savedIp).append("\n");
+                    Log.i("Lista de IPs", "IP guardada: " + savedIp); // Log para cada IP
+
+                }
+                ipTextView.setText(ips.toString());
+                Log.i("Actualizacion de lista", "Lista actualizada en pantalla.");
+            });
+        }
+    }
+
 
     public void setMyIpTextView(String newIp) {
         myIpTextView.setText(newIp);
     }
 
+    public Button getBtnCreacionRed(){
+        return btnCreacionRed;
+    }
+
     public void limpiarListasIp(){
+        Log.i("Estado de Red", "Limpiando listas.");
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
         // Actualizar el TextView en el hilo de la UI
         runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
-        ipList.clear();
+        StringBuilder displayTextips = new StringBuilder("IP's recibidas:\n");
+        // Actualizar el TextView en el hilo de la UI
+        runOnUiThread(() -> ipMessageTextView.setText(displayTextips.toString()));
+        //ipList.clear();
         ipMessageMap.clear();
-    }
-    public void crearRed(){
-        String ssid = ssidEditText.getText().toString().trim();
-        String password = passwordEditText.getText().toString().trim();
-        // Validar que el usuario haya ingresado el SSID y la contraseña
-        if (ssid.isEmpty() || password.isEmpty()) {
-            Log.i("Gestion de red", "No se pudo crear red. Debe ingresar un Nombre y/o una contraseña.");
-            estadoRedTextView.setText("Estado: No se pudo crear red. Ingresar nombre y/o contraseña.");
-            //Toast.makeText(MainActivity.this, "Ingrese un SSID y una contraseña", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Validar la longitud de la contraseña
-        if (password.length() < 8 || password.length() > 63) {
-            Log.i("Gestion de red", "No se pudo crear red. La contraseña debe tener al menos 8 carácteres.");
-            estadoRedTextView.setText("Estado: No se puedo crear. La contraseña debe tener al menos 8 carácteres.");
-            //Toast.makeText(MainActivity.this, "La contraseña debe tener entre 8 y 63 caracteres", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        boolean isHotspotActive;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            isHotspotActive = isHotspotActiveForAndroid10();
-        } else {
-            isHotspotActive = checkHotspotStatus();
-        }
-
-
-        if (isHotspotActive) {
-            Log.i("HotspotStatus", "El Hotspot está activado.");
-            // Actualiza la UI o haz lo que sea necesario
-        } else {
-            Log.i("HotspotStatus", "El Hotspot está desactivado.");
-        }
-
-        if (!ssid.isEmpty() && !password.isEmpty()) {
-            // Verificar si el sistema operativo es Android 10 o superior
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Activar el Hotspot (Wi-Fi Direct) con el SSID y la contraseña ingresados por el usuario
-                toggleHotspot(ssid, password);
-
-            } else {
-                Log.i("Gestion de red", "No se pudo crear red. Wifi Direct Hotspot requiere Android 10 o superior");
-                estadoRedTextView.setText("Estado: No se pudo crear la red. Wifi Direct Hotspot requiere Android 10 o superior.");
-                // Mostrar mensaje de error si la versión es inferior a Android 10
-                //Toast.makeText(MainActivity.this, "Wi-Fi Direct Hotspot requiere Android 10 o superior", Toast.LENGTH_SHORT).show();
-            }
-        }
-
+        Log.i("Estado de Red", "Listas limpiadas");
     }
 
-
-    // Método para verificar el estado del hotspot en versiones anteriores a Android 10
-    private boolean checkHotspotStatus() {
-        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-        try {
-            // Usamos reflexión para acceder al método privado isWifiApEnabled en versiones anteriores a Android 10
-            Method method = wifiManager.getClass().getDeclaredMethod("isWifiApEnabled");
-            method.setAccessible(true);
-            return (Boolean) method.invoke(wifiManager);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    // Método adicional para manejar Android 10 y superiores
-    private boolean isHotspotActiveForAndroid10() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            Network network = connectivityManager.getActiveNetwork();
-            NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);
-
-            // Verificamos si el hotspot está activo, generalmente cuando el Wi-Fi está desactivado
-            if (capabilities != null && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {
-                return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && !wifiManager.isWifiEnabled();
-            }
-        }
-        return false;
-    }
-
-    // Método para alternar el estado del Hotspot
-    private void toggleHotspot(String ssid, String password) {
-        Log.i("Red Hotspot", "Cambiando estado de Hotspot.");
-        if (!isHotspotActive) {
-            // Iniciar el Hotspot con Wi-Fi Direct
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                hotspotManager.startWifiDirectHotspot(ssid, password);
-            }
-        } else {
-            // Detener el Hotspot
-            hotspotManager.stopHotspot();
-        }
-
-        isHotspotActive = !isHotspotActive; // Cambiar el estado
-        String statusMessage = isHotspotActive ? "Hotspot activado" : "Hotspot desactivado";
-
-        // Mostrar un mensaje de éxito o error
-        //Toast.makeText(this, statusMessage, Toast.LENGTH_SHORT).show();
-
-        // Actualizar la interfaz
-        statusTextView.setText(statusMessage);
-        toggleHotspotButton.setText(isHotspotActive ? "Desactivar Hotspot" : "Activar Hotspot");
-
-    }
 
 
     public void setStatusTextViewOnYes() {
@@ -429,11 +423,12 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         // Mostrar resultado basado en la cantidad de votos
         if (contPositivo >= contNegativo) {
             Log.i("Conteo de votos", "Hay Accidente");
-            displayText.append("ACCIDENTE").append("\n");
-            ipMessageTextView.setText("ACCIDENTE");
+            displayText.append("Resultado Votación: HAY ACCIDENTE").append("\n");
+            resultadoTextView.setText("Resultado Votación: HAY ACCIDENTE");
         } else {
             Log.i("Conteo de votos", "No hubo accidente");
-            ipMessageTextView.setText("NO HUBO ACCIDENTE");
+            displayText.append("Resultado Votación: NO HUBO ACCIDENTE").append("\n");
+            resultadoTextView.setText("Resultado Votación: NO HUBO ACCIDENTE");
         }
     }
 
@@ -450,13 +445,13 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         }
 
-        int port = 12345; // Puedes definir el puerto a utilizar
+
 
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
         if (!ipList.isEmpty()) {
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
             for(String targetIp : ipList) {
-                messageSender.sendMessage(targetIp, port, message);
+                messageSender.sendMessage(targetIp, message);
                 Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
             }
         }
@@ -500,22 +495,6 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
-    @Override
-    public void onHotspotStarted(String ssid, String password) {
-        Log.i("Creacion de Hotspot", "Red creada.");
-
-        // Mostrar SSID y contraseña en los TextViews
-        ssidTextView.setText("SSID: " + ssid);
-        passwordTextView.setText("Contraseña: " + password);
-
-        // Obtener y mostrar la IP del dispositivo al crear el hotspot
-        String deviceIpAddress = getDeviceIpAddress();
-        //ipTextView.setText("Mi IP: " + deviceIpAddress);
-
-        myIpTextView.setText("Mi IP: " + deviceIpAddress);
-    }
-
     private String getDeviceIpAddress() {
         try {
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
@@ -533,6 +512,7 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
         return "IP no disponible";
     }
 
+
     public boolean isConnectedToWifi() {
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
@@ -547,6 +527,27 @@ public class MainActivity extends AppCompatActivity implements WifiHotspot.Hotsp
 
         // Detener el hotspot al cerrar la aplicación
         hotspotManager.stopHotspot();
+
+        CreacionRedActivity creacionRedActivity = new CreacionRedActivity();
+        creacionRedActivity.stopWifiDirectHotspot();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            connectivityManager.unregisterNetworkCallback(networkCallback);
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unregisterReceiver(networkChangeReceiver);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        registerReceiver(networkChangeReceiver, filter);
     }
 
 }

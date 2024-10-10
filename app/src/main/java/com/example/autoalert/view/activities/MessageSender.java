@@ -8,7 +8,9 @@ import java.net.Socket;
 
 public class MessageSender {
 
-    public void sendMessage(String ipAddress, int port, String message) {
+    int port = 12345; // Puedes definir el puerto a utilizar
+
+    public void sendMessage(String ipAddress, String message) {
         new Thread(() -> {
             try {
                 Log.i("Envio de mensaje", "Se envia mensaje a " + ipAddress + " con " + message);

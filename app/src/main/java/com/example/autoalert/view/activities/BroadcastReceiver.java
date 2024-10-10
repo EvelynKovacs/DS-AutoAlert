@@ -42,6 +42,16 @@ public class BroadcastReceiver {
                     String senderIp = receivePacket.getAddress().getHostAddress();
                     if(!senderIp.equals(myIpAddress)){
                         if (message.equals("DISCOVER_IP_REQUEST")) {
+
+//                            Log.d("BroadCastReceiver", "El mensaje tiene: "+message);
+//
+//                            String[] parts = message.split(":");
+//                            String requestType = parts[0];
+//                            String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
+//
+//                            // Almacenar la IP y el alias en MainActivity
+//                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
+
                             mainActivity.ipList.add(senderIp);
                             mainActivity.updateIpList(senderIp);
 
@@ -55,6 +65,15 @@ public class BroadcastReceiver {
 
                         if (message.equals(BROADCAST_RESPONSE)){
                             senderIp = receivePacket.getAddress().getHostAddress();
+
+//                            String[] parts = message.split(":");
+//                            String requestType = parts[0];
+//                            String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
+//
+//                            // Almacenar la IP y el alias en MainActivity
+//                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
+
+
                             //mainActivity.ipList.add(senderIp);
                             mainActivity.updateIpList(senderIp);
                             // Guardar la IP del emisor
@@ -92,6 +111,11 @@ public class BroadcastReceiver {
                 // Crear el socket para enviar la respuesta
                 DatagramSocket socket = new DatagramSocket();
                 InetAddress receiverAddress = InetAddress.getByName(senderIp);
+
+//                // Obtener el alias desde MainActivity
+//                String alias = mainActivity.getAlias();
+//                // Crear el mensaje de respuesta con la IP del receptor y su alias
+//                String responseMessage = BROADCAST_RESPONSE + ":" + alias;
 
                 // Crear el mensaje de respuesta con la IP del receptor
                 byte[] message = BROADCAST_RESPONSE.getBytes();
