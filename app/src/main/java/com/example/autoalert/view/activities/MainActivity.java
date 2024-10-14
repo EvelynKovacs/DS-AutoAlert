@@ -93,6 +93,9 @@ public class MainActivity extends AppCompatActivity{
     // HashMap para almacenar la asociación de IPs y alias
     public HashMap<String, String> ipAliasMap = new HashMap<>();
 
+    private SistemaVotación sistemaVotacion;
+    private NetworkUtils networkUtils;
+
 
 
     @SuppressLint("MissingInflatedId")
@@ -140,6 +143,9 @@ public class MainActivity extends AppCompatActivity{
         messageSender = new MessageSender();
         broadcastTimer = new BroadcastTimer();
 
+        networkUtils = new NetworkUtils();
+        sistemaVotacion = new SistemaVotación(this);
+
         // Inicializamos el HashMap
         ipMessageMap = new HashMap<>();
 
@@ -147,10 +153,10 @@ public class MainActivity extends AppCompatActivity{
 
         // Obtener y mostrar la IP del dispositivo
         Log.i("MainActivity", "Mostrando IP....");
-        String deviceIpAddress = getDeviceIpAddress();
+        String deviceIpAddress = networkUtils.getDeviceIpAddress();
         ipTextView.setText("Lista de IPs" + deviceIpAddress);
 
-        String myDeviceIpAddress = getDeviceIpAddress();
+        String myDeviceIpAddress = networkUtils.getDeviceIpAddress();
         myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
 
         // Iniciar la recepción de broadcasts y respuestas
@@ -185,32 +191,14 @@ public class MainActivity extends AppCompatActivity{
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
-       /* btnSendMessages.setOnClickListener(view -> {
-            if (isConnectedToWifi() || isWifiDirectGroupOwner()){
-                if (isSendingMessage) {
-                    // Si ya se está enviando un mensaje, no hacemos nada
-                    return;
-                }
-                Log.i("Envio de mensaje", "ESTOY POR ENVIAR UN MENSAJE. PERO UNO NOMAS");
-                isSendingMessage = false;
-                enviarMensaje();
-                isSendingMessage = true;  // Bloquear nuevos envíos
 
-
-                // Una vez que el mensaje se haya enviado, reiniciar el estado
-            } else if (responseTextView.getText().equals("SI")){
-                iniciarConteo();
-            }
-        });
-
-        */
 
         btnSendMessages.setOnClickListener(view -> {
                 Log.i("Envio de mensaje", "ESTOY POR ENVIAR UN MENSAJE. PERO UNO NOMAS");
                 enviarMensaje();
                 // Una vez que el mensaje se haya enviado, reiniciar el estado
             if (responseTextView.getText().equals("SI") && ipList.isEmpty()){
-                iniciarConteo();
+                sistemaVotacion.iniciarConteo();
             }
         });
 
@@ -218,35 +206,12 @@ public class MainActivity extends AppCompatActivity{
 
     }
 
-    private boolean isWifiDirectGroupOwner() {
-        // Suponiendo que tienes acceso al objeto WifiP2pInfo para verificar si este dispositivo es el propietario del grupo
-        if (wifiP2pInfo != null) {
-            return wifiP2pInfo.isGroupOwner;
-        }
-        return false;
-    }
-
-//    // Guardar la IP y el alias recibido
-//    public void storeAliasFromIp(String ip, String alias) {
-//        ipAliasMap.put(ip, alias);
-//        Log.d("MainActivity", "Guardado: IP " + ip + " con alias " + alias);
-//    }
-//
-//    // Método para obtener el alias
-//    public String getAlias() {
-//        return aliasEditText.getText().toString().trim(); // Devuelve el alias como un String
-//    }
 
     public void irACrecionRed(View view){
         Intent i = new Intent(this, CreacionRedActivity.class);
         startActivity(i);
     }
 
-    public void eliminarIp(String ip){
-        ipList.remove(ip);
-        ipMessageMap.remove(ip);
-        updateIpMessageView();
-    }
 
     public void enviarMensaje(){
         String message = responseTextView.getText().toString();
@@ -264,7 +229,7 @@ public class MainActivity extends AppCompatActivity{
             }
 
             if(responseTextView.getText().equals("SI")){
-                enviarEstado();
+                sistemaVotacion.enviarEstado();
             }
         } else {
             Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
@@ -272,24 +237,6 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    /*
-    // Método para actualizar la lista de IPs en el TextView
-    public void updateIpList(String ip) {
-        Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
-        handler.post(() -> {
-            StringBuilder ips = new StringBuilder("IPs recibidas:\n");
-            if (!ipList.contains(ip)) {
-                Log.i("Actualizacion de lista", "IP agregada: " + ip);
-                ipList.add(ip);
-                ips.append(ip).append("\n");
-            }
-            //ipTextView.setText(ips.toString());
-            runOnUiThread(() -> ipTextView.setText(ips.toString()));
-            Log.i("Actualizacion de lista", "Lista actualizada.");
-        });
-
-    }
-     */
 
     // Método para actualizar la lista de IPs en el TextView
     public void updateIpList(String ip) {
@@ -318,24 +265,6 @@ public class MainActivity extends AppCompatActivity{
     public void setMyIpTextView(String newIp) {
         myIpTextView.setText(newIp);
     }
-
-    public Button getBtnCreacionRed(){
-        return btnCreacionRed;
-    }
-
-    public void limpiarListasIp(){
-        Log.i("Estado de Red", "Limpiando listas.");
-        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
-        // Actualizar el TextView en el hilo de la UI
-        runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
-        StringBuilder displayTextips = new StringBuilder("IP's recibidas:\n");
-        // Actualizar el TextView en el hilo de la UI
-        runOnUiThread(() -> ipMessageTextView.setText(displayTextips.toString()));
-        //ipList.clear();
-        ipMessageMap.clear();
-        Log.i("Estado de Red", "Listas limpiadas");
-    }
-
 
 
     public void setStatusTextViewOnYes() {
@@ -370,93 +299,94 @@ public class MainActivity extends AppCompatActivity{
         runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
     }
 
+// COSAS DEL SISTEMA DE VOTACION
+//    public void guardarVoto(String ip, String voto){
+//        Log.i("Guardado de votos", "Se inicia el guardado de votos.");
+//        String[] votoArray = voto.split(":");
+//        String resultadoVoto = votoArray[1];
+//        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
+//
+//        ipMessageMap.put(ip, resultadoVoto);
+//        // Mostrar el mensaje recibido en la interfaz
+//        // Actualizar la interfaz con el contenido del HashMap
+//        updateIpMessageView();
+//        runOnUiThread(() -> {
+//            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + resultadoVoto, Toast.LENGTH_SHORT).show();
+//        });
+//        cont = cont + 1;
+//        Log.i("Guardado de votos", "El contador esta en " + cont);
+//
+//        if(ipList.size() == cont) {
+//            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
+//            iniciarConteo();
+//            cont = 0;
+//        }
+//    }
+//
+//    public void iniciarConteo(){
+//        int contPositivo = 0;
+//        int contNegativo = 0;
+//        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+//        Log.i("Conteo de votos", "Conteo de votos iniciado.");
+//
+//        for (String ip : ipMessageMap.keySet()) {
+//            String voto = ipMessageMap.get(ip);
+//            if ("SI".equals(voto)) {
+//                contPositivo++;
+//                Log.i("Conteo de votos", "VOTO:SI");
+//            } else if ("NO".equals(voto)) {
+//                contNegativo++;
+//                Log.i("Conteo de votos", "VOTO:NO");
+//            }
+//        }
+//
+//        Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
+//        if(responseTextView.getText().equals("SI")){
+//            Log.i("Conteo de votos", "Se añade un VOTO:SI");
+//            contPositivo++;
+//        } else {
+//            Log.i("Conteo de votos", "Se añade un VOTO:NO");
+//            contNegativo++;
+//        }
+//
+//        // Mostrar resultado basado en la cantidad de votos
+//        if (contPositivo >= contNegativo) {
+//            Log.i("Conteo de votos", "Hay Accidente");
+//            displayText.append("Resultado Votación: HAY ACCIDENTE").append("\n");
+//            resultadoTextView.setText("Resultado Votación: HAY ACCIDENTE");
+//        } else {
+//            Log.i("Conteo de votos", "No hubo accidente");
+//            displayText.append("Resultado Votación: NO HUBO ACCIDENTE").append("\n");
+//            resultadoTextView.setText("Resultado Votación: NO HUBO ACCIDENTE");
+//        }
+//    }
+//
+//    public void enviarEstado(){
+//        String message;
+//        Log.i("Envio de Estado", "Enviando estado");
+//        if(responseTextView.getText().equals("SI")){
+//            message = "VOTO:SI";
+//            Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
+//
+//        } else {
+//            message = "VOTO:NO";
+//            Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
+//
+//        }
+//
+//
+//
+//        // Supongamos que quieres enviar el mensaje a la primera IP de la lista
+//        if (!ipList.isEmpty()) {
+//            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
+//            for(String targetIp : ipList) {
+//                messageSender.sendMessage(targetIp, message);
+//                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
+//            }
+//        }
+//    }
 
-    public void guardarVoto(String ip, String voto){
-        Log.i("Guardado de votos", "Se inicia el guardado de votos.");
-        String[] votoArray = voto.split(":");
-        String resultadoVoto = votoArray[1];
-        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
-
-        ipMessageMap.put(ip, resultadoVoto);
-        // Mostrar el mensaje recibido en la interfaz
-        // Actualizar la interfaz con el contenido del HashMap
-        updateIpMessageView();
-        runOnUiThread(() -> {
-            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + resultadoVoto, Toast.LENGTH_SHORT).show();
-        });
-        cont = cont + 1;
-        Log.i("Guardado de votos", "El contador esta en " + cont);
-
-        if(ipList.size() == cont) {
-            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
-            iniciarConteo();
-            cont = 0;
-        }
-    }
-
-    public void iniciarConteo(){
-        int contPositivo = 0;
-        int contNegativo = 0;
-        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
-        Log.i("Conteo de votos", "Conteo de votos iniciado.");
-
-        for (String ip : ipMessageMap.keySet()) {
-            String voto = ipMessageMap.get(ip);
-            if ("SI".equals(voto)) {
-                contPositivo++;
-                Log.i("Conteo de votos", "VOTO:SI");
-            } else if ("NO".equals(voto)) {
-                contNegativo++;
-                Log.i("Conteo de votos", "VOTO:NO");
-            }
-        }
-
-        Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
-        if(responseTextView.getText().equals("SI")){
-            Log.i("Conteo de votos", "Se añade un VOTO:SI");
-            contPositivo++;
-        } else {
-            Log.i("Conteo de votos", "Se añade un VOTO:NO");
-            contNegativo++;
-        }
-
-        // Mostrar resultado basado en la cantidad de votos
-        if (contPositivo >= contNegativo) {
-            Log.i("Conteo de votos", "Hay Accidente");
-            displayText.append("Resultado Votación: HAY ACCIDENTE").append("\n");
-            resultadoTextView.setText("Resultado Votación: HAY ACCIDENTE");
-        } else {
-            Log.i("Conteo de votos", "No hubo accidente");
-            displayText.append("Resultado Votación: NO HUBO ACCIDENTE").append("\n");
-            resultadoTextView.setText("Resultado Votación: NO HUBO ACCIDENTE");
-        }
-    }
-
-    public void enviarEstado(){
-        String message;
-        Log.i("Envio de Estado", "Enviando estado");
-        if(responseTextView.getText().equals("SI")){
-            message = "VOTO:SI";
-            Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
-
-        } else {
-            message = "VOTO:NO";
-            Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
-
-        }
-
-
-
-        // Supongamos que quieres enviar el mensaje a la primera IP de la lista
-        if (!ipList.isEmpty()) {
-            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
-            for(String targetIp : ipList) {
-                messageSender.sendMessage(targetIp, message);
-                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
-            }
-        }
-    }
-
+    //ACA FINALIZA COSAS DEL SISTEMA DE VOTACION
 
     // Método para verificar permisos en tiempo de ejecución
     private void checkPermissions() {
@@ -495,30 +425,25 @@ public class MainActivity extends AppCompatActivity{
         }
     }
 
-    private String getDeviceIpAddress() {
-        try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
-                NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                    InetAddress inetAddress = enumIpAddr.nextElement();
-                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
-                        return inetAddress.getHostAddress();
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return "IP no disponible";
-    }
+    //ESTO SACARLO Y DEJARLO EN UNA CLASE DE NETWORK UTILS
+//    private String getDeviceIpAddress() {
+//        try {
+//            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
+//                NetworkInterface intf = en.nextElement();
+//                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
+//                    InetAddress inetAddress = enumIpAddr.nextElement();
+//                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
+//                        return inetAddress.getHostAddress();
+//                    }
+//                }
+//            }
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//        }
+//        return "IP no disponible";
+//    }
 
 
-    public boolean isConnectedToWifi() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
-
-        return networkInfo != null && networkInfo.isConnected();
-    }
 
 
     @Override
@@ -548,6 +473,36 @@ public class MainActivity extends AppCompatActivity{
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         registerReceiver(networkChangeReceiver, filter);
+    }
+
+    public HashMap<String, String> getIpMessageMap(){
+        return ipMessageMap;
+    }
+
+    public void sumarContador(){
+        cont++;
+    }
+
+    public int getContador(){
+        return cont;
+    }
+
+    public void reiniciarContador(){
+        cont = 0;
+    }
+
+    public String getResponseText(){
+        return responseTextView.getText().toString();
+    }
+
+    public Set<String> getIpList(){
+        return ipList;
+    }
+
+    public void setResultadoText(String message){
+        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+        displayText.append(message).append("\n");
+        resultadoTextView.setText(message);
     }
 
 }

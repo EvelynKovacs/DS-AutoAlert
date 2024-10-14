@@ -12,6 +12,7 @@ public class MessageReceiver {
 
     private Context context;
     private final int LISTEN_PORT = 12345; // Puerto donde escuchar los mensajes
+    private SistemaVotación sistemaVotacion;
 
 
     // Constructor que recibe el contexto de la actividad
@@ -46,12 +47,15 @@ public class MessageReceiver {
 
                     if (message.startsWith("VOTO:")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ESTADO. Mensaje: " + message);
-                        ((MainActivity)context).guardarVoto(clientIp, message);
+                        //(MainActivity)context).guardarVoto(clientIp, message);
+                        sistemaVotacion.guardarVoto(clientIp, message);
+
                     }
 
                     if(message.equals("SI")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
-                        ((MainActivity)context).enviarEstado();
+                        //((MainActivity)context).enviarEstado();
+                        sistemaVotacion.enviarEstado();
                     }
 
                     /*if(message.equals("Desconexion")) {
