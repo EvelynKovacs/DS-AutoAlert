@@ -22,9 +22,9 @@ public class MessageSender {
 
                 String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
 
-                Log.i("Envio de mensaje", "Se envia mensaje a " + ipAddress + " con " + timeString + " | " + message);
+                Log.i("Envio de mensaje", "Se envia mensaje a " + ipAddress + " con " + timeString + "-" + message);
 
-                String timestampMessage = timeString + " | " + message;
+                String timestampMessage = timeString + "-" + message;
 
                 // Crear un socket TCP para enviar el mensaje al dispositivo con la IP recibida
                 Socket socket = new Socket(ipAddress, port);

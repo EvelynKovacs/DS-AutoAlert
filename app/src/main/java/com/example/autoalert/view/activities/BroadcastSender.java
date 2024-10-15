@@ -7,6 +7,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.util.Calendar;
 import java.util.Collections;
 
 public class BroadcastSender {
@@ -33,17 +34,29 @@ public class BroadcastSender {
                 byte[] sendData = messageWithAlias.getBytes();
                  */
 
+                // Obtener la hora actual
+                Calendar calendar = Calendar.getInstance();
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                int second = calendar.get(Calendar.SECOND);
+
+                String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
+
+                String message = timeString + "-" + BROADCAST_MESSAGE;
+
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);
                 InetAddress broadcastAddress = getBroadcastAddress();
 
-                byte[] sendData = BROADCAST_MESSAGE.getBytes();
+                byte[] sendData = message.getBytes();
+                //byte[] sendData = BROADCAST_MESSAGE.getBytes();
 
 
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcastAddress, BROADCAST_PORT);
                 socket.send(sendPacket);
 
                 socket.close();
+                Log.d("BroadcastSender", "Mensaje a enviar: " + message);
                 Log.d("BroadcastSender", "Mensaje de peticion broadcast enviada.");
 
             } catch (Exception e) {

@@ -18,6 +18,7 @@ public class MessageReceiver {
     // Constructor que recibe el contexto de la actividad
     public MessageReceiver(Context context) {
         this.context = context;
+        this.sistemaVotacion = new SistemaVotación((MainActivity) context);
     }
 
     public void startListening() {
@@ -39,6 +40,11 @@ public class MessageReceiver {
                     // Leer el mensaje que envió el cliente
                     String message = input.readLine();
 
+                    String[] messagePartido = message.split("-");
+
+                    message = messagePartido[1];
+
+                    Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " a las " + messagePartido[0]);
                     Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " con " + message);
 
 

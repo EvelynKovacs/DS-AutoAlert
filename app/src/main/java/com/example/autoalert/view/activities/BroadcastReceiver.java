@@ -6,6 +6,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.util.Calendar;
 import java.util.Enumeration;
 
 public class BroadcastReceiver {
@@ -41,6 +42,12 @@ public class BroadcastReceiver {
                     String myIpAddress = getDeviceIpAddress(); // Método para obtener la IP del dispositivo
                     String senderIp = receivePacket.getAddress().getHostAddress();
                     if(!senderIp.equals(myIpAddress)){
+                        Log.d("BroadcastReceiver", "Mensaje recibido: " + message);
+                        String[] messagePartido = message.split("-");
+                        //Obtengo mensaje sin el timestamp
+                        message = messagePartido[1];
+                        Log.d("BroadcastReceiver", "Mensaje recibido, segunda parte: " + message);
+                        String timestamp = messagePartido[0];
                         if (message.equals("DISCOVER_IP_REQUEST")) {
 
 //                            Log.d("BroadCastReceiver", "El mensaje tiene: "+message);
@@ -52,12 +59,13 @@ public class BroadcastReceiver {
 //                            // Almacenar la IP y el alias en MainActivity
 //                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
 
+
                             mainActivity.ipList.add(senderIp);
                             mainActivity.updateIpList(senderIp);
 
                             // Guardar la IP del emisor
                             mainActivity.storeMessageFromIp(senderIp, message);
-
+                            mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
                             // Enviar respuesta con la IP del receptor
 
                             sendResponse(senderIp, RESPONSE_PORT, myIpAddress);
@@ -73,7 +81,7 @@ public class BroadcastReceiver {
 //                            // Almacenar la IP y el alias en MainActivity
 //                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
 
-
+                            mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
                             //mainActivity.ipList.add(senderIp);
                             mainActivity.updateIpList(senderIp);
                             // Guardar la IP del emisor
@@ -117,8 +125,17 @@ public class BroadcastReceiver {
 //                // Crear el mensaje de respuesta con la IP del receptor y su alias
 //                String responseMessage = BROADCAST_RESPONSE + ":" + alias;
 
+                // Obtener la hora actual
+                Calendar calendar = Calendar.getInstance();
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                int second = calendar.get(Calendar.SECOND);
+
+                String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
                 // Crear el mensaje de respuesta con la IP del receptor
-                byte[] message = BROADCAST_RESPONSE.getBytes();
+                String messageToSend = timeString+"-"+BROADCAST_RESPONSE;
+                byte[] message = messageToSend.getBytes();
+                //byte[] message = BROADCAST_RESPONSE.getBytes();
                 DatagramPacket responsePacket = new DatagramPacket(message, message.length, receiverAddress, port);
 
                 //byte[] sendData = BROADCAST_RESPONSE.getBytes();

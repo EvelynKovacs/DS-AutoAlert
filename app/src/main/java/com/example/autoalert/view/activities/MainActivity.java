@@ -36,11 +36,16 @@ import com.example.autoalert.R;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity{
@@ -96,7 +101,7 @@ public class MainActivity extends AppCompatActivity{
     private SistemaVotación sistemaVotacion;
     private NetworkUtils networkUtils;
 
-
+    private HashMap<String, String> ipTimestamp = new HashMap<>();
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -503,6 +508,62 @@ public class MainActivity extends AppCompatActivity{
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
         displayText.append(message).append("\n");
         resultadoTextView.setText(message);
+    }
+
+    public void actualizarIpTimeStamp(String senderIp, String timestamp) {
+        ipTimestamp.put(senderIp, timestamp);
+        Log.d("Actualizar Timestamp", "Se actualiza la ip con timestamp con ip: " + senderIp + " y " + timestamp);
+        for(Map.Entry<String, String> disp : ipTimestamp.entrySet()){
+            Log.d("Actualizar Timestamp", "IP" + disp.getKey() + " y " + disp.getValue());
+        }
+    }
+
+    public void verificarConexion() throws ParseException {
+        Log.i("Verificacion Conexion", "Verificando conexion de dispositivos");
+        if(ipTimestamp.size() == 0){
+            Log.d("Verificacion Conexion", "EH AMIGO ME RE FUI. TA VACIO ACA");
+            return;
+        }
+
+        for(Map.Entry<String, String> dispositivo : ipTimestamp.entrySet()){
+            long diferenciaTiempo = calcularDiferenciaTiempo(dispositivo.getValue());
+            Log.i("Verificacion Conexion", "Verificando conexion de: " + dispositivo.getKey());
+            Log.i("Verificacion Conexion", "La diferencia de tiempo es de: " + diferenciaTiempo);
+            if(diferenciaTiempo > 3){
+                Log.i("Verificacion Conexion", "El dispositivo " + dispositivo.getKey() + " está DESCONECTADO");
+                ipMessageMap.put(dispositivo.getKey(), "DESCONECTADO");
+            }
+            //TERMINAR DE HACER ESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+            //Es el sistema de votacion con tempo
+        }
+    }
+
+
+    public long calcularDiferenciaTiempo(String tiempoRecibido) throws ParseException {
+
+
+        // Formateador para convertir la cadena a un objeto Date
+        SimpleDateFormat formato = new SimpleDateFormat("HH:mm:ss");
+
+        // Parsear el tiempo recibido a un objeto Date
+        Date tiempoRecibidoDate = formato.parse(tiempoRecibido);
+
+        // Obtener el tiempo actual del sistema
+        Calendar ahora = Calendar.getInstance();
+        long timestampActual = ahora.getTimeInMillis();
+
+        // Convertir el tiempo recibido a milisegundos desde el comienzo del día
+        Calendar tiempoRecibidoCal = Calendar.getInstance();
+        tiempoRecibidoCal.setTime(tiempoRecibidoDate);
+        long timestampRecibido = tiempoRecibidoCal.getTimeInMillis();
+
+        // Calcular la diferencia en milisegundos y convertirla a segundos
+        long diferenciaEnMilisegundos = timestampActual - timestampRecibido;
+        long diferenciaEnSegundos = diferenciaEnMilisegundos / 1000;
+
+        Log.i("Diferencia de Tiempo","Diferencia en segundos: " + diferenciaEnSegundos);
+
+        return diferenciaEnSegundos;
     }
 
 }

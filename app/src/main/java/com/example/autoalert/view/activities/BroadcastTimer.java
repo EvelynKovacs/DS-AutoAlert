@@ -12,6 +12,7 @@ import java.util.Collections;
 public class BroadcastTimer {
 
     private BroadcastSender broadcastSender = new BroadcastSender();
+    private MainActivity mainActivity = new MainActivity();
     public void startBroadcastTimer() {
         new Thread(() -> {
             while(true) {
@@ -20,6 +21,10 @@ public class BroadcastTimer {
                     Thread.sleep(30000);
                     broadcastSender.sendBroadcast();
                     Log.d("BroadcastTimer", "Timer! Mensaje broadcast enviado!.");
+                    Log.i("Verificacion Conexion", "Empieza timer de 4seg");
+                    Thread.sleep(4000);
+                    Log.i("Verificacion Conexion", "Terminó Timer. Comienza verificacion de conexion");
+                    mainActivity.verificarConexion();
 
                 } catch (Exception e) {
                     e.printStackTrace();
