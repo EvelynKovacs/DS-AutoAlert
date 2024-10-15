@@ -6,6 +6,8 @@
     android:layout_height="match_parent"
     tools:context=".view.fragments.PrincipalFragment">
 
+    <!-- Botón de información en la parte superior derecha -->
+
     <!-- TODO: Update blank fragment layout -->
     <LinearLayout
         android:layout_width="match_parent"

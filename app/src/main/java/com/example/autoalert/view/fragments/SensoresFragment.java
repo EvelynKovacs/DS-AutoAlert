@@ -1,6 +1,7 @@
 package com.example.autoalert.view.fragments;
 
 
+import android.hardware.Sensor;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -32,6 +33,7 @@ public class SensoresFragment extends Fragment {
 
     private SensorViewModel sensorViewModel;
     private SensorAdapter sensorAdapter;
+
 
     // Para el gráfico
      private int pointsPlotted = 5;

@@ -1,14 +1,13 @@
 package com.example.autoalert.view.activities;
 
-
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
+import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -61,7 +60,6 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        context = this; // Initialize the context variable
         setContentView(R.layout.activity_creacion_red);
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.red), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
@@ -82,9 +80,6 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         hotspotManager = new WifiHotspot(this, this);
         // Inicializamos wifiManager
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-        // Recuperar datos de RedActivity si es necesario
-        String ipText = getIntent().getStringExtra("ipTextView");
 
         // Recuperar los datos desde SharedPreferences
         SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
@@ -179,10 +174,14 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         editor.putBoolean("redCreada", true);
         editor.apply(); // Guardar los cambios
 
-        // Assuming RedActivity is already started, you can send data via Intent
-        Intent intent = new Intent(context, RedActivity.class);
-        intent.putExtra("ipTextView", "Mi IP: " + getDeviceIpAddress());
-        startActivity(intent);
+        MainActivity mainActivity = (MainActivity) context;
+
+        // Llamar a un método en MainActivity o acceder a variables
+        //mainActivity.setMyIpTextView("Mi IP:" + getDeviceIpAddress());
+
+
+        // Obtener y mostrar la IP del dispositivo al crear el hotspot
+        String deviceIpAddress = getDeviceIpAddress();
         //ipTextView.setText("Mi IP: " + deviceIpAddress);
 
         //myIpTextView.setText("Mi IP: " + deviceIpAddress);
@@ -265,6 +264,10 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         } else {
             // Detener el Hotspot
             hotspotManager.stopHotspot();
+
+            // Detener el Hotspot con Wi-Fi Direct
+            stopWifiDirectHotspot();
+
             // Guardar los datos en SharedPreferences
             SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPref.edit();
@@ -282,6 +285,27 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         statusTextView.setText(statusMessage);
         toggleHotspotButton.setText(isHotspotActive ? "Desactivar Hotspot" : "Activar Hotspot");
 
+    }
+
+    // Método para detener la red Wi-Fi Direct
+    public void stopWifiDirectHotspot() {
+        WifiP2pManager wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
+        WifiP2pManager.Channel channel = wifiP2pManager.initialize(this, getMainLooper(), null);
+
+        wifiP2pManager.removeGroup(channel, new WifiP2pManager.ActionListener() {
+            @Override
+            public void onSuccess() {
+                Log.i("WiFiDirect", "El grupo Wi-Fi Direct se ha detenido.");
+                isHotspotActive = false;
+                statusTextView.setText("Hotspot desactivado");
+                toggleHotspotButton.setText("Activar Hotspot");
+            }
+
+            @Override
+            public void onFailure(int reason) {
+                Log.e("WiFiDirect", "No se pudo detener el grupo Wi-Fi Direct. Razón: " + reason);
+            }
+        });
     }
 
 }

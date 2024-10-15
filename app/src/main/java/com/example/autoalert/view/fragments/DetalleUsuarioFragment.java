@@ -94,6 +94,7 @@ public class DetalleUsuarioFragment extends Fragment {
                     Manifest.permission.READ_EXTERNAL_STORAGE
             }, PERMISSION_REQUEST_CODE);
         } else {
+            // Mueve la captura a un lugar más adecuado
             captureScreenshot();
         }
     }
@@ -127,7 +128,7 @@ public class DetalleUsuarioFragment extends Fragment {
 
 
     private void captureScreenshot() {
-        if (isScreenshotCaptured) return;
+        if (isScreenshotCaptured) return; // Evitar capturas múltiples
 
         View rootView = getView();
         if (rootView != null) {
@@ -148,7 +149,7 @@ public class DetalleUsuarioFragment extends Fragment {
 
                     // Check if dimensions are valid
                     if (width > 0 && height > 0) {
-                        isScreenshotCaptured = true;
+
 
                         // Capture the screenshot
                         Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
@@ -157,6 +158,7 @@ public class DetalleUsuarioFragment extends Fragment {
 
                         // Save the screenshot
                         saveScreenshotToGallery(bitmap);
+                        isScreenshotCaptured = true;  // Mueve esta línea aquí
                     } else {
                         Log.e("Screenshot", "View dimensions are still invalid after layout");
                         // Handle the error appropriately (e.g., show a message)
@@ -210,5 +212,20 @@ public class DetalleUsuarioFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permiso otorgado, capturar la pantalla
+                if (!isScreenshotCaptured) {
+                    captureScreenshot();
+                    isScreenshotCaptured = true;
+                }
+            } else {
+                Toast.makeText(getContext(), "Permiso de almacenamiento denegado", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
 
 }

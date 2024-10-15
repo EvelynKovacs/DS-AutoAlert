@@ -76,11 +76,12 @@
             android:id="@+id/button_msg_accidente"
             android:layout_width="250dp"
             android:layout_height="250dp"
-            android:text="@string/envio_msg_accidente"
-            android:textSize="20sp"
+            android:layout_gravity="center"
             android:background="@drawable/round_button"
+            android:text="@string/envio_msg_accidente"
             android:textColor="#FFFFFF"
-            android:layout_gravity="center" />
+            android:textColorLink="@color/border_error"
+            android:textSize="20sp" />
 
 
     </FrameLayout>

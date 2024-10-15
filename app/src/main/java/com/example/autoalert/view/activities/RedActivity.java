@@ -41,6 +41,7 @@ import java.net.NetworkInterface;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class RedActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{
@@ -221,20 +222,38 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     // Método para actualizar la lista de IPs en el TextView
     public void updateIpList(String ip) {
-        Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
-        handler.post(() -> {
-            StringBuilder ips = new StringBuilder("IPs recibidas:\n");
-            if (!ipList.contains(ip)) {
-                Log.i("Actualizacion de lista", "IP agregada: " + ip);
-                ipList.add(ip);
-                ips.append(ip).append("\n");
-            }
-            //ipTextView.setText(ips.toString());
-            runOnUiThread(() -> ipTextView.setText(ips.toString()));
-            Log.i("Actualizacion de lista", "Lista actualizada.");
-        });
+        Log.i("Actualizacion de lista", "Intentando agregar IP: " + ip);
 
+        // Revisamos si la IP es válida y no está vacía
+        if (ip != null && !ip.isEmpty()) {
+            handler.post(() -> {
+                // Solo agregamos la IP si no está en la lista
+                if (!ipList.contains(ip)) {
+                    Log.i("Actualizacion de lista", "IP agregada: " + ip);
+                    ipList.add(ip);
+                } else {
+                    Log.i("Actualizacion de lista", "La IP ya estaba en la lista: " + ip);
+                }
+
+                // Ahora recorremos toda la lista de IPs para mostrarlas sin repetición
+                StringBuilder ips = new StringBuilder("IPs recibidas:\n");
+                for (String storedIp : new HashSet<>(ipList)) { // Usamos un HashSet para evitar IPs duplicadas
+                    ips.append(storedIp).append("\n");
+                }
+
+                // Actualizamos el TextView en el hilo principal
+                runOnUiThread(() -> {
+                    ipTextView.setText(ips.toString());
+                    Log.i("Actualizacion de lista", "Lista de IPs actualizada en el TextView: " + ips.toString());
+                });
+            });
+        } else {
+            Log.e("Actualizacion de lista", "IP inválida recibida: " + ip);
+        }
     }
+
+
+
 
     public void setMyIpTextView(String newIp) {
         myIpTextView.setText(newIp);
@@ -592,10 +611,10 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
                 fileReader.close();
             } else {
-                Log.e("MainActivity", "El archivo JSON no existe.");
+                Log.e("RedActivity", "El archivo JSON no existe.");
             }
         } catch (Exception e) {
-            Log.e("MainActivity", "Error al leer el archivo JSON: " + e.getMessage());
+            Log.e("RedActivity", "Error al leer el archivo JSON: " + e.getMessage());
         }
 
         return alias.trim(); // Devuelve el alias generado

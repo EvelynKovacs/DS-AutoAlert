@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -29,6 +30,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -116,6 +118,10 @@ public class AddProjectFragment extends Fragment {
         // Inflate the layout for this fragment
         binding = FragmentAddProjectBinding.inflate(inflater, container, false);
         View view = binding.getRoot(); // This is the root view
+
+        // Inicializa SharedPreferences
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPreferences", Context.MODE_PRIVATE);
+        boolean isFirstEntry = sharedPreferences.getBoolean("isFirstEntry", true);
 
 
         // Inicializa el RecyclerView
@@ -211,7 +217,24 @@ public class AddProjectFragment extends Fragment {
 //     ((AppCompatActivity) requireActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
 
-        binding.btnAddProject.setOnClickListener(view1 -> handleSaveProject());
+        btnAddProject.setOnClickListener(view1 -> {
+            if (validateProjectFields()){
+                if (isFirstEntry){
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.putBoolean("isFirstEntry",false);
+                }
+
+                handleSaveProject();// Navegar al siguiente fragmento
+                requireActivity().getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fcv_main_container, new PrincipalFragment())
+                        .addToBackStack(null)
+                        .commit();
+            } else {
+                // Mostrar mensaje o manejar el caso de campos no válidos
+                Toast.makeText(requireContext(), "Por favor, complete todos los campos obligatorios", Toast.LENGTH_SHORT).show();
+            }
+
+        });
         binding.btnDeleteProject.setOnClickListener(view1 -> showDeleteConfirmationDialog());
         binding.btnAddContact.setOnClickListener(view1 -> showContacts());
         // Configura la visibilidad del botón de eliminar
@@ -236,131 +259,116 @@ public class AddProjectFragment extends Fragment {
     }
 
     private void handleSaveProject() {
-        boolean isValid = true;
+        // Realizar validaciones antes de guardar
+        if (!validateProjectFields()) {
+            return;
+        }
 
-
-        // Obtener valores de los campos
+        // Obtener los valores necesarios para crear o actualizar el proyecto
         String nombreUsuario = binding.edtNombreUsuario.getText().toString().trim();
         String apellidoUsuario = binding.edtApellidoUsuario.getText().toString().trim();
         String dni = binding.edtDni.getText().toString().trim();
-        String edadStr = binding.edtFechaNacimiento.getText().toString().trim();
-        String datosMedicos = binding.edtDatosMedicos.getText().toString().trim();
-        //String contactos = binding.edtContactNames.getText().toString();
         String fechaNacimientoStr = binding.edtFechaNacimiento.getText().toString().trim();
+        String datosMedicos = binding.edtDatosMedicos.getText().toString().trim();
         String grupoSanguineo = spinnerGrupoSanguineo.getSelectedItem().toString();
 
         Uri imageUri = getImageUriFromProfileImg(); // Obtener URI actualizada
         String base64Image = encodeImageToBase64(imageUri); // Codificar la imagen en base64
 
         if (imageUri != null) {
-            base64Image = encodeImageToBase64(imageUri); // Codificar la imagen en base64
+            base64Image = encodeImageToBase64(imageUri);
         } else {
-            // Si no se selecciona una nueva imagen, mantener la imagen existente
             base64Image = projectModel != null ? projectModel.getFoto() : null;
         }
 
-        if (nombreUsuario.isEmpty() || apellidoUsuario.isEmpty()  || edadStr.isEmpty() || dni.isEmpty() || grupoSanguineo.isEmpty()) {
+        // Crear o actualizar el proyecto según el caso
+        if (isEdit) {
+            updateProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr, datosMedicos, grupoSanguineo, base64Image, contactNamesList);
+        } else {
+            createProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr, datosMedicos, grupoSanguineo, base64Image, contactNamesList);
+        }
+    }
+
+
+    private boolean validateProjectFields() {
+        boolean isValid = true;
+
+        // Obtener valores de los campos
+        String nombreUsuario = binding.edtNombreUsuario.getText().toString().trim();
+        String apellidoUsuario = binding.edtApellidoUsuario.getText().toString().trim();
+        String dni = binding.edtDni.getText().toString().trim();
+        String edadStr = binding.edtFechaNacimiento.getText().toString().trim();
+        String fechaNacimientoStr = binding.edtFechaNacimiento.getText().toString().trim();
+        String grupoSanguineo = spinnerGrupoSanguineo.getSelectedItem().toString();
+
+        // Validación de campos vacíos
+        if (nombreUsuario.isEmpty() || apellidoUsuario.isEmpty() || edadStr.isEmpty() || dni.isEmpty() || grupoSanguineo.isEmpty() || contactNamesList.isEmpty()) {
             Toast.makeText(requireContext(), "Por favor, complete todos los campos obligatorios", Toast.LENGTH_SHORT).show();
-            return;
+            return false;
         }
 
-        // Validar formato de fecha de nacimiento
+        // Validación de formato de fecha
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-        sdf.setLenient(false);  // Deshabilitar la tolerancia a fechas inválidas
+        sdf.setLenient(false);
         Date fechaNacimiento;
         try {
-            fechaNacimiento = sdf.parse(fechaNacimientoStr); // Convertir String a Date
+            fechaNacimiento = sdf.parse(fechaNacimientoStr);
         } catch (ParseException e) {
             Toast.makeText(requireContext(), "Formato de fecha de nacimiento inválido", Toast.LENGTH_SHORT).show();
             binding.edtFechaNacimiento.setBackgroundResource(R.drawable.error_border);
-            return;
+            return false;
         }
 
-        // Calcular la edad a partir de la fecha
+        // Validar la edad
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(fechaNacimiento);
         int year = calendar.get(Calendar.YEAR);
         int month = calendar.get(Calendar.MONTH);
         int day = calendar.get(Calendar.DAY_OF_MONTH);
-
         int edad = calculateAge(year, month, day);
 
-        // Validar que la edad esté entre 10 y 110 años
         if (edad < 10 || edad > 110) {
             Toast.makeText(requireContext(), "La edad debe estar entre 10 y 110 años", Toast.LENGTH_SHORT).show();
             binding.edtFechaNacimiento.setBackgroundResource(R.drawable.error_border);
-            return;
-        } else {
-            binding.edtFechaNacimiento.setBackgroundResource(R.drawable.normal_border);
+            return false;
         }
 
+        // Validación de nombre
         if (!isValidName(nombreUsuario)) {
-            isValid = false;
             binding.edtNombreUsuario.setBackgroundResource(R.drawable.error_border);
-            Toast.makeText(requireContext(), "El nombre no puede contener numeros o caracteres especiales", Toast.LENGTH_SHORT).show();
-            return;
-        } else {
-            binding.edtNombreUsuario.setBackgroundResource(R.drawable.normal_border);
+            Toast.makeText(requireContext(), "El nombre no puede contener números o caracteres especiales", Toast.LENGTH_SHORT).show();
+            return false;
         }
 
+        // Validación de apellido
         if (!isValidName(apellidoUsuario)) {
             binding.edtApellidoUsuario.setBackgroundResource(R.drawable.error_border);
-            Toast.makeText(requireContext(), "El apellido no puede contener numeros o caracteres especiales", Toast.LENGTH_SHORT).show();
-            return;
-        } else {
-            binding.edtApellidoUsuario.setBackgroundResource(R.drawable.normal_border);
+            Toast.makeText(requireContext(), "El apellido no puede contener números o caracteres especiales", Toast.LENGTH_SHORT).show();
+            return false;
         }
 
+        // Validación de DNI
         if (!dni.matches("\\d+")) {
-            isValid = false;
             binding.edtDni.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(requireContext(), "El DNI debe contener solo números", Toast.LENGTH_SHORT).show();
-            return;
-        }else {
-            binding.edtDni.setBackgroundResource(R.drawable.normal_border);
+            return false;
         }
 
         if (dni.length() == 9 && Long.parseLong(dni) > 999999999) {
             Toast.makeText(requireContext(), "El DNI debe ser un número válido menor a 999999999", Toast.LENGTH_SHORT).show();
-            return;
-        }
-/*        boolean usuarioExiste = projectViewModel.userExists(nombreUsuario, apellidoUsuario, dni, projectModel);
-        if (!isEdit && usuarioExiste) {
-            Toast.makeText(requireContext(), "Este usuario ya está registrado con ese DNI", Toast.LENGTH_SHORT).show();
-            binding.edtDni.setBackgroundResource(R.drawable.error_border);
-            return;
-        }else {
-            binding.edtDni.setBackgroundResource(R.drawable.normal_border);
-        }
-*/
-        // Validación del grupo sanguíneo
-        if (grupoSanguineo.isEmpty()) {
-            isValid = false;
-            spinnerGrupoSanguineo.setBackgroundResource(R.drawable.error_border);
-            Toast.makeText(requireContext(), "No selecciono grupo sanguineo", Toast.LENGTH_SHORT).show();
-            return;
-        } else {
-            spinnerGrupoSanguineo.setBackgroundResource(R.drawable.normal_border);
+            return false;
         }
 
-        // Validación del grupo sanguíneo
+        // Validación de grupo sanguíneo
         if (grupoSanguineo.equals("Seleccionar Grupo")) {
-            isValid = false;
             spinnerGrupoSanguineo.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(requireContext(), "Por favor, seleccione un grupo sanguíneo", Toast.LENGTH_SHORT).show();
-            return;
-        } else {
-            spinnerGrupoSanguineo.setBackgroundResource(R.drawable.normal_border);
+            return false;
         }
 
-        if (isEdit) {
-            btnAddProject.setText("Actualizar");
-            updateProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr,datosMedicos,grupoSanguineo, base64Image, contactNamesList);
-        } else {
-            btnAddProject.setText("Agregar");
-            createProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr,datosMedicos,grupoSanguineo, base64Image, contactNamesList);
-        }
+        return isValid;
     }
+
 
     private void updateProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,
                                String datosMedicos, String grupoSanguineo, String base64Image, List<String> contactosList) {

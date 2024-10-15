@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
@@ -107,7 +108,7 @@ public class SimulacionFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 isConfirmationPressed = true; // Marca que el botón de confirmación fue presionado
-                showMessageDialog(v);
+                enviarMensaje(v);
             }
         });
 
@@ -121,9 +122,17 @@ public class SimulacionFragment extends Fragment {
             mp = null;
         }
 
+
         if (timer != null) {
             timer.cancel();
         }
+
+        /* ESTO ES EL SONIDOOOOO
+        // Ajustar el volumen del dispositivo al máximo
+        AudioManager audioManager = (AudioManager) getActivity().getSystemService(Context.AUDIO_SERVICE);
+        if (audioManager != null) {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
+        }*/
 
         mp = MediaPlayer.create(getActivity(), R.raw.sound_long);
         mp.start();
@@ -154,7 +163,7 @@ public class SimulacionFragment extends Fragment {
 
                 // Si el botón de confirmación no fue presionado, muestra el mensaje de emergencia
                 if (!isConfirmationPressed) {
-                    showMessageDialog(showMessage); // Pasar el botón directamente
+                    enviarMensaje(showMessage); // Pasar el botón directamente
                 }
             }
         }.start();
@@ -174,57 +183,91 @@ public class SimulacionFragment extends Fragment {
         progressBar.setProgress(0);
     }
 
-    public void showMessageDialog(View view) {
-
+    public void enviarMensaje(View view) {
         // Verifica y obtiene la ubicación actual
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            // Crea un LocationListener para recibir la ubicación actual
+            LocationListener locationListener = new LocationListener() {
+                @Override
+                public void onLocationChanged(Location location) {
+                    // Una vez que se obtiene la ubicación, detenemos las actualizaciones
+                    locationManager.removeUpdates(this);
 
-            if (location != null) {
-                try {
-                    Geocoder geocoder = new Geocoder(getActivity(), Locale.getDefault());
-                    List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                    String address = addresses.size() > 0 ? addresses.get(0).getAddressLine(0) : "Ubicación no disponible";
-
-                    // Crear mensaje de emergencia con ubicación o dirección
-                    String emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. "+"La persona: "+getDatos() +" Tuvo un accidente en la " +"Dirección aproximada: " + address;
-                    Log.d("SimulacionFragment", "Mensaje: " + emergencyMessage);
-                    //Log.d("SimulacionFragment", "Mensaje: " + contactos.toArray(new String[0]));
-                    //String emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. "+"La persona: "+getDatos() +" Tuvo un accidente en la " +"Dirección aproximada: " + address;
-                    // Enviar SMS de emergencia usando AppCompatActivity
-                    AppCompatActivity activity = (AppCompatActivity) getActivity();
-                    SmsUtils.checkAndSendSms(activity, contactos.toArray(new String[0]), emergencyMessage);
-
-
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                    builder.setTitle("Mensaje")
-                            .setMessage("Se envió el mensaje de emergencia.")
-                            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialog, int which) {
-                                    // Crear una nueva instancia del fragmento y pasar argumentos
-                                    DetalleUsuarioFragment detalleUsuarioFragment = new DetalleUsuarioFragment();
-                                    Bundle args = new Bundle();
-                                    args.putInt("userId", 1); // Asegúrate de establecer el ID del usuario
-                                    detalleUsuarioFragment.setArguments(args);
-
-                                    // Reemplazar el fragmento actual con DetalleUsuarioFragment
-                                    getActivity().getSupportFragmentManager()
-                                            .beginTransaction()
-                                            .replace(R.id.fcv_main_container, detalleUsuarioFragment) // Reemplaza 'fragment_container' con el ID de tu contenedor de fragmentos
-                                            .addToBackStack(null) // Añadir a la pila de retroceso si es necesario
-                                            .commit();
-                                }
-                            })
-                            .show();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    // Si obtenemos la ubicación, mostramos el mensaje de emergencia
+                    manejarUbicacion(location);
+                    Log.d("UbicacionActual", "Le paso la ubicacion actual: " + location);
                 }
+
+                @Override
+                public void onStatusChanged(String provider, int status, Bundle extras) {}
+
+                @Override
+                public void onProviderEnabled(String provider) {}
+
+                @Override
+                public void onProviderDisabled(String provider) {}
+            };
+
+            // Solicita actualizaciones de ubicación (solo GPS)
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, locationListener);
+/*
+            // Si no se obtiene la ubicación actual, intenta usar la última ubicación conocida
+            Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (lastKnownLocation != null) {
+                manejarUbicacion(lastKnownLocation);
+                Log.d("UltimaUbicacion", "Le paso la ultima ubicacion: " + lastKnownLocation);
+            } else {
+                // Manejar el caso cuando no hay ubicación conocida disponible
+                Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última conocida", Toast.LENGTH_SHORT).show();
+            }*/
+        }
+    }
+
+    private void manejarUbicacion(Location location) {
+        if (location != null) {
+            try {
+                // Ensure the fragment is attached to an activity
+                if (getActivity() == null) {
+                    Log.e("SimulacionFragment", "Fragment is not attached to an activity.");
+                    return;
+                }
+
+                Geocoder geocoder = new Geocoder(requireActivity(), Locale.getDefault());
+                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                String address = addresses.size() > 0 ? addresses.get(0).getAddressLine(0) : "Ubicación no disponible";
+
+                // Create emergency message with location or address
+                String emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. " +
+                        "La persona: " + getDatos() +
+                        " tuvo un accidente en la dirección aproximada: " + address;
+                Log.d("SimulacionFragment", "Mensaje: " + emergencyMessage);
+
+                // Enviar SMS de emergencia usando AppCompatActivity
+                AppCompatActivity activity = (AppCompatActivity) getActivity();
+                SmsUtils.checkAndSendSms(activity, contactos.toArray(new String[0]), emergencyMessage);
+
+                // Navegar al DetalleUsuarioFragment
+                DetalleUsuarioFragment detalleUsuarioFragment = new DetalleUsuarioFragment();
+                Bundle args = new Bundle();
+                args.putInt("userId", 1); // Ensure the user ID is set
+                detalleUsuarioFragment.setArguments(args);
+
+                requireActivity().getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.fcv_main_container, detalleUsuarioFragment)
+                        .addToBackStack(null)
+                        .commit();
+
+            } catch (IOException e) {
+                Log.e("SimulacionFragment", "Error al obtener la dirección de la ubicación", e);
             }
         }
     }
+
+
+
 
 
     // Método para obtener los datos del archivo JSON
@@ -288,14 +331,16 @@ public class SimulacionFragment extends Fragment {
         requestPermissionLauncher.launch(new String[]{
                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
                 Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.ACCESS_FINE_LOCATION
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.SEND_SMS // Solicitar permiso para enviar SMS
         });
     }
 
     private boolean hasPermissions() {
         return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-                && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+                && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                 && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED; // Verificar permiso para SMS
     }
 
     @Override
