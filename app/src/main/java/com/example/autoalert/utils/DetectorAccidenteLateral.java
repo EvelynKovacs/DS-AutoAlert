@@ -10,6 +10,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.autoalert.model.entities.DatosMovimiento;
+import com.example.autoalert.repository.CsvAccLateral;
 import com.example.autoalert.repository.DetectorAccidenteDataWriter;
 
 import org.junit.runner.RunWith;
@@ -26,12 +27,17 @@ public class DetectorAccidenteLateral {
     private static final double UMBRAL_CAMBIO_ANGULO = 70;  // Grados
     private static final double UMBRAL_DESACELERACION = 5.0;  // metros/seg^2
     private boolean cambioBruscoDetectado=false;
+    private CsvAccLateral csvHelper;
+    private double angulo;
+    private boolean desaceleracionBruscaDetectada=false;
+    private boolean autoParadoDetectado=false;
 
 
     private Context context; // Agregar contexto para el archivo
 
     public DetectorAccidenteLateral(Context context) {
         this.context = context.getApplicationContext(); // Usar el contexto de aplicación para evitar fugas
+        csvHelper=new CsvAccLateral(context);
 
 
     }
@@ -48,22 +54,31 @@ public class DetectorAccidenteLateral {
                 cambioBruscoDetectado = true;
                 historialDatos.clear();
                 Log.i(TAG, "Condiciones previas cumplidas. Recolectando 3 nuevos datos...");
+                csvHelper.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),angulo,cambioBruscoDetectado,desaceleracionBruscaDetectada,autoParadoDetectado,false );
                 return false; // Aún no es accidente, pero se cumple la primera condición
             }
+            csvHelper.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),angulo,cambioBruscoDetectado,desaceleracionBruscaDetectada,autoParadoDetectado,false );
+
         }
 
         if (cambioBruscoDetectado && historialDatos.size() == 3) {
             if (analizarMovimientoPosterior()) {
                 Log.i(TAG, "Posible accidente lateral detectado.");
+                csvHelper.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),angulo,cambioBruscoDetectado,desaceleracionBruscaDetectada,autoParadoDetectado,true);
+
                 DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTEEEEEEEEEEEEEEEEEEEEE LATERALLLLLLLLLLLLLLLLLLLL detectado.");
                 cambioBruscoDetectado = false;
                 return true;  // Accidente detectado
             } else {
                 Log.i(TAG, "No se detecta accidente.");
             }
-            cambioBruscoDetectado = false;
-        }
 
+            cambioBruscoDetectado = false;
+
+        }
+        if(historialDatos.size() != 3) {
+            csvHelper.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), 0, false, false, false, false);
+        }
         return false;  // Por defecto, no se detecta accidente
     }
 
@@ -79,7 +94,7 @@ public class DetectorAccidenteLateral {
         DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"Punto 3: ("+punto3.getLatitud()+","+punto3.getLongitud()+")");
 
 
-        double angulo = calcularAngulo(punto1, punto2, punto3);
+        angulo = calcularAngulo(punto1, punto2, punto3);
         Log.i(TAG,"ANGULO : "+ angulo+ " punto1="+ punto1.getLatitud()+","+punto1.getLongitud()+" punto2="+ punto2.getLatitud()+","+punto2.getLongitud()+" punto3="+ punto3.getLatitud()+","+punto3.getLongitud());
 
         DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"ANGULO: "+ angulo);
@@ -88,19 +103,19 @@ public class DetectorAccidenteLateral {
 
         DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"CAMBIO BRUSCO: "+ cambioBrusco);
 
-        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto2, punto3, UMBRAL_DESACELERACION);
-        Log.i(TAG,"DESACELERACION BRUSCA : "+ desaceleracionBrusca);
+         desaceleracionBruscaDetectada = esDesaceleracionBrusca(punto2, punto3, UMBRAL_DESACELERACION);
+        Log.i(TAG,"DESACELERACION BRUSCA : "+ desaceleracionBruscaDetectada);
 
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"DESACELERACION BRUSCA: "+ desaceleracionBrusca);
+        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"DESACELERACION BRUSCA: "+ desaceleracionBruscaDetectada);
 
-        boolean autoParado = elAutoEstaParado(punto1, punto2, punto3, UMBRAL_AUTO_PARADO);
-        Log.i(TAG,"AUTO PARADO : "+ autoParado);
+       autoParadoDetectado= elAutoEstaParado(punto1, punto2, punto3, UMBRAL_AUTO_PARADO);
+        Log.i(TAG,"AUTO PARADO : "+ autoParadoDetectado);
 
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"PARADO: "+ desaceleracionBrusca);
+        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"PARADO: "+ desaceleracionBruscaDetectada);
 
 
 
-        if (cambioBrusco && (desaceleracionBrusca || autoParado)) {
+        if (cambioBrusco && (desaceleracionBruscaDetectada || autoParadoDetectado)) {
             System.out.println("Cambio brusco y desaceleración brusca o auto parado detectados.");
             Log.i(TAG,"Cambio brusco y desaceleración brusca o auto parado detectados ");
 
@@ -138,8 +153,11 @@ public class DetectorAccidenteLateral {
 //                return "El auto desaceleró de manera progresiva.";
 //            }
 //        }
+        angulo = calcularAngulo(punto4, punto5, punto6);
 
-        if (esDesaceleracionBrusca(punto4, punto5, umbralDesaceleracion) || elAutoEstaParado(punto4, punto5, punto6, UMBRAL_AUTO_PARADO)) {
+
+
+        if (esDesaceleracionBrusca(punto4, punto5, umbralDesaceleracion)|| elAutoEstaParado(punto4, punto5, punto6, UMBRAL_AUTO_PARADO)) {
             return true;
         }
 
