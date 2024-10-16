@@ -58,7 +58,8 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
     private TextView ipTextView;
     private TextView myIpTextView;
 
-    private BroadcastSender broadcastSender;
+    private BroadcastSender broadcastSender = new BroadcastSender(); // Ensure this matches your constructor
+
     private MessageSender messageSender;
 
     private Handler handler = new Handler(Looper.getMainLooper());

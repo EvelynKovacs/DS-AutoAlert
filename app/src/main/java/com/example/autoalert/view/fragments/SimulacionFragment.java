@@ -107,6 +107,7 @@ public class SimulacionFragment extends Fragment {
         showMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Log.d("Click","TOQUE EL CLICK y el boolean es: "+isConfirmationPressed);
                 isConfirmationPressed = true; // Marca que el botón de confirmación fue presionado
                 enviarMensaje(v);
             }
@@ -186,12 +187,14 @@ public class SimulacionFragment extends Fragment {
     public void enviarMensaje(View view) {
         // Verifica y obtiene la ubicación actual
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
-
+        Log.d("EnviarMensaje", "Estoy dentro de EnviarMensaje");
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
             // Crea un LocationListener para recibir la ubicación actual
             LocationListener locationListener = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
+
+                    Log.d("EnviarMensaje", "Estoy dentro de onLocationChanged");
                     // Una vez que se obtiene la ubicación, detenemos las actualizaciones
                     locationManager.removeUpdates(this);
 
@@ -212,7 +215,7 @@ public class SimulacionFragment extends Fragment {
 
             // Solicita actualizaciones de ubicación (solo GPS)
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, locationListener);
-/*
+
             // Si no se obtiene la ubicación actual, intenta usar la última ubicación conocida
             Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             if (lastKnownLocation != null) {
@@ -221,7 +224,7 @@ public class SimulacionFragment extends Fragment {
             } else {
                 // Manejar el caso cuando no hay ubicación conocida disponible
                 Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última conocida", Toast.LENGTH_SHORT).show();
-            }*/
+            }
         }
     }
 

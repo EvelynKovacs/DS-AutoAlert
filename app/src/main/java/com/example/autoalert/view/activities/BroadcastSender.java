@@ -28,7 +28,7 @@ public class BroadcastSender {
 
 
                 if (mainActivity == null) {
-                    Log.e("BroadcastSender", "RedActivity es nulo. No se puede obtener el alias.");
+                    Log.e("BroadcastSender", "MainActivity es nulo. No se puede obtener el alias.");
                     return;
                 }
                 // Obtener el alias desde RedActivity

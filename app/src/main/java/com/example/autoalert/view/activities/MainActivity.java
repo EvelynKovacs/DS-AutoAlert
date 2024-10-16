@@ -155,6 +155,8 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         // Inicializar los componentes
         Log.i("MainActivity", "Inicio de hilos");
         broadcastSender = new BroadcastSender();
+        broadcastSender.setMainActivity(this);
+
         broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
         broadcastTimer = new BroadcastTimer();
@@ -166,6 +168,8 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         ipMessageMap = new HashMap<>();
 
         Log.i("MainActivity", "Inicio de Gestionador de Red.");
+        Log.d("MainActivity", "Alias en MainActivity: " + getAlias());
+
 
 
         // Iniciar la recepción de broadcasts y respuestas
@@ -403,8 +407,14 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
     protected void onDestroy() {
         super.onDestroy();
 
+
+
         // Detener el hotspot al cerrar la aplicación
-        hotspotManager.stopHotspot();
+        if (hotspotManager != null) {
+            hotspotManager.stopHotspot();
+        } else {
+            Log.e("MainActivity", "WifiHotspot object is null. Cannot stop hotspot.");
+        }
 
         CreacionRedActivity creacionRedActivity = new CreacionRedActivity();
         creacionRedActivity.stopWifiDirectHotspot();
