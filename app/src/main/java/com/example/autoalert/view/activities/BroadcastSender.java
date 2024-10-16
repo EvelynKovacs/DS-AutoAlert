@@ -7,32 +7,37 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+
 import java.util.Calendar;
+
 import java.util.Collections;
 
 public class BroadcastSender {
     private static final int BROADCAST_PORT = 8888;
     private static final String BROADCAST_MESSAGE = "DISCOVER_IP_REQUEST";
+
     private MainActivity mainActivity;
+    // Método setter para asignar redActivity
+    public void setMainActivity(MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
+    }
 
     public void sendBroadcast() {
         new Thread(() -> {
             try {
 
-                // Obtener el alias desde MainActivity
-                /* String alias = mainActivity.getAlias(); // Asegúrate de que este método esté devolviendo el valor correcto
+
+                if (mainActivity == null) {
+                    Log.e("BroadcastSender", "RedActivity es nulo. No se puede obtener el alias.");
+                    return;
+                }
+                // Obtener el alias desde RedActivity
+                String alias = mainActivity.getAlias(); // Asegúrate de que este método esté devolviendo el valor correcto
+
                 if (alias == null || alias.isEmpty()) {
                     Log.e("BroadcastSender", "Alias está vacío o nulo.");
                     return; // No continuar si el alias está vacío
                 }
-
-                 */
-
-                // Incorporar el alias en el mensaje
-                /*String messageWithAlias = BROADCAST_MESSAGE + ":" + alias;
-                Log.d("BroadCastSender", "El mensaje que envio: "+messageWithAlias);
-                byte[] sendData = messageWithAlias.getBytes();
-                 */
 
                 // Obtener la hora actual
                 Calendar calendar = Calendar.getInstance();
@@ -42,20 +47,30 @@ public class BroadcastSender {
 
                 String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
 
-                String message = timeString + "-" + BROADCAST_MESSAGE;
+
+                // Verificar si el alias está vacío
+                if (alias.isEmpty()) {
+                    Log.e("BroadcastSender", "No se puede enviar el mensaje de broadcast: alias vacío.");
+                    return; // Salir del método si el alias está vacío
+                }
+
+                String message = timeString + "-" + BROADCAST_MESSAGE + "-" + alias;
 
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);
                 InetAddress broadcastAddress = getBroadcastAddress();
 
+
                 byte[] sendData = message.getBytes();
                 //byte[] sendData = BROADCAST_MESSAGE.getBytes();
+
+                Log.d("BroadCastSender", "El mensaje en SendData: "+sendData.toString());
 
 
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcastAddress, BROADCAST_PORT);
                 socket.send(sendPacket);
-
                 socket.close();
+
                 Log.d("BroadcastSender", "Mensaje a enviar: " + message);
                 Log.d("BroadcastSender", "Mensaje de peticion broadcast enviada.");
 

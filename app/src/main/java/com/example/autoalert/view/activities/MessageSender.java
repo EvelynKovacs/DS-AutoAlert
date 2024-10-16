@@ -1,10 +1,12 @@
 package com.example.autoalert.view.activities;
 
+
 import android.util.Log;
 import android.widget.Toast;
 
 import java.io.OutputStream;
 import java.net.Socket;
+
 import java.util.Calendar;
 
 public class MessageSender {
@@ -32,6 +34,7 @@ public class MessageSender {
 
                 // Enviar el mensaje predefinido
                 outputStream.write(timestampMessage.getBytes());
+
                 outputStream.flush();
 
                 // Cerrar el socket después de enviar el mensaje
@@ -44,4 +47,3 @@ public class MessageSender {
         }).start();
     }
 }
-

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".view.fragments.SensoresFragment">
+
+    <!-- TODO: Update blank fragment layout -->
+    <!-- Encabezado con fondo verde, flecha a la izquierda y texto centrado -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/holo_green_dark"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <!-- Icono de la flecha para volver a la izquierda -->
+        <ImageView
+            android:id="@+id/back_arrow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:contentDescription="Flecha para regresar"
+            android:focusable="true"
+            android:src="@drawable/arrow_back_48px" />
+
+        <!-- Este espacio es para empujar el texto "Sensores" al centro -->
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+
+        <!-- Texto centrado -->
+        <TextView
+            android:id="@+id/header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Sensores"
+            android:textColor="@android:color/white"
+            android:textSize="24sp" />
+
+        <!-- Otro espacio para mantener el texto centrado -->
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <!-- ListView para mostrar la lista de sensores -->
+    <ListView
+        android:id="@+id/listView1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:divider="@android:color/black"
+        android:dividerHeight="1dp"
+        android:padding="16dp" />
+
+    <!-- Leyenda de colores para X, Y, Z -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="X"
+            android:textColor="@android:color/holo_red_dark"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp"
+            android:text="Y"
+            android:textColor="@color/green"
+            android:textSize="18sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Z"
+            android:textColor="@color/blue"
+            android:textSize="18sp" />
+    </LinearLayout>
+
+    <!-- Encabezado para gráfico de giroscopio -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="Giroscopio"
+        android:textSize="20sp" />
+
+    <!-- Gráfico para giroscopio -->
+    <com.jjoe64.graphview.GraphView
+        android:id="@+id/graphGyro"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" />
+
+    <!-- Encabezado para gráfico de acelerómetro -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="Acelerómetro"
+        android:textSize="20sp" />
+
+    <!-- Gráfico para acelerómetro -->
+    <com.jjoe64.graphview.GraphView
+        android:id="@+id/graphAcelerometer"
+        android:layout_width="match_parent"
+        android:layout_height="200dp" />
+
+    <!-- Texto de advertencia para sensores faltantes -->
+    <TextView
+        android:id="@+id/sensor_warning"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:dividerHeight="1dp"
+        android:padding="16dp"
+        android:text="Advertencia: Faltan sensores necesarios para algunas funcionalidades"
+        android:textColor="@android:color/holo_red_dark"
+        android:visibility="gone" />
+
+
+</LinearLayout>

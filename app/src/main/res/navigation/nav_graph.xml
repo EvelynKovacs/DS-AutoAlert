@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph">
+
+    <!-- Fragmento Principal -->
+    <fragment
+        android:id="@+id/fragment_principal"
+        android:name="com.example.autoalert.view.fragments.PrincipalFragment"
+        tools:layout="@layout/fragment_principal">
+        <action
+            android:id="@+id/action_principalFragment_to_sensoresFragment"
+            app:destination="@id/sensoresFragment" />
+        <action
+            android:id="@+id/action_principalFragment_to_simulacionFragment"
+            app:destination="@id/simulacionFragment" />
+        <action
+            android:id="@+id/action_principalFragment_to_ver_usuarioFragment"
+            app:destination="@id/verUsuarioFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/sensoresFragment"
+        android:name="com.example.autoalert.view.fragments.SensoresFragment"
+        tools:layout="@layout/fragment_sensores" />
+
+    <fragment
+        android:id="@+id/verUsuarioFragment"
+        android:name="com.example.autoalert.view.fragments.VerUsuarioFragment"
+        tools:layout="@layout/fragment_ver_usuario" >
+        <action
+            android:id="@+id/action_simulacionFragment_to_add_projectFragment"
+            app:destination="@id/addProjectFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/addProjectFragment"
+        android:name="com.example.autoalert.view.fragments.SensoresFragment"
+        tools:layout="@layout/fragment_add_project" />
+
+    <fragment
+        android:id="@+id/simulacionFragment"
+        android:name="com.example.autoalert.view.fragments.SimulacionFragment"
+        tools:layout="@layout/fragment_simulacion" >
+        <action
+            android:id="@+id/action_simulacionFragment_to_detalleUsuarioFragment"
+            app:destination="@id/detalleUsuarioFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/detalleUsuarioFragment"
+        android:name="com.example.autoalert.view.fragments.DetalleUsuarioFragment"
+        tools:layout="@layout/fragment_detalle_usuario" />
+
+
+</navigation>

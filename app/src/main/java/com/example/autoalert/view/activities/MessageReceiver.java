@@ -1,5 +1,6 @@
 package com.example.autoalert.view.activities;
 
+
 import android.content.Context;
 import android.util.Log;
 
@@ -12,13 +13,16 @@ public class MessageReceiver {
 
     private Context context;
     private final int LISTEN_PORT = 12345; // Puerto donde escuchar los mensajes
+
     private SistemaVotación sistemaVotacion;
 
 
     // Constructor que recibe el contexto de la actividad
     public MessageReceiver(Context context) {
         this.context = context;
+
         this.sistemaVotacion = new SistemaVotación((MainActivity) context);
+
     }
 
     public void startListening() {
@@ -40,15 +44,18 @@ public class MessageReceiver {
                     // Leer el mensaje que envió el cliente
                     String message = input.readLine();
 
+
                     String[] messagePartido = message.split("-");
 
                     message = messagePartido[1];
 
                     Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " a las " + messagePartido[0]);
+
                     Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " con " + message);
 
 
                     // Almacenar la IP y el mensaje recibido en el HashMap
+
                     ((MainActivity)context).storeMessageFromIp(clientIp, message);
 
                     if (message.startsWith("VOTO:")) {
@@ -60,6 +67,7 @@ public class MessageReceiver {
 
                     if(message.equals("SI")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
+
                         //((MainActivity)context).enviarEstado();
                         sistemaVotacion.enviarEstado();
                     }
@@ -82,4 +90,3 @@ public class MessageReceiver {
         }).start();
     }
 }
-

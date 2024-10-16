@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -25,14 +26,24 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
+
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.example.autoalert.R;
+import com.example.autoalert.view.fragments.PasosASeguirFragment;
+import com.example.autoalert.view.fragments.PrincipalFragment;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
+import java.io.File;
+import java.io.FileReader;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -48,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class MainActivity extends AppCompatActivity{
+public class MainActivity extends AppCompatActivity implements PasosASeguirFragment.OnCompleteListener{
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private WifiHotspot hotspotManager;
@@ -103,34 +114,34 @@ public class MainActivity extends AppCompatActivity{
 
     private HashMap<String, String> ipTimestamp = new HashMap<>();
 
+
+    private static final String PREFS_NAME = "AppPreferences";
+    private static final String FIRST_TIME_KEY = "isFirstTime";
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_inicio);
 
-        Log.d("MainActivity", "Inicio de componentes visuales.");
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        boolean isFirstTime = preferences.getBoolean(FIRST_TIME_KEY, true);
 
-        ssidTextView = findViewById(R.id.ssidTextView);
-        passwordTextView = findViewById(R.id.passwordTextView);
-        ssidEditText = findViewById(R.id.ssidEditText);
-        passwordEditText = findViewById(R.id.passwordEditText);
-        Button btnSendMessages = findViewById(R.id.btnSendMessages);
-        ipTextView = findViewById(R.id.ipTextView);
-        Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);
-        statusTextView = findViewById(R.id.statusTextView);
-        toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
-        ipMessageTextView = findViewById(R.id.ipMessageTextView);
-        myIpTextView = findViewById(R.id.myIpTextView);
-        btnYes = findViewById(R.id.btnYes);
-        btnNo = findViewById(R.id.btnNo);
-        statusBtnTextView = findViewById(R.id.statusBtnTextView);
-        responseTextView = findViewById(R.id.responseTextView);
-        estadoRedTextView = findViewById(R.id.redStatusTextView);
-        btnCreacionRed = findViewById(R.id.creacionRedbutton);
-        resultadoTextView = findViewById(R.id.resultadoTextView);
-        // Inicializa el alias
-        //aliasEditText = findViewById(R.id.aliasEditText);
+        if (savedInstanceState == null) {
+            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+            transaction.setReorderingAllowed(true);
+
+            if (isFirstTime) {
+                PasosASeguirFragment pasosFragment = new PasosASeguirFragment();
+                pasosFragment.setOnCompleteListener(this);
+                transaction.add(R.id.fcv_main_container, pasosFragment);
+            } else {
+                transaction.add(R.id.fcv_main_container, new PrincipalFragment());
+            }
+
+            transaction.commit();
+        }
+
         Log.i("MainActivity", "Componentes inicializados.");
 
         // Inicializamos wifiManager
@@ -156,35 +167,13 @@ public class MainActivity extends AppCompatActivity{
 
         Log.i("MainActivity", "Inicio de Gestionador de Red.");
 
-        // Obtener y mostrar la IP del dispositivo
-        Log.i("MainActivity", "Mostrando IP....");
-        String deviceIpAddress = networkUtils.getDeviceIpAddress();
-        ipTextView.setText("Lista de IPs" + deviceIpAddress);
-
-        String myDeviceIpAddress = networkUtils.getDeviceIpAddress();
-        myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
 
         // Iniciar la recepción de broadcasts y respuestas
         Log.i("MainActivity", "Escuchando mensajes de broadcast.");
         broadcastReceiver.startListening();
 
         broadcastTimer.startBroadcastTimer();
-        // Enviar mensaje de broadcast cuando se haga clic en el botón
-        btnSendBroadcast.setOnClickListener(view -> {
-            broadcastSender.sendBroadcast();
-        });
 
-        btnYes.setOnClickListener(view -> {
-            setStatusTextViewOnYes();
-        });
-
-        btnNo.setOnClickListener(view -> {
-            setStatusTextViewOnNo();
-        });
-
-        btnCreacionRed.setOnClickListener(view -> {
-            irACrecionRed(view);
-        });
 
         // Verificar y solicitar permisos necesarios
         Log.i("MainActivity", "Verificando permisos....");
@@ -198,49 +187,8 @@ public class MainActivity extends AppCompatActivity{
 
 
 
-        btnSendMessages.setOnClickListener(view -> {
-                Log.i("Envio de mensaje", "ESTOY POR ENVIAR UN MENSAJE. PERO UNO NOMAS");
-                enviarMensaje();
-                // Una vez que el mensaje se haya enviado, reiniciar el estado
-            if (responseTextView.getText().equals("SI") && ipList.isEmpty()){
-                sistemaVotacion.iniciarConteo();
-            }
-        });
-
-
-
     }
 
-
-    public void irACrecionRed(View view){
-        Intent i = new Intent(this, CreacionRedActivity.class);
-        startActivity(i);
-    }
-
-
-    public void enviarMensaje(){
-        String message = responseTextView.getText().toString();
-
-        Log.i("Enviar Mensaje", "Enviando mensaje.");
-
-        // Supongamos que quieres enviar el mensaje a la primera IP de la lista
-        if (!ipList.isEmpty()) {
-            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
-            for(String targetIp : ipList) {
-                messageSender.sendMessage(targetIp, message);
-                Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
-                Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
-
-            }
-
-            if(responseTextView.getText().equals("SI")){
-                sistemaVotacion.enviarEstado();
-            }
-        } else {
-            Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
-            Toast.makeText(this, "No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
-        }
-    }
 
 
     // Método para actualizar la lista de IPs en el TextView
@@ -496,19 +444,12 @@ public class MainActivity extends AppCompatActivity{
         cont = 0;
     }
 
-    public String getResponseText(){
-        return responseTextView.getText().toString();
-    }
+
 
     public Set<String> getIpList(){
         return ipList;
     }
 
-    public void setResultadoText(String message){
-        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
-        displayText.append(message).append("\n");
-        resultadoTextView.setText(message);
-    }
 
     public void actualizarIpTimeStamp(String senderIp, String timestamp) {
         ipTimestamp.put(senderIp, timestamp);
@@ -564,6 +505,62 @@ public class MainActivity extends AppCompatActivity{
         Log.i("Diferencia de Tiempo","Diferencia en segundos: " + diferenciaEnSegundos);
 
         return diferenciaEnSegundos;
+    }
+
+    @Override
+    public void onComplete() {
+        markFirstTimeCompleted();
+    }
+
+    public void markFirstTimeCompleted() {
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(FIRST_TIME_KEY, false);
+        editor.apply();
+    }
+
+    // Guardar la IP y el alias recibido
+    public void storeAliasFromIp(String ip, String alias) {
+        ipAliasMap.put(ip, alias);
+        Log.d("RedActivity", "Guardado: IP " + ip + " con alias " + alias);
+    }
+
+    // Método para obtener el alias de una IP
+    public String getAliasFromIp(String ip) {
+        return ipAliasMap.get(ip);
+    }
+
+    // Método para obtener el alias del archivo JSON
+    public String getAlias() {
+        String alias = "";
+        try {
+            // Ruta del archivo JSON
+            File file = new File(getFilesDir(), "user_data.json"); // Cambia la ruta si es necesario
+
+            if (file.exists()) {
+                // Lee el archivo JSON
+                FileReader fileReader = new FileReader(file);
+
+                // Usa Gson para parsear el archivo JSON
+                Gson gson = new Gson();
+                JsonObject userData = gson.fromJson(fileReader, JsonObject.class);
+
+                // Extrae el nombre y apellido
+                String nombreUsuario = userData.get("nombreUsuario").getAsString();
+                String apellidoUsuario = userData.get("apellidoUsuario").getAsString();
+
+                // Genera el alias
+                alias = nombreUsuario + apellidoUsuario;
+
+                fileReader.close();
+            } else {
+                Log.e("RedActivity", "El archivo JSON no existe.");
+            }
+        } catch (Exception e) {
+            Log.e("RedActivity", "Error al leer el archivo JSON: " + e.getMessage());
+        }
+
+        return alias.trim(); // Devuelve el alias generado
     }
 
 }

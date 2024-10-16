@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">AutoAlert</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="mediaPlay">Inicio Simulacro</string>
+    <string name="msg_accidente">SE DETECTÓ ACCIDENTE</string>
+    <string name="envio_msg_accidente">ENVIAR MENSAJES DE EMERGENCIA</string>
+
 </resources>

@@ -1,5 +1,6 @@
 package com.example.autoalert.view.activities;
 
+
 import android.content.Context;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -46,7 +47,9 @@ public class WifiHotspot {
                 Log.d("Hotspot", "Hotspot iniciado. SSID: " + ssid + " Contraseña: " + password);
                 isHotspotEnabled = true;
 
-                // Notificar al listener (MainActivity)
+
+                // Notificar al listener (redActivity)
+
                 if (hotspotListener != null) {
                     hotspotListener.onHotspotStarted(ssid, password);
                 }

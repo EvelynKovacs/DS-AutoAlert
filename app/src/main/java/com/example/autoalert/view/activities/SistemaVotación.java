@@ -8,6 +8,7 @@ import java.util.HashMap;
 public class SistemaVotación {
 
     private MainActivity mainActivity;
+    private RedActivity redActivity;
     private MessageSender messageSender;
 
     public SistemaVotación(MainActivity mainActivity) {
@@ -54,7 +55,7 @@ public class SistemaVotación {
             }
         }
         Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
-        if(mainActivity.getResponseText().equals("SI")){
+        if(redActivity.getResponseText().equals("SI")){
             Log.i("Conteo de votos", "Se añade un VOTO:SI");
             contPositivo++;
         } else {
@@ -66,18 +67,20 @@ public class SistemaVotación {
         if (contPositivo >= contNegativo) {
             Log.i("Conteo de votos", "Hay Accidente");
             displayText.append("Resultado Votación: HAY ACCIDENTE").append("\n");
-            mainActivity.setResultadoText("Resultado Votación: HAY ACCIDENTE");
+            redActivity.setResultadoText("Resultado Votación: HAY ACCIDENTE");
+            // Que vaya a PANTALLA DE SIMULACIÓN
         } else {
             Log.i("Conteo de votos", "No hubo accidente");
             displayText.append("Resultado Votación: NO HUBO ACCIDENTE").append("\n");
-            mainActivity.setResultadoText("Resultado Votación: NO HAY ACCIDENTE");
+            redActivity.setResultadoText("Resultado Votación: NO HAY ACCIDENTE");
         }
     }
 
     public void enviarEstado(){
+        messageSender = new MessageSender();
         String message;
         Log.i("Envio de Estado", "Enviando estado");
-        if(mainActivity.getResponseText().equals("SI")){
+        if(redActivity.getResponseText().equals("SI")){
             message = "VOTO:SI";
             Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
 

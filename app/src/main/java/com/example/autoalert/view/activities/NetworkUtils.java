@@ -6,7 +6,7 @@ import java.util.Enumeration;
 
 public class NetworkUtils {
 
-    //ESTO SACARLO Y DEJARLO EN UNA CLASE DE NETWORK UTILS
+
     public String getDeviceIpAddress() {
         try {
             for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
