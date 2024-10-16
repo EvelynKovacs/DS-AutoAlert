@@ -563,4 +563,13 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         return alias.trim(); // Devuelve el alias generado
     }
 
+    @Override
+    public void onFirstTimeCompleted() {
+        // Logic to mark first time as completed
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(FIRST_TIME_KEY, false);
+        editor.apply();
+    }
+
 }

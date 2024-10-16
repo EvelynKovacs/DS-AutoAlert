@@ -89,7 +89,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     private SistemaVotación sistemaVotación;
 
-    private NetworkUtils networkUtils;
+    NetworkUtils networkUtils = new NetworkUtils();
 
     @SuppressLint("MissingInflatedId")
     @Override

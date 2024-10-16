@@ -24,31 +24,26 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
     private NetworkUtils networkUtils = new NetworkUtils();
     @Override
     public void onReceive(Context context, Intent intent) {
-
         if (intent.getAction().equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
             if (isConnectedToNetwork(context)) {
                 Log.i("NetworkChangeReceiver", "Dispositivo conectado a una red.");
-                // Cast seguro
 
-                MainActivity mainActivity = (MainActivity) context;
-                //mainActivity.limpiarListasIp();
-
-                // Llamar a un método en MainActivity o acceder a variables
-                //mainActivity.setMyIpTextView("Mi IP:" +networkUtils.getDeviceIpAddress());
-
-                //mainActivity.getBtnCreacionRed().setEnabled(false);
-                //mainActivity.limpiarListasIp();
+                if (context instanceof RedActivity) {
+                    RedActivity mainActivity = (RedActivity) context;
+                    // Lógica específica de MainActivity
+                    mainActivity.setMyIpTextView("Mi IP: " + networkUtils.getDeviceIpAddress());
+                } else {
+                    Log.w("NetworkChangeReceiver", "El contexto no es MainActivity.");
+                }
 
                 broadcastSender = new BroadcastSender();
                 broadcastSender.sendBroadcast();
-
             } else {
-
-                //redActivity.getBtnCreacionRed().setEnabled(true);
                 Log.i("NetworkChangeReceiver", "Dispositivo desconectado de la red.");
             }
         }
     }
+
 
     private boolean isConnectedToNetwork(Context context) {
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);

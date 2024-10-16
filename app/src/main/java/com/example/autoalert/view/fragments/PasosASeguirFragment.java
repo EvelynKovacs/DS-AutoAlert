@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.autoalert.R;
-import com.example.autoalert.view.activities.MenuInicioActivity;
+
 import com.google.android.material.button.MaterialButton;
 
 public class PasosASeguirFragment extends Fragment {
@@ -17,7 +17,9 @@ public class PasosASeguirFragment extends Fragment {
 
     public interface OnCompleteListener {
         void onComplete();
+        void onFirstTimeCompleted();
     }
+
 
     private OnCompleteListener listener;
 
@@ -42,19 +44,19 @@ public class PasosASeguirFragment extends Fragment {
 
         // Configurar el clic en el botón
         btnContinue.setOnClickListener(v -> {
-            // Iniciar transacción para cambiar al Usuario
+            // Fragment transaction logic
             FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
             transaction.replace(R.id.fcv_main_container, new AddProjectFragment());
             transaction.addToBackStack(null);
             transaction.commit();
 
-            // Marcar que ya no es la primera vez que ingresa
-            ((MenuInicioActivity) getActivity()).markFirstTimeCompleted();
-
+            // Notify the listener that first time is completed
             if (listener != null) {
+                listener.onFirstTimeCompleted();
                 listener.onComplete();
             }
         });
+
 
         return view;
     }

@@ -9,7 +9,7 @@ import androidx.media3.common.util.Log;
 import com.example.autoalert.R;
 import com.example.autoalert.view.fragments.PasosASeguirFragment;
 import com.example.autoalert.view.fragments.PrincipalFragment;
-
+/*
 public class MenuInicioActivity extends AppCompatActivity implements PasosASeguirFragment.OnCompleteListener {
 
     private static final String PREFS_NAME = "AppPreferences";
@@ -52,4 +52,4 @@ public class MenuInicioActivity extends AppCompatActivity implements PasosASegui
         editor.putBoolean(FIRST_TIME_KEY, false);
         editor.apply();
     }
-}
+}*/
