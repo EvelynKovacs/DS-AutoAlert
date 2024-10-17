@@ -195,7 +195,7 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         Log.i("MainActivity", "Verificando permisos....");
         checkPermissions();
 
-        MessageReceiver messageReceiver = new MessageReceiver(this);
+        MessageReceiver messageReceiver = new MessageReceiver(this,this);
         messageReceiver.startListening();
 
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
@@ -276,91 +276,107 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
     }
 
 // COSAS DEL SISTEMA DE VOTACION
-//    public void guardarVoto(String ip, String voto){
-//        Log.i("Guardado de votos", "Se inicia el guardado de votos.");
-//        String[] votoArray = voto.split(":");
-//        String resultadoVoto = votoArray[1];
-//        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
-//
-//        ipMessageMap.put(ip, resultadoVoto);
-//        // Mostrar el mensaje recibido en la interfaz
-//        // Actualizar la interfaz con el contenido del HashMap
-//        updateIpMessageView();
-//        runOnUiThread(() -> {
-//            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + resultadoVoto, Toast.LENGTH_SHORT).show();
-//        });
-//        cont = cont + 1;
-//        Log.i("Guardado de votos", "El contador esta en " + cont);
-//
-//        if(ipList.size() == cont) {
-//            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
-//            iniciarConteo();
-//            cont = 0;
-//        }
-//    }
-//
-//    public void iniciarConteo(){
-//        int contPositivo = 0;
-//        int contNegativo = 0;
-//        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
-//        Log.i("Conteo de votos", "Conteo de votos iniciado.");
-//
-//        for (String ip : ipMessageMap.keySet()) {
-//            String voto = ipMessageMap.get(ip);
-//            if ("SI".equals(voto)) {
-//                contPositivo++;
-//                Log.i("Conteo de votos", "VOTO:SI");
-//            } else if ("NO".equals(voto)) {
-//                contNegativo++;
-//                Log.i("Conteo de votos", "VOTO:NO");
-//            }
-//        }
-//
-//        Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
-//        if(responseTextView.getText().equals("SI")){
-//            Log.i("Conteo de votos", "Se añade un VOTO:SI");
-//            contPositivo++;
-//        } else {
-//            Log.i("Conteo de votos", "Se añade un VOTO:NO");
-//            contNegativo++;
-//        }
-//
+    public void guardarVoto(String ip, String voto){
+        Log.i("Guardado de votos", "Se inicia el guardado de votos.");
+        String[] votoArray = voto.split(":");
+        String resultadoVoto = votoArray[1];
+        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
+
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+
+        Set <String> ipListNueva = sharedPref.getStringSet("ipList", new HashSet<>());
+
+
+        storeMessageFromIp(ip, resultadoVoto);
+        // Mostrar el mensaje recibido en la interfaz
+        // Actualizar la interfaz con el contenido del HashMap
+        updateIpMessageView();
+        runOnUiThread(() -> {
+            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + resultadoVoto, Toast.LENGTH_SHORT).show();
+        });
+        cont = cont + 1;
+        Log.i("Guardado de votos", "El contador esta en " + cont);
+
+        if(ipListNueva.size() == cont) {
+            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
+            iniciarConteo();
+            cont = 0;
+        }
+    }
+
+    public void iniciarConteo(){
+        int contPositivo = 0;
+        int contNegativo = 0;
+        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+        Log.i("Conteo de votos", "Conteo de votos iniciado.");
+
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+        String estadoAccidente = sharedPref.getString("estadoAccidente","NO");
+
+
+        for (String ip : ipMessageMap.keySet()) {
+            String voto = ipMessageMap.get(ip);
+            if ("SI".equals(voto)) {
+                contPositivo++;
+                Log.i("Conteo de votos", "VOTO:SI");
+            } else if ("NO".equals(voto)) {
+                contNegativo++;
+                Log.i("Conteo de votos", "VOTO:NO");
+            }
+        }
+
+        Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
+        if(estadoAccidente.equals("SI")){
+            Log.i("Conteo de votos", "Se añade un VOTO:SI");
+            contPositivo++;
+        } else {
+            Log.i("Conteo de votos", "Se añade un VOTO:NO");
+            contNegativo++;
+        }
+
 //        // Mostrar resultado basado en la cantidad de votos
-//        if (contPositivo >= contNegativo) {
-//            Log.i("Conteo de votos", "Hay Accidente");
-//            displayText.append("Resultado Votación: HAY ACCIDENTE").append("\n");
-//            resultadoTextView.setText("Resultado Votación: HAY ACCIDENTE");
-//        } else {
-//            Log.i("Conteo de votos", "No hubo accidente");
-//            displayText.append("Resultado Votación: NO HUBO ACCIDENTE").append("\n");
-//            resultadoTextView.setText("Resultado Votación: NO HUBO ACCIDENTE");
-//        }
-//    }
-//
-//    public void enviarEstado(){
-//        String message;
-//        Log.i("Envio de Estado", "Enviando estado");
-//        if(responseTextView.getText().equals("SI")){
-//            message = "VOTO:SI";
-//            Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
-//
-//        } else {
-//            message = "VOTO:NO";
-//            Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
-//
-//        }
-//
-//
-//
-//        // Supongamos que quieres enviar el mensaje a la primera IP de la lista
-//        if (!ipList.isEmpty()) {
-//            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
-//            for(String targetIp : ipList) {
-//                messageSender.sendMessage(targetIp, message);
-//                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
-//            }
-//        }
-//    }
+        if (contPositivo >= contNegativo) {
+            Log.i("Conteo de votos", "Hay Accidente");
+            displayText.append("Resultado Votación: HAY ACCIDENTE").append("\n");
+
+        } else {
+            Log.i("Conteo de votos", "No hubo accidente");
+            displayText.append("Resultado Votación: NO HUBO ACCIDENTE").append("\n");
+
+        }
+    }
+
+    public void enviarEstado(){
+        String message;
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+
+        Log.i("Envio de Estado", "Enviando estado");
+        if(sharedPref.getString("estadoAccidente","NO").equals("SI")){
+            message = "VOTO:SI";
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
+
+        } else {
+            message = "VOTO:NO";
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
+
+        }
+
+
+        Set <String> ipListNueva = sharedPref.getStringSet("ipList", new HashSet<>());
+
+
+
+        // Supongamos que quieres enviar el mensaje a la primera IP de la lista
+        if (!ipListNueva.isEmpty()) {
+            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
+            for(String targetIp : ipListNueva) {
+                messageSender.sendMessage(targetIp, message);
+                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
+            }
+        }
+    }
 
     //ACA FINALIZA COSAS DEL SISTEMA DE VOTACION
 

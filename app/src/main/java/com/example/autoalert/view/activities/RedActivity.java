@@ -90,7 +90,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     private MainActivity mainActivity = new MainActivity();
 
-    private SistemaVotación sistemaVotación = new SistemaVotación(mainActivity);
+//    private SistemaVotación sistemaVotación = new SistemaVotación(mainActivity);
 
     NetworkUtils networkUtils = new NetworkUtils();
 
@@ -178,7 +178,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
             if (isConnectedToWifi()){
                 enviarMensaje();
             } else if (responseTextView.getText().equals("SI")){
-                sistemaVotación.iniciarConteo();
+                mainActivity.iniciarConteo();
             }
         });
 
@@ -220,7 +220,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
             }
 
             if(responseTextView.getText().equals("SI")){
-                sistemaVotación.enviarEstado();
+                mainActivity.enviarEstado();
             }
         } else {
             Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");

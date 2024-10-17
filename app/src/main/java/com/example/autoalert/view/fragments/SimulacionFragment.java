@@ -22,6 +22,8 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -188,19 +190,31 @@ public class SimulacionFragment extends Fragment {
         // Verifica y obtiene la ubicación actual
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
         Log.d("EnviarMensaje", "Estoy dentro de EnviarMensaje");
+
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // Variable para asegurarse de que solo se procese una ubicación
+            final boolean[] ubicacionProcesada = {false};
+
+            // Intenta obtener la última ubicación conocida primero
+            Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
             // Crea un LocationListener para recibir la ubicación actual
             LocationListener locationListener = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
+                    if (!ubicacionProcesada[0]) {  // Solo procesar si no se ha hecho antes
+                        Log.d("EnviarMensaje", "Estoy dentro de onLocationChanged");
 
-                    Log.d("EnviarMensaje", "Estoy dentro de onLocationChanged");
-                    // Una vez que se obtiene la ubicación, detenemos las actualizaciones
-                    locationManager.removeUpdates(this);
+                        // Detenemos las actualizaciones de ubicación
+                        locationManager.removeUpdates(this);
 
-                    // Si obtenemos la ubicación, mostramos el mensaje de emergencia
-                    manejarUbicacion(location);
-                    Log.d("UbicacionActual", "Le paso la ubicacion actual: " + location);
+                        // Procesamos solo la ubicación actual
+                        manejarUbicacion(location);
+                        Log.d("UbicacionActual", "Le paso la ubicación actual: " + location);
+
+                        // Marcar que ya se procesó una ubicación
+                        ubicacionProcesada[0] = true;
+                    }
                 }
 
                 @Override
@@ -213,20 +227,28 @@ public class SimulacionFragment extends Fragment {
                 public void onProviderDisabled(String provider) {}
             };
 
-            // Solicita actualizaciones de ubicación (solo GPS)
+            // Solicita actualizaciones de ubicación
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, locationListener);
 
-            // Si no se obtiene la ubicación actual, intenta usar la última ubicación conocida
-            Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (lastKnownLocation != null) {
-                manejarUbicacion(lastKnownLocation);
-                Log.d("UltimaUbicacion", "Le paso la ultima ubicacion: " + lastKnownLocation);
-            } else {
-                // Manejar el caso cuando no hay ubicación conocida disponible
-                Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última conocida", Toast.LENGTH_SHORT).show();
-            }
+            // Retrasamos la verificación de la última ubicación conocida para dar tiempo a la actualización actual
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                // Si no hemos procesado la ubicación actual, usamos la última conocida
+                if (!ubicacionProcesada[0]) {
+                    if (lastKnownLocation != null) {
+                        manejarUbicacion(lastKnownLocation);
+                        Log.d("UltimaUbicacion", "Le paso la última ubicación: " + lastKnownLocation);
+
+                        // Marcar que ya se procesó una ubicación
+                        ubicacionProcesada[0] = true;
+                    } else {
+                        // Manejar el caso cuando no hay ubicación conocida disponible
+                        Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última conocida", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            }, 5000); // Esperamos 5 segundos antes de usar la última ubicación conocida
         }
     }
+
 
     private void manejarUbicacion(Location location) {
         if (location != null) {

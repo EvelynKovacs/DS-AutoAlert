@@ -15,13 +15,14 @@ public class MessageReceiver {
     private final int LISTEN_PORT = 12345; // Puerto donde escuchar los mensajes
 
     private SistemaVotación sistemaVotacion;
-
+    private MainActivity mainActivity;
 
     // Constructor que recibe el contexto de la actividad
-    public MessageReceiver(Context context) {
+    public MessageReceiver(Context context, MainActivity mainActivity) {
         this.context = context;
 
         this.sistemaVotacion = new SistemaVotación((MainActivity) context);
+        this.mainActivity = mainActivity;
 
     }
 
@@ -61,7 +62,7 @@ public class MessageReceiver {
                     if (message.startsWith("VOTO:")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ESTADO. Mensaje: " + message);
                         //(MainActivity)context).guardarVoto(clientIp, message);
-                        sistemaVotacion.guardarVoto(clientIp, message);
+                        mainActivity.guardarVoto(clientIp, message);
 
                     }
 
@@ -69,7 +70,7 @@ public class MessageReceiver {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
 
                         //((MainActivity)context).enviarEstado();
-                        sistemaVotacion.enviarEstado();
+                        mainActivity.enviarEstado();
                     }
 
                     /*if(message.equals("Desconexion")) {
