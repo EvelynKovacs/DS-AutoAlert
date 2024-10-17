@@ -1,5 +1,6 @@
 package com.example.autoalert.viewmodel;
 
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
@@ -24,6 +25,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
@@ -52,6 +54,7 @@ public class SpeedViewModel extends AndroidViewModel {
     private static final int REQUEST_LOCATION_PERMISSION = 1001;
     public static final int REQUEST_CHECK_SETTINGS = 1002;
     private static int MAX_SIZE_COORD = 3;
+    private static int UMBRAL_MIN_VEL=5;
 
     private MutableLiveData<Double> speedKmh = new MutableLiveData<>();
     private MutableLiveData<Location> location = new MutableLiveData<>();
@@ -69,6 +72,9 @@ public class SpeedViewModel extends AndroidViewModel {
     private double previousLatitude;
     private double previousLongitude;
     private boolean isFirstCoordinate = true;
+
+    private boolean deteccionIniciada = false;
+
 
     private final CoordinateQueue coordinateQueue = new CoordinateQueue();
     private DetectorAccidente accidente;
@@ -137,21 +143,23 @@ public class SpeedViewModel extends AndroidViewModel {
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastSpeedUpdate >= UPDATE_INTERVAL_MS) {
                 lastSpeedUpdate = currentTime;
+                processSpeedData(location);
 
-                float currentSpeed = location.getSpeed();  // Velocidad en m/s
-                DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en M/S:" + currentSpeed);
+
+                //float currentSpeed = location.getSpeed();  // Velocidad en m/s
+                //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en M/S:" + currentSpeed);
 
                 //speedAndAccelerationHandler.handleSpeedAndAcceleration(currentSpeed, currentTime, accelerationQueueRepository);
 
-                double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
-                speedKmh.setValue(speedKmhValue);
+                //double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
+                //speedKmh.setValue(speedKmhValue);
 
                 // Registrar datos de velocidad y aplicar filtro de Kalman
-                DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en KM/H:" + speedKmhValue);
-                sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
+                //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en KM/H:" + speedKmhValue);
+                //sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
 
                 // Registrar datos de movimiento
-                accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), currentSpeed, currentTime));
+                //accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), currentSpeed, currentTime));
 
                 // Obtener dirección desde las coordenadas
                 addressFetcher.fetchAddressFromLocation(location, address);
@@ -162,6 +170,30 @@ public class SpeedViewModel extends AndroidViewModel {
 
 
         }
+    }
+    private void processSpeedData(Location location) {
+        float currentSpeed = location.getSpeed();  // Velocidad en m/s
+        double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
+        speedKmh.setValue(speedKmhValue);
+        sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
+        if (!deteccionIniciada && speedKmhValue > UMBRAL_MIN_VEL) {
+            Log.i("MainActivity", "Velocidad mayor a 5km/h. Iniciando detección de accidentes.");
+            Toast.makeText(getApplication().getApplicationContext(), "Velocidad mayor a 5 km/h. Iniciando detección de accidentes.", Toast.LENGTH_LONG).show();
+
+            deteccionIniciada = true;  // Marcamos que ya hemos iniciado la detección
+            accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), speedKmhValue, System.currentTimeMillis()));
+        }else if (deteccionIniciada){
+            accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), speedKmhValue, System.currentTimeMillis()));
+
+        }else{
+            Log.i("MainActivity", "Velocidad menor a 5km/h. Esperando para iniciar la detección.");
+            Toast.makeText(getApplication().getApplicationContext(), "Velocidad menor a 5 km/h. Esperando para iniciar la detección.", Toast.LENGTH_LONG).show();
+
+
+        }
+//csvHelper.saveDataToCsv(speedKmhValue,location.getLatitude(),location.getLongitude(),0,false,false,false);
+        // csvHelper.saveDataToCsv(speedKmhValue,location.getLatitude(),location.getLongitude(),address.getValue());
+
     }
 
 //    private void updateLocation(Location location) {
@@ -262,16 +294,13 @@ public class SpeedViewModel extends AndroidViewModel {
                 .setMinUpdateIntervalMillis(UPDATE_INTERVAL_MS / 2)
                 .build();
 
-        Log.i("SpeedViewModel", "Omg");
 
 
         LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
-        Log.i("SpeedViewModel", "zzzz");
 
 
         Task<LocationSettingsResponse> task = LocationServices.getSettingsClient(context)
                 .checkLocationSettings(builder.build());
-        Log.i("SpeedViewModel", "nnnn");
 
         //resumeLocationUpdates();
 
@@ -281,7 +310,6 @@ public class SpeedViewModel extends AndroidViewModel {
             resumeLocationUpdates(); // Llama a resumeLocationUpdates solo si la ubicación está activada
         });
         //task.addOnSuccessListener(locationSettingsResponse -> resumeLocationUpdates());
-        Log.i("SpeedViewModel", "jjj");
 
 
         task.addOnFailureListener(e -> {
