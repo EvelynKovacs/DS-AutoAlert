@@ -63,7 +63,7 @@ public class BroadcastReceiver {
                             //String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
 
                             // Almacenar la IP y el alias en MainActivity
-                            //redActivity.storeAliasFromIp(senderIp, senderAlias);
+                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
 
 
                             mainActivity.ipList.add(senderIp);

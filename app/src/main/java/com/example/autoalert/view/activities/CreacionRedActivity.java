@@ -175,6 +175,7 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         editor.putBoolean("redCreada", true);
         editor.apply(); // Guardar los cambios
 
+
         MainActivity mainActivity = (MainActivity) context;
 
         // Llamar a un método en MainActivity o acceder a variables

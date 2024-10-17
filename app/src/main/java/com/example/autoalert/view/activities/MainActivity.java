@@ -118,11 +118,23 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
     private static final String PREFS_NAME = "AppPreferences";
     private static final String FIRST_TIME_KEY = "isFirstTime";
 
+
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inicio);
+
+        // Guardar los datos en SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        // Guardar nombre y edad
+        editor.putStringSet("ipList",ipList);
+        editor.putString("estadoAccidente","NO");
+        editor.apply(); // Guardar los cambios
+
 
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean isFirstTime = preferences.getBoolean(FIRST_TIME_KEY, true);
@@ -199,23 +211,30 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
     public void updateIpList(String ip) {
         Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
 
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+        Set <String> ipListNueva = sharedPref.getStringSet("ipList", new HashSet<>());
+
+
         // Comprobar si la IP ya está en la lista
-        if (!ipList.contains(ip)) {
+        if (!ipListNueva.contains(ip)) {
             Log.i("Actualizacion de lista", "IP agregada: " + ip);
-            ipList.add(ip);  // Agregar IP a la lista interna
-
-            // Actualizar el TextView con todas las IPs acumuladas
-            runOnUiThread(() -> {
-                StringBuilder ips = new StringBuilder("IPs recibidas:\n");
-                for (String savedIp : ipList) {
-                    ips.append(savedIp).append("\n");
-                    Log.i("Lista de IPs", "IP guardada: " + savedIp); // Log para cada IP
-
-                }
-                ipTextView.setText(ips.toString());
-                Log.i("Actualizacion de lista", "Lista actualizada en pantalla.");
-            });
+            ipListNueva.add(ip);  // Agregar IP a la lista interna
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putStringSet("ipList",ipListNueva);
+            editor.apply();
         }
+        // Actualizar el TextView con todas las IPs acumuladas
+        runOnUiThread(() -> {
+            StringBuilder ips = new StringBuilder("IPs recibidas:\n");
+            for (String savedIp : ipListNueva) {
+                ips.append(savedIp).append("\n");
+                Log.i("Lista de IPs", "IP guardada: " + savedIp); // Log para cada IP
+
+            }
+            //       ipTextView.setText(ips.toString());
+            Log.i("Actualizacion de lista", "Lista actualizada en pantalla.");
+        });
     }
 
 
@@ -237,7 +256,7 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         ipMessageMap.put(ip, message);
         // Mostrar el mensaje recibido en la interfaz
         // Actualizar la interfaz con el contenido del HashMap
-        updateIpMessageView();
+        //updateIpMessageView();
         runOnUiThread(() -> {
             Toast.makeText(this, "Mensaje recibido de " + ip + ": " + message, Toast.LENGTH_SHORT).show();
         });
@@ -253,7 +272,7 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         }
 
         // Actualizar el TextView en el hilo de la UI
-        runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
+        //runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
     }
 
 // COSAS DEL SISTEMA DE VOTACION
@@ -457,6 +476,18 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
 
 
     public Set<String> getIpList(){
+
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+
+        Set <String> ipListNueva = sharedPref.getStringSet("ipList", new HashSet<>());
+
+
+        for (String ip : ipListNueva){
+            Log.d("ForIp","ip: "+ip);
+        }
+
+
         return ipList;
     }
 
@@ -564,12 +595,14 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
 
                 fileReader.close();
             } else {
-                Log.e("RedActivity", "El archivo JSON no existe.");
+                Log.e("MainActivity", "El archivo JSON no existe.");
             }
         } catch (Exception e) {
-            Log.e("RedActivity", "Error al leer el archivo JSON: " + e.getMessage());
+            Log.e("MainActivity", "Error al leer el archivo JSON: " + e.getMessage());
         }
-
+        if (alias.isEmpty()){
+            alias = "aliasGenerico";
+        }
         return alias.trim(); // Devuelve el alias generado
     }
 
@@ -580,6 +613,13 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(FIRST_TIME_KEY, false);
         editor.apply();
+    }
+
+    public String getEstadoAccidente(){
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+        String estado = sharedPref.getString("estadoAccidente","NO");
+        return estado;
     }
 
 }

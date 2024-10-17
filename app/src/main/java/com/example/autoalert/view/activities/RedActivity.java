@@ -6,6 +6,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.net.Network;
@@ -43,6 +44,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class RedActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{
 
@@ -60,7 +62,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     private BroadcastSender broadcastSender = new BroadcastSender(); // Ensure this matches your constructor
 
-    private MessageSender messageSender;
+    private MessageSender messageSender  = new MessageSender();
 
     private Handler handler = new Handler(Looper.getMainLooper());
     private TextView ipMessageTextView;
@@ -88,7 +90,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     private MainActivity mainActivity = new MainActivity();
 
-    private SistemaVotación sistemaVotación;
+    private SistemaVotación sistemaVotación = new SistemaVotación(mainActivity);
 
     NetworkUtils networkUtils = new NetworkUtils();
 
@@ -122,6 +124,16 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
         // Inicializamos wifiManager
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+
+
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+
+        Set <String> ipListNueva = sharedPref.getStringSet("ipList", new HashSet<>());
+
+        for (String ip : ipListNueva){
+            Log.d("ForIp","ip: "+ip);
+        }
 
 
         // Inicializar el administrador del hotspot
@@ -183,12 +195,24 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     public void enviarMensaje(){
         String message = responseTextView.getText().toString();
+
         Log.i("Enviar Mensaje", "Enviando mensaje.");
 
+        // Recuperar los datos desde SharedPreferences
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+
+        Set <String> ipListNueva = sharedPref.getStringSet("ipList", new HashSet<>());
+
+        for (String ip : ipListNueva){
+            Log.d("ForIp EnviarMensaje","ip EnviarMensaje: "+ip);
+        }
+
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
-        if (!mainActivity.getIpList().isEmpty()) {
+        if (!ipListNueva.isEmpty()) {
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
-            for(String targetIp : mainActivity.getIpList()) {
+            for(String targetIp : ipListNueva) {
+                Log.i("MensajeTexto", "El mensaje es:"+ message);
+                Log.d("Redactivity","La ip:"+targetIp);
                 messageSender.sendMessage(targetIp, message);
                 Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
                 Toast.makeText(RedActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
@@ -210,11 +234,24 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
 
     public void setStatusTextViewOnYes() {
+
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString("estadoAccidente","SI");
+        editor.apply();
+
         responseTextView.setText("SI");
     }
 
 
     public void setStatusTextViewOnNo() {
+
+        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString("estadoAccidente","NO");
+        editor.apply();
+
         responseTextView.setText("NO");
     }
 

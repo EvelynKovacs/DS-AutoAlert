@@ -16,22 +16,24 @@ public class BroadcastSender {
     private static final int BROADCAST_PORT = 8888;
     private static final String BROADCAST_MESSAGE = "DISCOVER_IP_REQUEST";
 
-    private MainActivity mainActivity;
+    private MainActivity mainActivity = new MainActivity();
+
     // Método setter para asignar redActivity
     public void setMainActivity(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
     }
 
     public void sendBroadcast() {
+
+        //setMainActivity(mainActivity);
         new Thread(() -> {
             try {
-
 
                 if (mainActivity == null) {
                     Log.e("BroadcastSender", "MainActivity es nulo. No se puede obtener el alias.");
                     return;
                 }
-                // Obtener el alias desde RedActivity
+                // Obtener el alias desde MainActivity
                 String alias = mainActivity.getAlias(); // Asegúrate de que este método esté devolviendo el valor correcto
 
                 if (alias == null || alias.isEmpty()) {

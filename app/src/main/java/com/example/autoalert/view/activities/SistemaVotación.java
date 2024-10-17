@@ -1,5 +1,6 @@
 package com.example.autoalert.view.activities;
 
+import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -79,7 +80,22 @@ public class SistemaVotación {
     public void enviarEstado(){
         messageSender = new MessageSender();
         String message;
+/*
+        String estado = mainActivity.getEstadoAccidente();
+        String message;
         Log.i("Envio de Estado", "Enviando estado");
+        Log.d("Envio de Estado", "ESTA NUL???: "+estado);
+*/
+        /*if(estado.equals("SI")){
+            message = "VOTO:SI";
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
+
+        } else {
+            message = "VOTO:NO";
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
+
+        }*/
+
         if(redActivity.getResponseText().equals("SI")){
             message = "VOTO:SI";
             Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
@@ -89,8 +105,6 @@ public class SistemaVotación {
             Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
 
         }
-
-
 
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
         if(mainActivity.getIpList().isEmpty()){
