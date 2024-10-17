@@ -1,0 +1,244 @@
+Index: app/src/androidTest/java/com/example/autoalert/DetectorAccidenteLateralTest.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.autoalert;\n\nimport static org.junit.Assert.assertTrue;\nimport static org.mockito.Mockito.mock;\nimport static org.mockito.Mockito.when;\n\nimport android.app.Application;\nimport android.content.Context;\n\nimport com.example.autoalert.model.entities.DatosMovimiento;\nimport com.example.autoalert.utils.DetectorAccidenteLateral;\n//import com.example.autoalert.utils.DetectorAccidenteLateral;\n\nimport org.junit.After;\nimport org.junit.Before;\nimport org.junit.Test;\n\n\nimport java.io.ByteArrayOutputStream;\nimport java.io.PrintStream;\n\n//@Config(sdk = {28}) // Usa la versión de SDK que necesites\n//@RunWith(RobolectricTestRunner.class)\n\npublic class DetectorAccidenteLateralTest extends Application {\n\n\n\n\n\n\n    private DetectorAccidenteLateral detectorAccidente;\n    private  ByteArrayOutputStream outputStreamCaptor;\n    private  PrintStream originalOut ;\n\n    @Before\n    public void setup() {\n//        Context context = ApplicationProvider.getApplicationContext();\n//        detectorAccidente = new DetectorAccidenteLateral(context);\n\n       Context context = mock(Context.class);\n        when(context.getApplicationContext()).thenReturn(context); // Mockear el contexto\n//\n        detectorAccidente = new DetectorAccidenteLateral(context);\n\n        //detectorAccidente = new DetectorAccidente(getApplicationContext());\n        originalOut = System.out;\n        //System.setOut(new PrintStream(outputStreamCaptor));\n        outputStreamCaptor = new ByteArrayOutputStream();\n        System.setOut(new PrintStream(outputStreamCaptor));\n\n    }\n\n    @Test\n    public void testDesaceleracionNoAccidente() {\n        long tiempoActual = System.currentTimeMillis();\n\n\n\n        // Crea datos que simulen una desaceleración que no termina en accidente\n        DatosMovimiento dato1 = new DatosMovimiento(-42.789351, -65.019023, 20, tiempoActual);  // Velocidad de 20 m/s\n        DatosMovimiento dato2 = new DatosMovimiento(-42.789256, -65.018722, 15, tiempoActual + 1000); // 15 m/s después de 1 segundo\n        DatosMovimiento dato3 = new DatosMovimiento(-42.789162, -65.018765, 5, tiempoActual + 2000);  // Desaceleración brusca a 5 m/s\n\n         DatosMovimiento postDato1 = new DatosMovimiento(-42.7891,-65.01879, 10, tiempoActual + 3000); // Retoma la velocidad\n        DatosMovimiento postDato2 = new DatosMovimiento(-42.78905,-65.01881, 12, tiempoActual + 4000); // Continúa movimiento\n        DatosMovimiento postDato3 = new DatosMovimiento(-42.789,-65.01883, 15, tiempoActual + 5000); // Retorna a la velocidad original\n\n\n        // Registra los datos\n        detectorAccidente.registrarNuevoDato(dato1);\n        detectorAccidente.registrarNuevoDato(dato2);\n        detectorAccidente.registrarNuevoDato(dato3);\n        detectorAccidente.registrarNuevoDato(postDato1);\n        detectorAccidente.registrarNuevoDato(postDato2);\n        detectorAccidente.registrarNuevoDato(postDato3);\n\n\n\n        String output = outputStreamCaptor.toString().trim();\n        System.out.println(output);  // Ver qué se imprimió realmente\n        assertTrue(output.contains(\"No se detecta accidente.\"));\n\n\n\n\n\n       // assertTrue(outputStreamCaptor.toString().trim().contains(\"No se detecta accidente.\"));\n    }\n\n\n    @Test\n    public void testParadoNoAccidente() {\n        long tiempoActual = System.currentTimeMillis();\n\n\n        // Crea datos que simulen una desaceleración que no termina en accidente\n        DatosMovimiento dato1 = new DatosMovimiento(-42.789351, -65.019023, 0, tiempoActual);  // Velocidad de 20 m/s\n        DatosMovimiento dato2 = new DatosMovimiento(-42.789256, -65.018722, 0, tiempoActual + 1000); // 15 m/s después de 1 segundo\n        DatosMovimiento dato3 = new DatosMovimiento(-42.789162, -65.018765, 0, tiempoActual + 2000);  // Desaceleración brusca a 5 m/s\n\n        DatosMovimiento postDato1 = new DatosMovimiento(-42.7891,-65.01879, 10, tiempoActual + 3000); // Retoma la velocidad\n        DatosMovimiento postDato2 = new DatosMovimiento(-42.78905,-65.01881, 12, tiempoActual + 4000); // Continúa movimiento\n        DatosMovimiento postDato3 = new DatosMovimiento(-42.789,-65.01883, 15, tiempoActual + 5000); // Retorna a la velocidad original\n\n\n        // Registra los datos\n        detectorAccidente.registrarNuevoDato(dato1);\n        detectorAccidente.registrarNuevoDato(dato2);\n        detectorAccidente.registrarNuevoDato(dato3);\n        detectorAccidente.registrarNuevoDato(postDato1);\n        detectorAccidente.registrarNuevoDato(postDato2);\n        detectorAccidente.registrarNuevoDato(postDato3);\n\n\n\n        String output = outputStreamCaptor.toString().trim();\n        System.out.println(output);  // Ver qué se imprimió realmente\n        assertTrue(output.contains(\"No se detecta accidente.\"));\n\n    }\n\n\n    @Test\n    public void testDesaceleracionAccidenteDetectado() {\n        // Crea datos de movimiento que deberían desencadenar un accidente\n        long tiempoActual = System.currentTimeMillis(); // Simula el tiempo actual\n\n\n        //para anulo de 90 grados:\n        //A:(−42.789256,−65.019722)\n        //B:(−42.789256,−65.018722)\n        //C:(−42.788256,−65.018722)\n\n\n\n\n        // Crea datos que simulen un accidente\n        DatosMovimiento dato1 = new DatosMovimiento(-42.789351, -65.019023, 20, tiempoActual);  // Velocidad de 20 m/s\n        DatosMovimiento dato2 = new DatosMovimiento(-42.789256, -65.018722, 15, tiempoActual + 1000); // 15 m/s después de 1 segundo\n        DatosMovimiento dato3 = new DatosMovimiento(-42.789162, -65.018765, 5, tiempoActual + 2000);  // Desaceleración brusca a 5 m/s\n\n        // Movimientos posteriores que confirman el accidente\n        DatosMovimiento postDato1 = new DatosMovimiento(-42.789100, -65.018700, 0, tiempoActual + 3000); // Detención completa\n        DatosMovimiento postDato2 = new DatosMovimiento(-42.789050, -65.018650, 0, tiempoActual + 4000); // Sin movimiento\n        DatosMovimiento postDato3 = new DatosMovimiento(-42.789000, -65.018600, 0, tiempoActual + 5000); // Sin movimiento\n\n        // Registra los datos\n        detectorAccidente.registrarNuevoDato(dato1);\n        detectorAccidente.registrarNuevoDato(dato2);\n        detectorAccidente.registrarNuevoDato(dato3);\n        detectorAccidente.registrarNuevoDato(postDato1);\n        detectorAccidente.registrarNuevoDato(postDato2);\n        detectorAccidente.registrarNuevoDato(postDato3);\n\n\n\n        // Captura la salida para verificar si \"Posible accidente lateral detectado.\" se imprime.\n        assertTrue(outputStreamCaptor.toString().trim().contains(\"Posible accidente lateral detectado.\"));\n    }\n\n    @Test\n    public void testMasDatosAccidenteDetectado() {\n        long tiempoActual = System.currentTimeMillis();\n\n        DatosMovimiento dato1 = new DatosMovimiento(-42.789351, -65.019023, 5, tiempoActual);\n        DatosMovimiento dato2 = new DatosMovimiento(-42.789256, -65.018722, 0, tiempoActual + 1000);\n        DatosMovimiento dato3 = new DatosMovimiento(-42.789162, -65.018765, 5, tiempoActual + 2000);\n\n        // Movimientos posteriores que confirman el accidente\n        DatosMovimiento postDato1 = new DatosMovimiento(-42.789100, -65.018700, 10, tiempoActual + 3000);\n        DatosMovimiento postDato2 = new DatosMovimiento(-42.789050, -65.018650, 15, tiempoActual + 4000);\n        DatosMovimiento postDato3 = new DatosMovimiento(-42.789000, -65.018600, 20, tiempoActual + 5000);\n//        DatosMovimiento postDato4 = new DatosMovimiento(-42.78895,-65.01876, 5, tiempoActual + 5000);\n//        DatosMovimiento postDato5 = new DatosMovimiento(-42.78887,-65.0188, 0, tiempoActual + 5000);\n//        DatosMovimiento postDato6 = new DatosMovimiento(-42.7888,-65.01884, 0, tiempoActual + 5000);\n//        DatosMovimiento postDato7 = new DatosMovimiento(-42.78874,-65.01888, 0, tiempoActual + 5000);\n        DatosMovimiento postDato4 = new DatosMovimiento(-42.78893,-65.01864, 5, tiempoActual + 5000);\n        DatosMovimiento postDato5 = new DatosMovimiento(-42.78887,-65.01868, 0, tiempoActual + 5000);\n        DatosMovimiento postDato6 = new DatosMovimiento(-42.7888,-65.0186, 0, tiempoActual + 5000);\n        DatosMovimiento postDato7 = new DatosMovimiento(-42.78874,-65.01852, 0, tiempoActual + 5000);\n\n\n        // Registra los datos\n        detectorAccidente.registrarNuevoDato(dato1);\n        detectorAccidente.registrarNuevoDato(dato2);\n        detectorAccidente.registrarNuevoDato(dato3);\n        detectorAccidente.registrarNuevoDato(postDato1);\n        detectorAccidente.registrarNuevoDato(postDato2);\n        detectorAccidente.registrarNuevoDato(postDato3);\n        detectorAccidente.registrarNuevoDato(postDato4);\n        detectorAccidente.registrarNuevoDato(postDato5);\n        detectorAccidente.registrarNuevoDato(postDato6);\n        detectorAccidente.registrarNuevoDato(postDato7);\n\n\n\n        // Captura la salida para verificar si \"Posible accidente lateral detectado.\" se imprime.\n        assertTrue(outputStreamCaptor.toString().trim().contains(\"Posible accidente lateral detectado.\"));\n\n    }\n\n\n    @Test\n    public void testMasCurvasNoAccidente() {\n        long tiempoActual = System.currentTimeMillis();\n\n        DatosMovimiento dato1 = new DatosMovimiento(-42.789351, -65.019023, 5, tiempoActual);\n        DatosMovimiento dato2 = new DatosMovimiento(-42.789256, -65.018722, 2, tiempoActual + 1000);\n        DatosMovimiento dato3 = new DatosMovimiento(-42.789162, -65.018765, 5, tiempoActual + 2000);\n\n        // Movimientos posteriores que confirman el accidente\n        DatosMovimiento postDato1 = new DatosMovimiento(-42.789100, -65.018700, 10, tiempoActual + 3000);\n        DatosMovimiento postDato2 = new DatosMovimiento(-42.789050, -65.018650, 15, tiempoActual + 4000);\n        DatosMovimiento postDato3 = new DatosMovimiento(-42.789000, -65.018600, 20, tiempoActual + 5000);\n//        DatosMovimiento postDato4 = new DatosMovimiento(-42.78895,-65.01876, 5, tiempoActual + 5000);\n//        DatosMovimiento postDato5 = new DatosMovimiento(-42.78887,-65.0188, 5, tiempoActual + 5000);\n//        DatosMovimiento postDato6 = new DatosMovimiento(-42.7888,-65.01884, 10, tiempoActual + 5000);\n//        DatosMovimiento postDato7 = new DatosMovimiento(-42.78874,-65.01888, 15, tiempoActual + 5000);\n        DatosMovimiento postDato4 = new DatosMovimiento(-42.78893,-65.01864, 5, tiempoActual + 5000);\n        DatosMovimiento postDato5 = new DatosMovimiento(-42.78887,-65.01868, 5, tiempoActual + 5000);\n        DatosMovimiento postDato6 = new DatosMovimiento(-42.7888,-65.0186, 10, tiempoActual + 5000);\n        DatosMovimiento postDato7 = new DatosMovimiento(-42.78874,-65.01852, 15, tiempoActual + 5000);\n\n\n        // Registra los datos\n        detectorAccidente.registrarNuevoDato(dato1);\n        detectorAccidente.registrarNuevoDato(dato2);\n        detectorAccidente.registrarNuevoDato(dato3);\n        detectorAccidente.registrarNuevoDato(postDato1);\n        detectorAccidente.registrarNuevoDato(postDato2);\n        detectorAccidente.registrarNuevoDato(postDato3);\n        detectorAccidente.registrarNuevoDato(postDato4);\n        detectorAccidente.registrarNuevoDato(postDato5);\n        detectorAccidente.registrarNuevoDato(postDato6);\n        detectorAccidente.registrarNuevoDato(postDato7);\n\n\n\n        // Captura la salida para verificar si \"Posible accidente lateral detectado.\" se imprime.\n        assertTrue(outputStreamCaptor.toString().trim().contains(\"No se detecta accidente.\"));\n\n    }\n\n\n\n    @After\n    public void tearDown() {\n        // Restaura la salida estándar original\n       System.setOut(originalOut);\n    }\n}\n
+===================================================================
+diff --git a/app/src/androidTest/java/com/example/autoalert/DetectorAccidenteLateralTest.java b/app/src/androidTest/java/com/example/autoalert/DetectorAccidenteLateralTest.java
+--- a/app/src/androidTest/java/com/example/autoalert/DetectorAccidenteLateralTest.java	
++++ b/app/src/androidTest/java/com/example/autoalert/DetectorAccidenteLateralTest.java	
+@@ -1,5 +1,6 @@
+ package com.example.autoalert;
+ 
++import static org.junit.Assert.assertFalse;
+ import static org.junit.Assert.assertTrue;
+ import static org.mockito.Mockito.mock;
+ import static org.mockito.Mockito.when;
+@@ -68,18 +69,26 @@
+ 
+ 
+         // Registra los datos
+-        detectorAccidente.registrarNuevoDato(dato1);
+-        detectorAccidente.registrarNuevoDato(dato2);
+-        detectorAccidente.registrarNuevoDato(dato3);
+-        detectorAccidente.registrarNuevoDato(postDato1);
+-        detectorAccidente.registrarNuevoDato(postDato2);
+-        detectorAccidente.registrarNuevoDato(postDato3);
++//        detectorAccidente.registrarNuevoDato(dato1);
++//        detectorAccidente.registrarNuevoDato(dato2);
++//        detectorAccidente.registrarNuevoDato(dato3);
++//        detectorAccidente.registrarNuevoDato(postDato1);
++//        detectorAccidente.registrarNuevoDato(postDato2);
++//        detectorAccidente.registrarNuevoDato(postDato3);
++        // Registra los datos y verifica que no detecta accidente
++        assertFalse(detectorAccidente.registrarNuevoDato(dato1));
++        assertFalse(detectorAccidente.registrarNuevoDato(dato2));
++        assertFalse(detectorAccidente.registrarNuevoDato(dato3));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato1));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato2));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato3));
+ 
+ 
+ 
+-        String output = outputStreamCaptor.toString().trim();
+-        System.out.println(output);  // Ver qué se imprimió realmente
+-        assertTrue(output.contains("No se detecta accidente."));
++
++//        String output = outputStreamCaptor.toString().trim();
++//        System.out.println(output);  // Ver qué se imprimió realmente
++//        assertTrue(output.contains("No se detecta accidente."));
+ 
+ 
+ 
+@@ -89,37 +98,45 @@
+     }
+ 
+ 
+-    @Test
+-    public void testParadoNoAccidente() {
+-        long tiempoActual = System.currentTimeMillis();
+-
+-
+-        // Crea datos que simulen una desaceleración que no termina en accidente
+-        DatosMovimiento dato1 = new DatosMovimiento(-42.789351, -65.019023, 0, tiempoActual);  // Velocidad de 20 m/s
+-        DatosMovimiento dato2 = new DatosMovimiento(-42.789256, -65.018722, 0, tiempoActual + 1000); // 15 m/s después de 1 segundo
+-        DatosMovimiento dato3 = new DatosMovimiento(-42.789162, -65.018765, 0, tiempoActual + 2000);  // Desaceleración brusca a 5 m/s
+-
+-        DatosMovimiento postDato1 = new DatosMovimiento(-42.7891,-65.01879, 10, tiempoActual + 3000); // Retoma la velocidad
+-        DatosMovimiento postDato2 = new DatosMovimiento(-42.78905,-65.01881, 12, tiempoActual + 4000); // Continúa movimiento
+-        DatosMovimiento postDato3 = new DatosMovimiento(-42.789,-65.01883, 15, tiempoActual + 5000); // Retorna a la velocidad original
+-
+-
+-        // Registra los datos
+-        detectorAccidente.registrarNuevoDato(dato1);
+-        detectorAccidente.registrarNuevoDato(dato2);
+-        detectorAccidente.registrarNuevoDato(dato3);
+-        detectorAccidente.registrarNuevoDato(postDato1);
+-        detectorAccidente.registrarNuevoDato(postDato2);
+-        detectorAccidente.registrarNuevoDato(postDato3);
+-
+-
+-
+-        String output = outputStreamCaptor.toString().trim();
+-        System.out.println(output);  // Ver qué se imprimió realmente
+-        assertTrue(output.contains("No se detecta accidente."));
+-
+-    }
+-
++//    @Test
++//    public void testParadoNoAccidente() {
++//        long tiempoActual = System.currentTimeMillis();
++//
++//
++//        // Crea datos que simulen una desaceleración que no termina en accidente
++//        DatosMovimiento dato1 = new DatosMovimiento(-42.789351, -65.019023, 0, tiempoActual);  // Velocidad de 20 m/s
++//        DatosMovimiento dato2 = new DatosMovimiento(-42.789256, -65.018722, 0, tiempoActual + 1000); // 15 m/s después de 1 segundo
++//        DatosMovimiento dato3 = new DatosMovimiento(-42.789162, -65.018765, 0, tiempoActual + 2000);  // Desaceleración brusca a 5 m/s
++//
++//        DatosMovimiento postDato1 = new DatosMovimiento(-42.7891,-65.01879, 10, tiempoActual + 3000); // Retoma la velocidad
++//        DatosMovimiento postDato2 = new DatosMovimiento(-42.78905,-65.01881, 12, tiempoActual + 4000); // Continúa movimiento
++//        DatosMovimiento postDato3 = new DatosMovimiento(-42.789,-65.01883, 15, tiempoActual + 5000); // Retorna a la velocidad original
++//
++//
++//        // Registra los datos
++////        detectorAccidente.registrarNuevoDato(dato1);
++////        detectorAccidente.registrarNuevoDato(dato2);
++////        detectorAccidente.registrarNuevoDato(dato3);
++////        detectorAccidente.registrarNuevoDato(postDato1);
++////        detectorAccidente.registrarNuevoDato(postDato2);
++////        detectorAccidente.registrarNuevoDato(postDato3);
++////
++//        assertFalse(detectorAccidente.registrarNuevoDato(dato1));
++//        assertFalse(detectorAccidente.registrarNuevoDato(dato2));
++//        assertFalse(detectorAccidente.registrarNuevoDato(dato3));
++//        assertFalse(detectorAccidente.registrarNuevoDato(postDato1));
++//        assertFalse(detectorAccidente.registrarNuevoDato(postDato2));
++//        assertFalse(detectorAccidente.registrarNuevoDato(postDato3));
++//
++//
++//
++//
++////        String output = outputStreamCaptor.toString().trim();
++////        System.out.println(output);  // Ver qué se imprimió realmente
++////        assertTrue(output.contains("No se detecta accidente."));
++//
++//    }
++//
+ 
+     @Test
+     public void testDesaceleracionAccidenteDetectado() {
+@@ -146,17 +163,23 @@
+         DatosMovimiento postDato3 = new DatosMovimiento(-42.789000, -65.018600, 0, tiempoActual + 5000); // Sin movimiento
+ 
+         // Registra los datos
++//        detectorAccidente.registrarNuevoDato(dato1);
++//        detectorAccidente.registrarNuevoDato(dato2);
++//        detectorAccidente.registrarNuevoDato(dato3);
++//        detectorAccidente.registrarNuevoDato(postDato1);
++//        detectorAccidente.registrarNuevoDato(postDato2);
++//        detectorAccidente.registrarNuevoDato(postDato3);
+         detectorAccidente.registrarNuevoDato(dato1);
+         detectorAccidente.registrarNuevoDato(dato2);
+         detectorAccidente.registrarNuevoDato(dato3);
+         detectorAccidente.registrarNuevoDato(postDato1);
+         detectorAccidente.registrarNuevoDato(postDato2);
+-        detectorAccidente.registrarNuevoDato(postDato3);
++        assertTrue(detectorAccidente.registrarNuevoDato(postDato3));
+ 
+ 
+ 
+         // Captura la salida para verificar si "Posible accidente lateral detectado." se imprime.
+-        assertTrue(outputStreamCaptor.toString().trim().contains("Posible accidente lateral detectado."));
++//        assertTrue(outputStreamCaptor.toString().trim().contains("Posible accidente lateral detectado."));
+     }
+ 
+     @Test
+@@ -176,12 +199,23 @@
+ //        DatosMovimiento postDato6 = new DatosMovimiento(-42.7888,-65.01884, 0, tiempoActual + 5000);
+ //        DatosMovimiento postDato7 = new DatosMovimiento(-42.78874,-65.01888, 0, tiempoActual + 5000);
+         DatosMovimiento postDato4 = new DatosMovimiento(-42.78893,-65.01864, 5, tiempoActual + 5000);
+-        DatosMovimiento postDato5 = new DatosMovimiento(-42.78887,-65.01868, 0, tiempoActual + 5000);
+-        DatosMovimiento postDato6 = new DatosMovimiento(-42.7888,-65.0186, 0, tiempoActual + 5000);
+-        DatosMovimiento postDato7 = new DatosMovimiento(-42.78874,-65.01852, 0, tiempoActual + 5000);
++        DatosMovimiento postDato5 = new DatosMovimiento(-42.78887,-65.01868, 0, tiempoActual + 6000);
++        DatosMovimiento postDato6 = new DatosMovimiento(-42.7888,-65.0186, 0, tiempoActual + 7000);
++        DatosMovimiento postDato7 = new DatosMovimiento(-42.78874,-65.01852, 0, tiempoActual + 8000);
+ 
+ 
+         // Registra los datos
++//        detectorAccidente.registrarNuevoDato(dato1);
++//        detectorAccidente.registrarNuevoDato(dato2);
++//        detectorAccidente.registrarNuevoDato(dato3);
++//        detectorAccidente.registrarNuevoDato(postDato1);
++//        detectorAccidente.registrarNuevoDato(postDato2);
++//        detectorAccidente.registrarNuevoDato(postDato3);
++//        detectorAccidente.registrarNuevoDato(postDato4);
++//        detectorAccidente.registrarNuevoDato(postDato5);
++//        detectorAccidente.registrarNuevoDato(postDato6);
++//        detectorAccidente.registrarNuevoDato(postDato7);
++
+         detectorAccidente.registrarNuevoDato(dato1);
+         detectorAccidente.registrarNuevoDato(dato2);
+         detectorAccidente.registrarNuevoDato(dato3);
+@@ -191,12 +225,13 @@
+         detectorAccidente.registrarNuevoDato(postDato4);
+         detectorAccidente.registrarNuevoDato(postDato5);
+         detectorAccidente.registrarNuevoDato(postDato6);
+-        detectorAccidente.registrarNuevoDato(postDato7);
++        assertTrue(detectorAccidente.registrarNuevoDato(postDato7));
++
+ 
+ 
+ 
+         // Captura la salida para verificar si "Posible accidente lateral detectado." se imprime.
+-        assertTrue(outputStreamCaptor.toString().trim().contains("Posible accidente lateral detectado."));
++//        assertTrue(outputStreamCaptor.toString().trim().contains("Posible accidente lateral detectado."));
+ 
+     }
+ 
+@@ -224,21 +259,34 @@
+ 
+ 
+         // Registra los datos
+-        detectorAccidente.registrarNuevoDato(dato1);
+-        detectorAccidente.registrarNuevoDato(dato2);
+-        detectorAccidente.registrarNuevoDato(dato3);
+-        detectorAccidente.registrarNuevoDato(postDato1);
+-        detectorAccidente.registrarNuevoDato(postDato2);
+-        detectorAccidente.registrarNuevoDato(postDato3);
+-        detectorAccidente.registrarNuevoDato(postDato4);
+-        detectorAccidente.registrarNuevoDato(postDato5);
+-        detectorAccidente.registrarNuevoDato(postDato6);
+-        detectorAccidente.registrarNuevoDato(postDato7);
++//        detectorAccidente.registrarNuevoDato(dato1);
++//        detectorAccidente.registrarNuevoDato(dato2);
++//        detectorAccidente.registrarNuevoDato(dato3);
++//        detectorAccidente.registrarNuevoDato(postDato1);
++//        detectorAccidente.registrarNuevoDato(postDato2);
++//        detectorAccidente.registrarNuevoDato(postDato3);
++//        detectorAccidente.registrarNuevoDato(postDato4);
++//        detectorAccidente.registrarNuevoDato(postDato5);
++//        detectorAccidente.registrarNuevoDato(postDato6);
++//        detectorAccidente.registrarNuevoDato(postDato7);
++//
++//
++//
++//        // Captura la salida para verificar si "Posible accidente lateral detectado." se imprime.
++//        assertTrue(outputStreamCaptor.toString().trim().contains("No se detecta accidente."));
+ 
++        assertFalse(detectorAccidente.registrarNuevoDato(dato1));
++        assertFalse(detectorAccidente.registrarNuevoDato(dato2));
++        assertFalse(detectorAccidente.registrarNuevoDato(dato3));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato1));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato2));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato3));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato4));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato5));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato6));
++        assertFalse(detectorAccidente.registrarNuevoDato(postDato7));
+ 
+ 
+-        // Captura la salida para verificar si "Posible accidente lateral detectado." se imprime.
+-        assertTrue(outputStreamCaptor.toString().trim().contains("No se detecta accidente."));
+ 
+     }
+ 

@@ -1,19 +1,102 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".view.activities.MainActivity">
+    android:background="#1A1A1A">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+    <!-- FrameLayout para el velocímetro -->
+    <FrameLayout
+        android:id="@+id/speedometerContainer"
+        android:layout_width="700dp"
+        android:layout_height="700dp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="50dp">
+
+        <!-- Imagen de velocímetro (un círculo) -->
+        <ImageView
+            android:id="@+id/speedometerImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Speedometer"
+            android:src="@drawable/circ_removebg"
+            android:scaleType="fitCenter"
+            android:background="@android:color/transparent" />
+
+        <!-- Texto de velocidad, centrado dentro del círculo -->
+        <TextView
+            android:id="@+id/speedText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speed: 60 km/h"
+            android:textSize="20sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:layout_gravity="center" />
+    </FrameLayout>
+
+    <!-- Menú de botones en la parte inferior -->
+        <LinearLayout
+            android:id="@+id/buttonMenu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="#F0F0F0"
+            android:padding="10dp"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- Botón para Enviar Mensaje -->
+        <ImageButton
+            android:id="@+id/sendMessageButton"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:contentDescription="Send Message"
+            android:src="@drawable/baseline_send_24"
+            android:background="@drawable/button_background"
+            android:padding="10dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginRight="5dp"/>
+
+        <!-- Botón para Crear Red -->
+        <ImageButton
+            android:id="@+id/createNetworkButton"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:contentDescription="Create Network"
+            android:src="@drawable/baseline_network_check_24"
+            android:background="@drawable/button_background"
+            android:padding="10dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginRight="5dp"/>
+
+
+        <!-- Botón para Ver Usuarios -->
+        <ImageButton
+            android:id="@+id/viewUsersButton"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:contentDescription="View Users"
+            android:src="@drawable/baseline_people_24"
+            android:background="@drawable/button_background"
+            android:padding="10dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginRight="5dp"/>
+
+        <!-- Botón para Editar Perfil -->
+        <ImageButton
+            android:id="@+id/editProfileButton"
+            android:layout_width="0dp"
+            android:layout_height="80dp"
+            android:layout_weight="1"
+            android:contentDescription="Edit Profile"
+            android:src="@drawable/baseline_edit_24"
+            android:background="@drawable/button_background"
+            android:padding="10dp"/>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

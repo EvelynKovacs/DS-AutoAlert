@@ -1,26 +1,47 @@
 package com.example.autoalert.view.activities;
 
 import android.os.Bundle;
-
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.example.autoalert.R;
 
 public class MainActivity extends AppCompatActivity {
 
+    private TextView speedText;
+    private ImageButton sendMessageButton, createNetworkButton, viewUsersButton, editProfileButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+
+        // Initialize views
+        speedText = findViewById(R.id.speedText);
+        sendMessageButton = findViewById(R.id.sendMessageButton);
+        createNetworkButton = findViewById(R.id.createNetworkButton);
+        viewUsersButton = findViewById(R.id.viewUsersButton);
+        editProfileButton = findViewById(R.id.editProfileButton);
+
+        // Set speed or any other logic here
+        speedText.setText("Velocidad\n60 km/h");  // Aquí se añade el salto de línea
+
+        // Set button click listeners if needed
+        sendMessageButton.setOnClickListener(v -> {
+            // Handle send message action
+        });
+
+        createNetworkButton.setOnClickListener(v -> {
+            // Handle create network action
+        });
+
+        viewUsersButton.setOnClickListener(v -> {
+            // Handle view users action
+        });
+
+        editProfileButton.setOnClickListener(v -> {
+            // Handle edit profile action
         });
     }
 }

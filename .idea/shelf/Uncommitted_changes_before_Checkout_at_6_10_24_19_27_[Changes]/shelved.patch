@@ -1,0 +1,544 @@
+Index: app/src/main/java/com/example/autoalert/view/activities/MainActivity.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.autoalert.view.activities;\n\nimport android.Manifest;\nimport android.annotation.SuppressLint;\nimport android.content.Context;\nimport android.content.Intent;\nimport android.content.IntentFilter;\nimport android.content.pm.PackageManager;\nimport android.net.ConnectivityManager;\nimport android.net.Network;\nimport android.net.NetworkCapabilities;\nimport android.net.NetworkInfo;\nimport android.net.wifi.WifiManager;\nimport android.os.Build;\nimport android.os.Bundle;\nimport android.os.Handler;\nimport android.os.Looper;\nimport android.util.Log;\nimport android.view.View;\nimport android.widget.Button;\nimport android.widget.EditText;\nimport android.widget.TextView;\nimport android.widget.Toast;\n\nimport androidx.annotation.NonNull;\nimport androidx.annotation.RequiresApi;\nimport androidx.appcompat.app.AppCompatActivity;\nimport androidx.core.app.ActivityCompat;\nimport androidx.core.content.ContextCompat;\n\nimport com.example.autoalert.R;\n\nimport java.lang.reflect.Method;\nimport java.net.InetAddress;\nimport java.net.NetworkInterface;\nimport java.util.ArrayList;\nimport java.util.Enumeration;\nimport java.util.HashMap;\nimport java.util.List;\n\npublic class MainActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{\n\n    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;\n    private WifiHotspot hotspotManager;\n    private TextView statusTextView;\n    private Button toggleHotspotButton;\n    private boolean isHotspotActive = false;\n    private TextView ssidTextView;\n    private TextView passwordTextView;\n    private EditText ssidEditText;\n    private EditText passwordEditText;\n    private TextView ipTextView;\n    private TextView myIpTextView;\n    private BroadcastSender broadcastSender;\n    private BroadcastReceiver broadcastReceiver;\n    private Handler handler = new Handler(Looper.getMainLooper());\n    private MessageSender messageSender;\n    public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast\n    private HashMap<String, String> ipMessageMap;\n    private TextView ipMessageTextView;\n    private Button btnYes;\n    private Button btnNo;\n    private TextView statusBtnTextView;\n    private TextView responseTextView;\n    private TextView estadoRedTextView;\n    private Button btnCreacionRed;\n    private BroadcastTimer broadcastTimer;\n    private int cont = 0;\n\n    private WifiManager wifiManager;\n\n    private NetworkChangeReceiver networkChangeReceiver = new NetworkChangeReceiver();\n\n\n\n\n    @SuppressLint(\"MissingInflatedId\")\n    @Override\n    protected void onCreate(Bundle savedInstanceState) {\n        super.onCreate(savedInstanceState);\n        setContentView(R.layout.activity_main);\n\n        Log.d(\"MainActivity\", \"Inicio de componentes visuales.\");\n\n        ssidTextView = findViewById(R.id.ssidTextView);\n        passwordTextView = findViewById(R.id.passwordTextView);\n        ssidEditText = findViewById(R.id.ssidEditText);\n        passwordEditText = findViewById(R.id.passwordEditText);\n        Button btnSendMessages = findViewById(R.id.btnSendMessages);\n        ipTextView = findViewById(R.id.ipTextView);\n        Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);\n        statusTextView = findViewById(R.id.statusTextView);\n        toggleHotspotButton = findViewById(R.id.toggleHotspotButton);\n        ipMessageTextView = findViewById(R.id.ipMessageTextView);\n        myIpTextView = findViewById(R.id.myIpTextView);\n        btnYes = findViewById(R.id.btnYes);\n        btnNo = findViewById(R.id.btnNo);\n        statusBtnTextView = findViewById(R.id.statusBtnTextView);\n        responseTextView = findViewById(R.id.responseTextView);\n        estadoRedTextView = findViewById(R.id.redStatusTextView);\n        btnCreacionRed = findViewById(R.id.creacionRedbutton);\n        Log.i(\"MainActivity\", \"Componentes inicializados.\");\n\n\n        // Inicializamos wifiManager\n        wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);\n\n        // Registro del BroadcastReceiver dinámicamente\n        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);\n        registerReceiver(networkChangeReceiver, filter);\n\n\n        // Inicializar los componentes\n        Log.i(\"MainActivity\", \"Inicio de hilos\");\n        broadcastSender = new BroadcastSender();\n        broadcastReceiver = new BroadcastReceiver(this);\n        messageSender = new MessageSender();\n        broadcastTimer = new BroadcastTimer();\n        //responseListener = new ResponseListener(this);\n\n        // Inicializamos el HashMap\n        ipMessageMap = new HashMap<>();\n\n        Log.i(\"MainActivity\", \"Inicio de Gestionador de Red.\");\n        // Inicializar el administrador del hotspot\n        hotspotManager = new WifiHotspot(this, this);\n\n        // Obtener y mostrar la IP del dispositivo\n        Log.i(\"MainActivity\", \"Mostrando IP....\");\n        String deviceIpAddress = getDeviceIpAddress();\n        ipTextView.setText(\"Mi IP: \" + deviceIpAddress);\n\n        String myDeviceIpAddress = getDeviceIpAddress();\n        myIpTextView.setText(\"Mi IP: \" + myDeviceIpAddress);\n\n        // Iniciar la recepción de broadcasts y respuestas\n        Log.i(\"MainActivity\", \"Escuchando mensajes de broadcast.\");\n        broadcastReceiver.startListening();\n        //responseListener.listenForResponses();\n\n        broadcastTimer.startBroadcastTimer();\n        // Enviar mensaje de broadcast cuando se haga clic en el botón\n        btnSendBroadcast.setOnClickListener(view -> {\n            broadcastSender.sendBroadcast();\n        });\n\n        btnYes.setOnClickListener(view -> {\n            setStatusTextViewOnYes();\n        });\n\n        btnNo.setOnClickListener(view -> {\n            setStatusTextViewOnNo();\n        });\n\n        btnCreacionRed.setOnClickListener(view -> {\n            irACrecionRed(view);\n        });\n\n        // Verificar y solicitar permisos necesarios\n        Log.i(\"MainActivity\", \"Verificando permisos....\");\n        checkPermissions();\n\n        MessageReceiver messageReceiver = new MessageReceiver(this);\n        messageReceiver.startListening();\n\n        // Configuramos el botón para activar el hotspot\n        toggleHotspotButton.setOnClickListener(view -> {\n            crearRed();\n        });\n\n\n        btnSendMessages.setOnClickListener(view -> {\n            if (isConnectedToWifi()){\n                enviarMensaje();\n            } else if (responseTextView.getText().equals(\"SI\")){\n                iniciarConteo();\n            }\n        });\n\n\n    }\n\n    public void irACrecionRed(View view){\n        Intent i = new Intent(this, CreacionRedActivity.class);\n        startActivity(i);\n    }\n\n    public void enviarMensaje(){\n        String message = responseTextView.getText().toString();\n        int port = 12345; // Puedes definir el puerto a utilizar\n        Log.i(\"Enviar Mensaje\", \"Enviando mensaje.\");\n\n        // Supongamos que quieres enviar el mensaje a la primera IP de la lista\n        if (!ipList.isEmpty()) {\n            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista\n            for(String targetIp : ipList) {\n                messageSender.sendMessage(targetIp, port, message);\n                Log.i(\"Envio de mensaje\", \"Mensaje enviado a: \" + targetIp + \" con \" + message);\n                Toast.makeText(MainActivity.this, \"Mensaje enviado a: \" + targetIp, Toast.LENGTH_SHORT).show();\n\n            }\n\n            if(responseTextView.getText().equals(\"SI\")){\n                enviarEstado();\n            }\n        } else {\n            Log.e(\"Envio de mensaje\", \"No hay IPs disponibles para enviar el mensaje.\");\n            Toast.makeText(this, \"No hay IPs disponibles para enviar el mensaje\", Toast.LENGTH_SHORT).show();\n        }\n    }\n\n    // Método para actualizar la lista de IPs en el TextView\n    public void updateIpList(String ip) {\n        Log.i(\"Actualizacion de lista\", \"Actualizando lista de IP's.\");\n        handler.post(() -> {\n            StringBuilder ips = new StringBuilder(\"IPs recibidas:\\n\");\n            if (!ipList.contains(ip)) {\n                Log.i(\"Actualizacion de lista\", \"IP agregada: \" + ip);\n                ipList.add(ip);\n                ips.append(ip).append(\"\\n\");\n            }\n            //ipTextView.setText(ips.toString());\n            runOnUiThread(() -> ipTextView.setText(ips.toString()));\n            Log.i(\"Actualizacion de lista\", \"Lista actualizada.\");\n        });\n\n    }\n\n    public void setMyIpTextView(String newIp) {\n        myIpTextView.setText(newIp);\n    }\n\n    public void limpiarListasIp(){\n        StringBuilder displayText = new StringBuilder(\"Mensajes recibidos:\\n\");\n        // Actualizar el TextView en el hilo de la UI\n        runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));\n        ipList.clear();\n        ipMessageMap.clear();\n    }\n    public void crearRed(){\n        String ssid = ssidEditText.getText().toString().trim();\n        String password = passwordEditText.getText().toString().trim();\n        // Validar que el usuario haya ingresado el SSID y la contraseña\n        if (ssid.isEmpty() || password.isEmpty()) {\n            Log.i(\"Gestion de red\", \"No se pudo crear red. Debe ingresar un Nombre y/o una contraseña.\");\n            estadoRedTextView.setText(\"Estado: No se pudo crear red. Ingresar nombre y/o contraseña.\");\n            //Toast.makeText(MainActivity.this, \"Ingrese un SSID y una contraseña\", Toast.LENGTH_SHORT).show();\n            return;\n        }\n\n        // Validar la longitud de la contraseña\n        if (password.length() < 8 || password.length() > 63) {\n            Log.i(\"Gestion de red\", \"No se pudo crear red. La contraseña debe tener al menos 8 carácteres.\");\n            estadoRedTextView.setText(\"Estado: No se puedo crear. La contraseña debe tener al menos 8 carácteres.\");\n            //Toast.makeText(MainActivity.this, \"La contraseña debe tener entre 8 y 63 caracteres\", Toast.LENGTH_LONG).show();\n            return;\n        }\n\n        boolean isHotspotActive;\n        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {\n            isHotspotActive = isHotspotActiveForAndroid10();\n        } else {\n            isHotspotActive = checkHotspotStatus();\n        }\n\n\n        if (isHotspotActive) {\n            Log.i(\"HotspotStatus\", \"El Hotspot está activado.\");\n            // Actualiza la UI o haz lo que sea necesario\n        } else {\n            Log.i(\"HotspotStatus\", \"El Hotspot está desactivado.\");\n        }\n\n        if (!ssid.isEmpty() && !password.isEmpty()) {\n            // Verificar si el sistema operativo es Android 10 o superior\n            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {\n                // Activar el Hotspot (Wi-Fi Direct) con el SSID y la contraseña ingresados por el usuario\n                toggleHotspot(ssid, password);\n\n            } else {\n                Log.i(\"Gestion de red\", \"No se pudo crear red. Wifi Direct Hotspot requiere Android 10 o superior\");\n                estadoRedTextView.setText(\"Estado: No se pudo crear la red. Wifi Direct Hotspot requiere Android 10 o superior.\");\n                // Mostrar mensaje de error si la versión es inferior a Android 10\n                //Toast.makeText(MainActivity.this, \"Wi-Fi Direct Hotspot requiere Android 10 o superior\", Toast.LENGTH_SHORT).show();\n            }\n        }\n\n    }\n\n\n    // Método para verificar el estado del hotspot en versiones anteriores a Android 10\n    private boolean checkHotspotStatus() {\n        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);\n        try {\n            // Usamos reflexión para acceder al método privado isWifiApEnabled en versiones anteriores a Android 10\n            Method method = wifiManager.getClass().getDeclaredMethod(\"isWifiApEnabled\");\n            method.setAccessible(true);\n            return (Boolean) method.invoke(wifiManager);\n        } catch (Exception e) {\n            e.printStackTrace();\n            return false;\n        }\n    }\n\n    // Método adicional para manejar Android 10 y superiores\n    private boolean isHotspotActiveForAndroid10() {\n        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);\n\n        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {\n            Network network = connectivityManager.getActiveNetwork();\n            NetworkCapabilities capabilities = connectivityManager.getNetworkCapabilities(network);\n\n            // Verificamos si el hotspot está activo, generalmente cuando el Wi-Fi está desactivado\n            if (capabilities != null && capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI)) {\n                return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) && !wifiManager.isWifiEnabled();\n            }\n        }\n        return false;\n    }\n\n    // Método para alternar el estado del Hotspot\n    private void toggleHotspot(String ssid, String password) {\n        Log.i(\"Red Hotspot\", \"Cambiando estado de Hotspot.\");\n        if (!isHotspotActive) {\n            // Iniciar el Hotspot con Wi-Fi Direct\n            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {\n                hotspotManager.startWifiDirectHotspot(ssid, password);\n            }\n        } else {\n            // Detener el Hotspot\n            hotspotManager.stopHotspot();\n        }\n\n        isHotspotActive = !isHotspotActive; // Cambiar el estado\n        String statusMessage = isHotspotActive ? \"Hotspot activado\" : \"Hotspot desactivado\";\n\n        // Mostrar un mensaje de éxito o error\n        //Toast.makeText(this, statusMessage, Toast.LENGTH_SHORT).show();\n\n        // Actualizar la interfaz\n        statusTextView.setText(statusMessage);\n        toggleHotspotButton.setText(isHotspotActive ? \"Desactivar Hotspot\" : \"Activar Hotspot\");\n\n    }\n\n\n    public void setStatusTextViewOnYes() {\n        responseTextView.setText(\"SI\");\n    }\n\n\n    public void setStatusTextViewOnNo() {\n        responseTextView.setText(\"NO\");\n    }\n\n    public void storeMessageFromIp(String ip, String message) {\n        ipMessageMap.put(ip, message);\n        // Mostrar el mensaje recibido en la interfaz\n        // Actualizar la interfaz con el contenido del HashMap\n        updateIpMessageView();\n        runOnUiThread(() -> {\n            Toast.makeText(this, \"Mensaje recibido de \" + ip + \": \" + message, Toast.LENGTH_SHORT).show();\n        });\n    }\n\n    // Método para actualizar el TextView con el contenido del HashMap\n    private void updateIpMessageView() {\n        Log.i(\"Actualizar IP-Mensaje\", \"Se actualiza lista de mensajes.\");\n\n        StringBuilder displayText = new StringBuilder(\"Mensajes recibidos:\\n\");\n        for (String ip : ipMessageMap.keySet()) {\n            displayText.append(\"IP: \").append(ip).append(\" - Mensaje: \").append(ipMessageMap.get(ip)).append(\"\\n\");\n        }\n\n        // Actualizar el TextView en el hilo de la UI\n        runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));\n    }\n\n\n    public void guardarVoto(String ip, String voto){\n        Log.i(\"Guardado de votos\", \"Se inicia el guardado de votos.\");\n        String[] votoArray = voto.split(\":\");\n        String resultadoVoto = votoArray[1];\n        Log.i(\"Guardado de votos\", \"Se obtiene voto: \" + resultadoVoto);\n\n        ipMessageMap.put(ip, resultadoVoto);\n        // Mostrar el mensaje recibido en la interfaz\n        // Actualizar la interfaz con el contenido del HashMap\n        updateIpMessageView();\n        runOnUiThread(() -> {\n            Toast.makeText(this, \"Mensaje recibido de \" + ip + \": \" + resultadoVoto, Toast.LENGTH_SHORT).show();\n        });\n        cont = cont + 1;\n        Log.i(\"Guardado de votos\", \"El contador esta en \" + cont);\n\n        if(ipList.size() == cont) {\n            Log.i(\"Recoleccion de estados\", \"Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.\");\n            iniciarConteo();\n            cont = 0;\n        }\n    }\n\n    public void iniciarConteo(){\n        int contPositivo = 0;\n        int contNegativo = 0;\n        StringBuilder displayText = new StringBuilder(\"Mensajes recibidos:\\n\");\n        Log.i(\"Conteo de votos\", \"Conteo de votos iniciado.\");\n\n        for (String ip : ipMessageMap.keySet()) {\n            String voto = ipMessageMap.get(ip);\n            if (\"SI\".equals(voto)) {\n                contPositivo++;\n                Log.i(\"Conteo de votos\", \"VOTO:SI\");\n            } else if (\"NO\".equals(voto)) {\n                contNegativo++;\n                Log.i(\"Conteo de votos\", \"VOTO:NO\");\n            }\n        }\n\n        Log.i(\"Conteo de votos\", \"Añadiendo voto del propio dispositivo.\");\n        if(responseTextView.getText().equals(\"SI\")){\n            Log.i(\"Conteo de votos\", \"Se añade un VOTO:SI\");\n            contPositivo++;\n        } else {\n            Log.i(\"Conteo de votos\", \"Se añade un VOTO:NO\");\n            contNegativo++;\n        }\n\n        // Mostrar resultado basado en la cantidad de votos\n        if (contPositivo >= contNegativo) {\n            Log.i(\"Conteo de votos\", \"Hay Accidente\");\n            displayText.append(\"ACCIDENTE\").append(\"\\n\");\n            ipMessageTextView.setText(\"ACCIDENTE\");\n        } else {\n            Log.i(\"Conteo de votos\", \"No hubo accidente\");\n            ipMessageTextView.setText(\"NO HUBO ACCIDENTE\");\n        }\n    }\n\n    public void enviarEstado(){\n        String message;\n        Log.i(\"Envio de Estado\", \"Enviando estado\");\n        if(responseTextView.getText().equals(\"SI\")){\n            message = \"VOTO:SI\";\n            Log.i(\"Envio de Estado\", \"Enviando mensaje: VOTO:SI\");\n\n        } else {\n            message = \"VOTO:NO\";\n            Log.i(\"Envio de Estado\", \"Enviando mensaje: VOTO:NO\");\n\n        }\n\n        int port = 12345; // Puedes definir el puerto a utilizar\n\n        // Supongamos que quieres enviar el mensaje a la primera IP de la lista\n        if (!ipList.isEmpty()) {\n            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista\n            for(String targetIp : ipList) {\n                messageSender.sendMessage(targetIp, port, message);\n                Log.i(\"Envio de Estado\", \"Enviando mensaje a \" + targetIp + \" con: VOTO:NO\");\n            }\n        }\n    }\n\n\n    // Método para verificar permisos en tiempo de ejecución\n    private void checkPermissions() {\n        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {\n            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_WIFI_STATE) != PackageManager.PERMISSION_GRANTED ||\n                    ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_WIFI_STATE) != PackageManager.PERMISSION_GRANTED ||\n                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED ||\n                    ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED ||\n                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {\n\n                ActivityCompat.requestPermissions(this,\n                        new String[]{\n                                Manifest.permission.ACCESS_WIFI_STATE,\n                                Manifest.permission.CHANGE_WIFI_STATE,\n                                Manifest.permission.ACCESS_NETWORK_STATE,\n                                Manifest.permission.CHANGE_NETWORK_STATE,\n                                Manifest.permission.ACCESS_FINE_LOCATION,\n                                Manifest.permission.ACCESS_COARSE_LOCATION\n                        }, 1);\n            }\n        }\n    }\n\n    // Callback para manejar la respuesta del usuario a la solicitud de permisos\n    @Override\n    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {\n        super.onRequestPermissionsResult(requestCode, permissions, grantResults);\n        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {\n            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {\n                // Permisos concedidos, puedes iniciar el hotspot\n                Log.i(\"PermissionSuccesfull\", \"Permiso de ubicación habilitados. Se puede iniciar el hotspot.\");\n            } else {\n                // Permisos no concedidos, manejar el caso según tu lógica\n                Log.e(\"PermissionError\", \"Permiso de ubicación denegado. No se puede iniciar el hotspot.\");\n            }\n        }\n    }\n\n    @RequiresApi(api = Build.VERSION_CODES.O)\n    @Override\n    public void onHotspotStarted(String ssid, String password) {\n        Log.i(\"Creacion de Hotspot\", \"Red creada.\");\n\n        // Mostrar SSID y contraseña en los TextViews\n        ssidTextView.setText(\"SSID: \" + ssid);\n        passwordTextView.setText(\"Contraseña: \" + password);\n\n        // Obtener y mostrar la IP del dispositivo al crear el hotspot\n        String deviceIpAddress = getDeviceIpAddress();\n        //ipTextView.setText(\"Mi IP: \" + deviceIpAddress);\n\n        myIpTextView.setText(\"Mi IP: \" + deviceIpAddress);\n    }\n\n    private String getDeviceIpAddress() {\n        try {\n            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {\n                NetworkInterface intf = en.nextElement();\n                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {\n                    InetAddress inetAddress = enumIpAddr.nextElement();\n                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {\n                        return inetAddress.getHostAddress();\n                    }\n                }\n            }\n        } catch (Exception ex) {\n            ex.printStackTrace();\n        }\n        return \"IP no disponible\";\n    }\n\n    public boolean isConnectedToWifi() {\n        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);\n        NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);\n\n        return networkInfo != null && networkInfo.isConnected();\n    }\n\n\n    @Override\n    protected void onDestroy() {\n        super.onDestroy();\n\n        // Detener el hotspot al cerrar la aplicación\n        hotspotManager.stopHotspot();\n    }\n\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/autoalert/view/activities/MainActivity.java b/app/src/main/java/com/example/autoalert/view/activities/MainActivity.java
+--- a/app/src/main/java/com/example/autoalert/view/activities/MainActivity.java	
++++ b/app/src/main/java/com/example/autoalert/view/activities/MainActivity.java	
+@@ -27,8 +27,11 @@
+ import androidx.appcompat.app.AppCompatActivity;
+ import androidx.core.app.ActivityCompat;
+ import androidx.core.content.ContextCompat;
++import androidx.lifecycle.ViewModelProvider;
+ 
+ import com.example.autoalert.R;
++import com.example.autoalert.utils.NotificadorAccidente;
++import com.example.autoalert.viewmodel.AccidentViewModel;
+ 
+ import java.lang.reflect.Method;
+ import java.net.InetAddress;
+@@ -58,10 +61,10 @@
+     public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast
+     private HashMap<String, String> ipMessageMap;
+     private TextView ipMessageTextView;
+-    private Button btnYes;
+-    private Button btnNo;
++    //private Button btnYes;
++    //private Button btnNo;
+     private TextView statusBtnTextView;
+-    private TextView responseTextView;
++    //rivate TextView responseTextView;
+     private TextView estadoRedTextView;
+     private Button btnCreacionRed;
+     private BroadcastTimer broadcastTimer;
+@@ -70,6 +73,10 @@
+     private WifiManager wifiManager;
+ 
+     private NetworkChangeReceiver networkChangeReceiver = new NetworkChangeReceiver();
++    private AccidentViewModel accidentViewModel;
++
++   private  boolean huboAccidente = false; // Cambia esto a true cuando detectes un accidente
++
+ 
+ 
+ 
+@@ -86,17 +93,17 @@
+         passwordTextView = findViewById(R.id.passwordTextView);
+         ssidEditText = findViewById(R.id.ssidEditText);
+         passwordEditText = findViewById(R.id.passwordEditText);
+-        Button btnSendMessages = findViewById(R.id.btnSendMessages);
++        //Button btnSendMessages = findViewById(R.id.btnSendMessages);
+         ipTextView = findViewById(R.id.ipTextView);
+         Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);
+         statusTextView = findViewById(R.id.statusTextView);
+         toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
+         ipMessageTextView = findViewById(R.id.ipMessageTextView);
+         myIpTextView = findViewById(R.id.myIpTextView);
+-        btnYes = findViewById(R.id.btnYes);
+-        btnNo = findViewById(R.id.btnNo);
+-        statusBtnTextView = findViewById(R.id.statusBtnTextView);
+-        responseTextView = findViewById(R.id.responseTextView);
++       // btnYes = findViewById(R.id.btnYes);
++        //btnNo = findViewById(R.id.btnNo);
++       // statusBtnTextView = findViewById(R.id.statusBtnTextView);
++        //responseTextView = findViewById(R.id.responseTextView);
+         estadoRedTextView = findViewById(R.id.redStatusTextView);
+         btnCreacionRed = findViewById(R.id.creacionRedbutton);
+         Log.i("MainActivity", "Componentes inicializados.");
+@@ -144,13 +151,13 @@
+             broadcastSender.sendBroadcast();
+         });
+ 
+-        btnYes.setOnClickListener(view -> {
+-            setStatusTextViewOnYes();
+-        });
+-
+-        btnNo.setOnClickListener(view -> {
+-            setStatusTextViewOnNo();
+-        });
++//        btnYes.setOnClickListener(view -> {
++//            setStatusTextViewOnYes();
++//        });
++//
++//        btnNo.setOnClickListener(view -> {
++//            setStatusTextViewOnNo();
++//        });
+ 
+         btnCreacionRed.setOnClickListener(view -> {
+             irACrecionRed(view);
+@@ -168,14 +175,35 @@
+             crearRed();
+         });
+ 
++        accidentViewModel = new ViewModelProvider(this).get(AccidentViewModel.class);
++        // Pasar el ViewModel al NotificadorAccidente
++        NotificadorAccidente notificador = NotificadorAccidente.getInstancia();
++        notificador.setAccidentViewModel(accidentViewModel);
++
+ 
+-        btnSendMessages.setOnClickListener(view -> {
+-            if (isConnectedToWifi()){
+-                enviarMensaje();
+-            } else if (responseTextView.getText().equals("SI")){
+-                iniciarConteo();
++
++        // Observar cambios en el estado del accidente
++        accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
++            if (accidentDetected) {
++                huboAccidente = true;
++                if (isConnectedToWifi()){
++                    enviarMensaje();
++                } else{
++                    iniciarConteo();
++                }
++                Log.i("Accidente", "Se ha detectado un accidente.");
++
+             }
+         });
++
++
++//        btnSendMessages.setOnClickListener(view -> {
++//            if (isConnectedToWifi()){
++//                enviarMensaje();
++//            } else if (huboAccidente){
++//                iniciarConteo();
++//            }
++//        });
+ 
+ 
+     }
+@@ -186,7 +214,7 @@
+     }
+ 
+     public void enviarMensaje(){
+-        String message = responseTextView.getText().toString();
++        String message = "Accidente";
+         int port = 12345; // Puedes definir el puerto a utilizar
+         Log.i("Enviar Mensaje", "Enviando mensaje.");
+ 
+@@ -200,7 +228,7 @@
+ 
+             }
+ 
+-            if(responseTextView.getText().equals("SI")){
++            if(huboAccidente){
+                 enviarEstado();
+             }
+         } else {
+@@ -344,14 +372,14 @@
+     }
+ 
+ 
+-    public void setStatusTextViewOnYes() {
+-        responseTextView.setText("SI");
+-    }
+-
+-
+-    public void setStatusTextViewOnNo() {
+-        responseTextView.setText("NO");
+-    }
++//    public void setStatusTextViewOnYes() {
++//        responseTextView.setText("SI");
++//    }
++//
++//
++//    public void setStatusTextViewOnNo() {
++//        responseTextView.setText("NO");
++//    }
+ 
+     public void storeMessageFromIp(String ip, String message) {
+         ipMessageMap.put(ip, message);
+@@ -418,7 +446,7 @@
+         }
+ 
+         Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
+-        if(responseTextView.getText().equals("SI")){
++        if(huboAccidente){
+             Log.i("Conteo de votos", "Se añade un VOTO:SI");
+             contPositivo++;
+         } else {
+@@ -440,7 +468,7 @@
+     public void enviarEstado(){
+         String message;
+         Log.i("Envio de Estado", "Enviando estado");
+-        if(responseTextView.getText().equals("SI")){
++        if(huboAccidente){
+             message = "VOTO:SI";
+             Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
+ 
+Index: app/src/main/res/layout/activity_main.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\n<androidx.constraintlayout.widget.ConstraintLayout xmlns:android=\"http://schemas.android.com/apk/res/android\"\n    xmlns:app=\"http://schemas.android.com/apk/res-auto\"\n    xmlns:tools=\"http://schemas.android.com/tools\"\n    android:id=\"@+id/main\"\n    android:layout_width=\"match_parent\"\n    android:layout_height=\"match_parent\"\n    tools:context=\".MainActivity\">\n\n    <TextView\n        android:id=\"@+id/ssidLabel\"\n        android:layout_width=\"51dp\"\n        android:layout_height=\"25dp\"\n        android:layout_marginTop=\"32dp\"\n        android:text=\"SSID:\"\n        android:textSize=\"20sp\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.038\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toTopOf=\"parent\" />\n\n    <com.google.android.material.textfield.TextInputEditText\n        android:id=\"@+id/ssidEditText\"\n        android:layout_width=\"325dp\"\n        android:layout_height=\"40dp\"\n        android:layout_marginTop=\"4dp\"\n        android:hint=\"Nombre\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.29\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/ssidLabel\" />\n\n    <TextView\n        android:id=\"@+id/passwordLabel\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginTop=\"12dp\"\n        android:text=\"Contraseña:\"\n        android:textSize=\"20sp\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.046\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/ssidEditText\" />\n\n    <com.google.android.material.textfield.TextInputEditText\n        android:id=\"@+id/passwordEditText\"\n        android:layout_width=\"333dp\"\n        android:layout_height=\"42dp\"\n        android:hint=\"contraseña\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.32\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/passwordLabel\" />\n\n    <TextView\n        android:id=\"@+id/statusTextView\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginStart=\"156dp\"\n        android:layout_marginTop=\"4dp\"\n        android:text=\"Estado de la Red:\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.287\"\n        app:layout_constraintStart_toEndOf=\"@+id/ssidTextView\"\n        app:layout_constraintTop_toBottomOf=\"@+id/toggleHotspotButton\" />\n\n    <Button\n        android:id=\"@+id/toggleHotspotButton\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginTop=\"8dp\"\n        android:text=\"Activar Red\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/passwordEditText\" />\n\n    <TextView\n        android:id=\"@+id/ssidTextView\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginStart=\"20dp\"\n        android:layout_marginTop=\"4dp\"\n        android:text=\"SSID:\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/toggleHotspotButton\" />\n\n    <TextView\n        android:id=\"@+id/passwordTextView\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginStart=\"20dp\"\n        android:layout_marginTop=\"4dp\"\n        android:text=\"Contraseña:\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/ssidTextView\" />\n\n    <Button\n        android:id=\"@+id/btnSendBroadcast\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginTop=\"92dp\"\n        android:text=\"Enviar mensaje de broadcast\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/toggleHotspotButton\" />\n\n    <TextView\n        android:id=\"@+id/myIpTextView\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginStart=\"16dp\"\n        android:layout_marginTop=\"24dp\"\n        android:text=\"Mi ip:\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/btnSendBroadcast\" />\n\n    <TextView\n        android:id=\"@+id/ipTextView\"\n        android:layout_width=\"193dp\"\n        android:layout_height=\"98dp\"\n        android:layout_marginStart=\"16dp\"\n        android:layout_marginTop=\"16dp\"\n        android:text=\"IP's recibidas:\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/myIpTextView\" />\n\n    <Button\n        android:id=\"@+id/btnSendMessages\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:text=\"Enviar mensaje a dispositivos\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/ipTextView\" />\n\n    <TextView\n        android:id=\"@+id/ipMessageTextView\"\n        android:layout_width=\"271dp\"\n        android:layout_height=\"119dp\"\n        android:layout_marginTop=\"12dp\"\n        android:text=\"Mensajes recibidos:\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.114\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/btnSendMessages\" />\n\n    <Button\n        android:id=\"@+id/btnYes\"\n        android:layout_width=\"69dp\"\n        android:layout_height=\"54dp\"\n        android:layout_marginStart=\"8dp\"\n        android:layout_marginTop=\"8dp\"\n        android:text=\"SI\"\n        app:layout_constraintStart_toEndOf=\"@+id/ipTextView\"\n        app:layout_constraintTop_toBottomOf=\"@+id/statusBtnTextView\" />\n\n    <Button\n        android:id=\"@+id/btnNo\"\n        android:layout_width=\"69dp\"\n        android:layout_height=\"55dp\"\n        android:layout_marginStart=\"28dp\"\n        android:layout_marginTop=\"8dp\"\n        android:text=\"NO\"\n        app:layout_constraintStart_toEndOf=\"@+id/btnYes\"\n        app:layout_constraintTop_toBottomOf=\"@+id/statusBtnTextView\" />\n\n    <TextView\n        android:id=\"@+id/responseTextView\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginTop=\"60dp\"\n        android:text=\"No\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.44\"\n        app:layout_constraintStart_toEndOf=\"@+id/ipTextView\"\n        app:layout_constraintTop_toBottomOf=\"@+id/statusBtnTextView\" />\n\n    <TextView\n        android:id=\"@+id/statusBtnTextView\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:layout_marginTop=\"40dp\"\n        android:layout_marginEnd=\"16dp\"\n        android:text=\"Contenido del mensaje: [Si/No]\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/btnSendBroadcast\" />\n\n    <TextView\n        android:id=\"@+id/redStatusTextView\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:text=\"Estado:\"\n        app:layout_constraintBottom_toTopOf=\"@+id/btnSendBroadcast\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.26\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toBottomOf=\"@+id/passwordTextView\"\n        app:layout_constraintVertical_bias=\"0.592\" />\n\n    <Button\n        android:id=\"@+id/creacionRedbutton\"\n        android:layout_width=\"wrap_content\"\n        android:layout_height=\"wrap_content\"\n        android:text=\"Ir a Crear Red\"\n        app:layout_constraintBottom_toTopOf=\"@+id/btnSendBroadcast\"\n        app:layout_constraintEnd_toEndOf=\"parent\"\n        app:layout_constraintHorizontal_bias=\"0.699\"\n        app:layout_constraintStart_toStartOf=\"parent\"\n        app:layout_constraintTop_toTopOf=\"parent\"\n        app:layout_constraintVertical_bias=\"0.031\" />\n\n</androidx.constraintlayout.widget.ConstraintLayout>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
+--- a/app/src/main/res/layout/activity_main.xml	
++++ b/app/src/main/res/layout/activity_main.xml	
+@@ -5,7 +5,7 @@
+     android:id="@+id/main"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+-    tools:context=".MainActivity">
++    tools:context="com.example.autoalert.view.activities.MainActivity">
+ 
+     <TextView
+         android:id="@+id/ssidLabel"
+@@ -124,66 +124,16 @@
+         app:layout_constraintStart_toStartOf="parent"
+         app:layout_constraintTop_toBottomOf="@+id/myIpTextView" />
+ 
+-    <Button
+-        android:id="@+id/btnSendMessages"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:text="Enviar mensaje a dispositivos"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/ipTextView" />
+-
+     <TextView
+         android:id="@+id/ipMessageTextView"
+-        android:layout_width="271dp"
+-        android:layout_height="119dp"
+-        android:layout_marginTop="12dp"
++        android:layout_width="351dp"
++        android:layout_height="172dp"
++        android:layout_marginBottom="20dp"
+         android:text="Mensajes recibidos:"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.114"
+-        app:layout_constraintStart_toStartOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/btnSendMessages" />
+-
+-    <Button
+-        android:id="@+id/btnYes"
+-        android:layout_width="69dp"
+-        android:layout_height="54dp"
+-        android:layout_marginStart="8dp"
+-        android:layout_marginTop="8dp"
+-        android:text="SI"
+-        app:layout_constraintStart_toEndOf="@+id/ipTextView"
+-        app:layout_constraintTop_toBottomOf="@+id/statusBtnTextView" />
+-
+-    <Button
+-        android:id="@+id/btnNo"
+-        android:layout_width="69dp"
+-        android:layout_height="55dp"
+-        android:layout_marginStart="28dp"
+-        android:layout_marginTop="8dp"
+-        android:text="NO"
+-        app:layout_constraintStart_toEndOf="@+id/btnYes"
+-        app:layout_constraintTop_toBottomOf="@+id/statusBtnTextView" />
+-
+-    <TextView
+-        android:id="@+id/responseTextView"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginTop="60dp"
+-        android:text="No"
++        app:layout_constraintBottom_toBottomOf="parent"
+         app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintHorizontal_bias="0.44"
+-        app:layout_constraintStart_toEndOf="@+id/ipTextView"
+-        app:layout_constraintTop_toBottomOf="@+id/statusBtnTextView" />
+-
+-    <TextView
+-        android:id="@+id/statusBtnTextView"
+-        android:layout_width="wrap_content"
+-        android:layout_height="wrap_content"
+-        android:layout_marginTop="40dp"
+-        android:layout_marginEnd="16dp"
+-        android:text="Contenido del mensaje: [Si/No]"
+-        app:layout_constraintEnd_toEndOf="parent"
+-        app:layout_constraintTop_toBottomOf="@+id/btnSendBroadcast" />
++        app:layout_constraintHorizontal_bias="0.233"
++        app:layout_constraintStart_toStartOf="parent" />
+ 
+     <TextView
+         android:id="@+id/redStatusTextView"
+Index: app/src/main/java/com/example/autoalert/viewmodel/AccidentViewModel.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/autoalert/viewmodel/AccidentViewModel.java b/app/src/main/java/com/example/autoalert/viewmodel/AccidentViewModel.java
+new file mode 100644
+--- /dev/null	
++++ b/app/src/main/java/com/example/autoalert/viewmodel/AccidentViewModel.java	
+@@ -0,0 +1,24 @@
++package com.example.autoalert.viewmodel;
++
++import androidx.lifecycle.LiveData;
++import androidx.lifecycle.MutableLiveData;
++import androidx.lifecycle.ViewModel;
++
++public class AccidentViewModel extends ViewModel {
++    private MutableLiveData<Boolean> accidenteDetectado = new MutableLiveData<>();
++
++    public LiveData<Boolean> getAccidenteDetectado() {
++        return accidenteDetectado;
++    }
++
++    // Método para notificar que hubo un accidente
++    public void notificarAccidente() {
++        accidenteDetectado.setValue(true); // Notifica que hubo un accidente
++    }
++
++    // Método para restablecer el estado
++    public void resetAccidente() {
++        accidenteDetectado.setValue(false); // Resetea el estado de accidente
++    }
++}
++
+Index: app/src/main/java/com/example/autoalert/utils/DetectorAccidenteTrasero.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteTrasero.java b/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteTrasero.java
+new file mode 100644
+--- /dev/null	
++++ b/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteTrasero.java	
+@@ -0,0 +1,81 @@
++package com.example.autoalert.utils;
++
++import static com.example.autoalert.utils.AceleracionBrusca.esAceleracionBrusca;
++import static com.example.autoalert.utils.AutoParado.elAutoEstaParado;
++
++import android.content.Context;
++import android.util.Log;
++
++import com.example.autoalert.model.entities.DatosMovimiento;
++import com.example.autoalert.repository.DetectorAccidenteDataWriter;
++
++import java.util.LinkedList;
++
++public class DetectorAccidenteTrasero {
++
++    private static final double UMBRAL_ACELERACION = 5.0;  // metros/seg^2 (ajustar según necesidad)
++    private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();
++    private boolean aceleracionBruscaDetectada = false;
++    private Context context;
++
++    public DetectorAccidenteTrasero(Context context) {
++        this.context = context.getApplicationContext();
++    }
++
++    public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
++        historialDatos.add(nuevoDato);
++        if (historialDatos.size() > 3) {
++            historialDatos.removeFirst();  // Mantén solo los últimos 3 datos
++        }
++
++        if (!aceleracionBruscaDetectada && historialDatos.size() == 3) {
++            if (analizarCondicionesPrevias()) {
++                aceleracionBruscaDetectada = true;
++                historialDatos.clear();
++                Log.i("ACCIDENTE_TRASERO", "Condiciones previas de accidente trasero cumplidas.");
++                return true;  // Se detectó un posible accidente
++            }
++            return false;  // No se cumplen las condiciones previas
++        }
++
++        if (aceleracionBruscaDetectada && historialDatos.size() == 3) {
++            if (analizarMovimientoPosterior()) {
++                Log.i("ACCIDENTE_TRASERO", "Posible accidente trasero detectado.");
++                DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTE TRASERO DETECTADO.");
++                aceleracionBruscaDetectada = false;
++                return true;  // Se detectó un accidente
++            } else {
++                Log.i("ACCIDENTE_TRASERO", "No se detecta accidente trasero.");
++                aceleracionBruscaDetectada = false;
++                return false;  // No se detectó un accidente
++            }
++        }
++
++        return false;  // Por defecto, si no se cumplen las condiciones de accidente
++    }
++
++    private boolean analizarCondicionesPrevias() {
++        DatosMovimiento punto1 = historialDatos.get(0);
++        DatosMovimiento punto2 = historialDatos.get(1);
++        DatosMovimiento punto3 = historialDatos.get(2);
++
++        boolean aceleracionBrusca = esAceleracionBrusca(punto1, punto2, UMBRAL_ACELERACION);
++
++        if (aceleracionBrusca) {
++            Log.i("ACCIDENTE_TRASERO", "Aceleración brusca detectada.");
++            return true;
++        }
++
++        return false;
++    }
++
++    private boolean analizarMovimientoPosterior() {
++        DatosMovimiento punto4 = historialDatos.get(0);
++        DatosMovimiento punto5 = historialDatos.get(1);
++        DatosMovimiento punto6 = historialDatos.get(2);
++
++        return esAceleracionBrusca(punto4, punto5, UMBRAL_ACELERACION) || elAutoEstaParado(punto4, punto5, punto6, 1);
++    }
++
++
++}
+Index: app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java b/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java
+new file mode 100644
+--- /dev/null	
++++ b/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java	
+@@ -0,0 +1,103 @@
++package com.example.autoalert.utils;
++
++import static com.example.autoalert.utils.CalcularAngulo.calcularAngulo;
++import static com.example.autoalert.utils.CambioBrusco.esCambioBrusco;
++import static com.example.autoalert.utils.DesaceleracionBrusca.esDesaceleracionBrusca;
++
++import android.content.Context;
++import android.util.Log;
++import com.example.autoalert.model.entities.DatosMovimiento;
++import com.example.autoalert.repository.DetectorAccidenteDataWriter;
++
++import java.util.LinkedList;
++
++public class DetectorAccidenteVuelco {
++
++    private static final double UMBRAL_CAMBIO_ORIENTACION = 60.0; // Grados (puede ajustarse)
++    private static final double UMBRAL_DESACELERACION = 5.0;  // metros/seg^2
++    private static final double UMBRAL_TIEMPO_ORIENTACION = 3; // Segundos de cambio mantenido
++    private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();
++    private boolean cambioBruscoDetectado = false;
++    private Context context;
++
++    public DetectorAccidenteVuelco(Context context) {
++        this.context = context.getApplicationContext();
++    }
++
++    public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
++        historialDatos.add(nuevoDato);
++        if (historialDatos.size() > 3) {
++            historialDatos.removeFirst();  // Mantén solo los últimos 3 datos
++        }
++
++        if (!cambioBruscoDetectado && historialDatos.size() == 3) {
++            if (analizarCondicionesPrevias()) {
++                cambioBruscoDetectado = true;
++                historialDatos.clear();
++                Log.i("ACCIDENTE_VUELCO", "Condiciones previas de accidente por vuelco cumplidas.");
++                return false;  // Aún no se ha confirmado el accidente, pero las condiciones previas se cumplieron
++            }
++        }
++
++        if (cambioBruscoDetectado && historialDatos.size() == 3) {
++            if (analizarMovimientoPosterior()) {
++                Log.i("ACCIDENTE_VUELCO", "Posible accidente de vuelco detectado.");
++                DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTE POR VUELCO DETECTADO.");
++                cambioBruscoDetectado = false;
++                return true;  // Se detectó un accidente de vuelco
++            } else {
++                Log.i("ACCIDENTE_VUELCO", "No se detecta accidente por vuelco.");
++                cambioBruscoDetectado = false;
++            }
++        }
++
++        return false;  // No se ha detectado un accidente de vuelco
++    }
++
++    private boolean analizarCondicionesPrevias() {
++        DatosMovimiento punto1 = historialDatos.get(0);
++        DatosMovimiento punto2 = historialDatos.get(1);
++        DatosMovimiento punto3 = historialDatos.get(2);
++
++        // Calcula el cambio en la orientación
++        double cambioOrientacion = calcularAngulo(punto1, punto2, punto3);
++        boolean cambioBrusco = esCambioBrusco(cambioOrientacion, UMBRAL_CAMBIO_ORIENTACION);
++        Log.i("ACCIDENTE_VUELCO", "Cambio brusco de orientación: " + cambioBrusco);
++
++        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto2, punto3, UMBRAL_DESACELERACION);
++        Log.i("ACCIDENTE_VUELCO", "Desaceleración brusca: " + desaceleracionBrusca);
++
++        if (cambioBrusco && desaceleracionBrusca) {
++            Log.i("ACCIDENTE_VUELCO", "Condiciones previas de vuelco detectadas.");
++            return true;  // Las condiciones de un vuelco potencial están presentes
++        }
++
++        return false;
++    }
++
++    private boolean analizarMovimientoPosterior() {
++        DatosMovimiento punto4 = historialDatos.get(0);
++        DatosMovimiento punto5 = historialDatos.get(1);
++        DatosMovimiento punto6 = historialDatos.get(2);
++
++        // Analiza si el cambio de orientación se mantuvo por el tiempo requerido
++        boolean cambioSostenido = verificarCambioSostenido(historialDatos);
++        Log.i("ACCIDENTE_VUELCO", "Cambio de orientación sostenido: " + cambioSostenido);
++
++        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto4, punto5, UMBRAL_DESACELERACION);
++
++        return cambioSostenido && desaceleracionBrusca;
++    }
++
++    private boolean verificarCambioSostenido(LinkedList<DatosMovimiento> historial) {
++        // Verifica si el cambio de orientación se mantuvo durante los 3 puntos (tiempo simulado en segundos)
++        if (historial.size() < 3) return false;
++
++        DatosMovimiento punto1 = historial.get(0);
++        DatosMovimiento punto2 = historial.get(1);
++        DatosMovimiento punto3 = historial.get(2);
++
++        double cambioOrientacion1 = calcularAngulo(punto1, punto2, punto3);
++        return esCambioBrusco(cambioOrientacion1, UMBRAL_CAMBIO_ORIENTACION);
++    }
++}
+Index: app/src/main/java/com/example/autoalert/utils/AceleracionBrusca.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/autoalert/utils/AceleracionBrusca.java b/app/src/main/java/com/example/autoalert/utils/AceleracionBrusca.java
+new file mode 100644
+--- /dev/null	
++++ b/app/src/main/java/com/example/autoalert/utils/AceleracionBrusca.java	
+@@ -0,0 +1,13 @@
++package com.example.autoalert.utils;
++
++import com.example.autoalert.model.entities.DatosMovimiento;
++
++public class AceleracionBrusca {
++
++    public static boolean esAceleracionBrusca(DatosMovimiento punto1, DatosMovimiento punto2, double umbralAceleracion) {
++        double cambioVelocidad = punto2.getVelocidad() - punto1.getVelocidad();
++        long tiempoDiferencia = punto2.getTiempo() - punto1.getTiempo();
++        double aceleracion = cambioVelocidad / (tiempoDiferencia / 1000.0);
++        return aceleracion > umbralAceleracion;
++    }
++}

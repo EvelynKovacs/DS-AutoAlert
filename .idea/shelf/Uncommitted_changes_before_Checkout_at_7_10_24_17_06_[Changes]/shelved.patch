@@ -1,0 +1,232 @@
+Index: app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.autoalert.utils;\n\nimport static com.example.autoalert.utils.CalcularAngulo.calcularAngulo;\nimport static com.example.autoalert.utils.CambioBrusco.esCambioBrusco;\nimport static com.example.autoalert.utils.DesaceleracionBrusca.esDesaceleracionBrusca;\n\nimport android.content.Context;\nimport android.util.Log;\nimport com.example.autoalert.model.entities.DatosMovimiento;\nimport com.example.autoalert.repository.DetectorAccidenteDataWriter;\n\nimport java.util.LinkedList;\n\npublic class DetectorAccidenteVuelco {\n\n    private static final double UMBRAL_CAMBIO_ORIENTACION = 60.0; // Grados (puede ajustarse)\n    private static final double UMBRAL_DESACELERACION = 5.0;  // metros/seg^2\n    private static final double UMBRAL_TIEMPO_ORIENTACION = 3; // Segundos de cambio mantenido\n    private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();\n    private boolean cambioBruscoDetectado = false;\n    private Context context;\n\n    public DetectorAccidenteVuelco(Context context) {\n        this.context = context.getApplicationContext();\n    }\n\n    public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {\n        historialDatos.add(nuevoDato);\n        if (historialDatos.size() > 3) {\n            historialDatos.removeFirst();  // Mantén solo los últimos 3 datos\n        }\n\n        if (!cambioBruscoDetectado && historialDatos.size() == 3) {\n            if (analizarCondicionesPrevias()) {\n                cambioBruscoDetectado = true;\n                historialDatos.clear();\n                Log.i(\"ACCIDENTE_VUELCO\", \"Condiciones previas de accidente por vuelco cumplidas.\");\n                return false;  // Aún no se ha confirmado el accidente, pero las condiciones previas se cumplieron\n            }\n        }\n\n        if (cambioBruscoDetectado && historialDatos.size() == 3) {\n            if (analizarMovimientoPosterior()) {\n                Log.i(\"ACCIDENTE_VUELCO\", \"Posible accidente de vuelco detectado.\");\n                DetectorAccidenteDataWriter.writeAccidentDataToFile(context, \"ACCIDENTE POR VUELCO DETECTADO.\");\n                cambioBruscoDetectado = false;\n                return true;  // Se detectó un accidente de vuelco\n            } else {\n                Log.i(\"ACCIDENTE_VUELCO\", \"No se detecta accidente por vuelco.\");\n                cambioBruscoDetectado = false;\n            }\n        }\n\n        return false;  // No se ha detectado un accidente de vuelco\n    }\n\n    private boolean analizarCondicionesPrevias() {\n        DatosMovimiento punto1 = historialDatos.get(0);\n        DatosMovimiento punto2 = historialDatos.get(1);\n        DatosMovimiento punto3 = historialDatos.get(2);\n\n        // Calcula el cambio en la orientación\n        double cambioOrientacion = calcularAngulo(punto1, punto2, punto3);\n        boolean cambioBrusco = esCambioBrusco(cambioOrientacion, UMBRAL_CAMBIO_ORIENTACION);\n        Log.i(\"ACCIDENTE_VUELCO\", \"Cambio brusco de orientación: \" + cambioBrusco);\n\n        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto2, punto3, UMBRAL_DESACELERACION);\n        Log.i(\"ACCIDENTE_VUELCO\", \"Desaceleración brusca: \" + desaceleracionBrusca);\n\n        if (cambioBrusco && desaceleracionBrusca) {\n            Log.i(\"ACCIDENTE_VUELCO\", \"Condiciones previas de vuelco detectadas.\");\n            return true;  // Las condiciones de un vuelco potencial están presentes\n        }\n\n        return false;\n    }\n\n    private boolean analizarMovimientoPosterior() {\n        DatosMovimiento punto4 = historialDatos.get(0);\n        DatosMovimiento punto5 = historialDatos.get(1);\n        DatosMovimiento punto6 = historialDatos.get(2);\n\n        // Analiza si el cambio de orientación se mantuvo por el tiempo requerido\n        boolean cambioSostenido = verificarCambioSostenido(historialDatos);\n        Log.i(\"ACCIDENTE_VUELCO\", \"Cambio de orientación sostenido: \" + cambioSostenido);\n\n        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto4, punto5, UMBRAL_DESACELERACION);\n\n        return cambioSostenido && desaceleracionBrusca;\n    }\n\n    private boolean verificarCambioSostenido(LinkedList<DatosMovimiento> historial) {\n        // Verifica si el cambio de orientación se mantuvo durante los 3 puntos (tiempo simulado en segundos)\n        if (historial.size() < 3) return false;\n\n        DatosMovimiento punto1 = historial.get(0);\n        DatosMovimiento punto2 = historial.get(1);\n        DatosMovimiento punto3 = historial.get(2);\n\n        double cambioOrientacion1 = calcularAngulo(punto1, punto2, punto3);\n        return esCambioBrusco(cambioOrientacion1, UMBRAL_CAMBIO_ORIENTACION);\n    }\n}\n
+===================================================================
+diff --git a/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java b/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java
+--- a/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java	
++++ b/app/src/main/java/com/example/autoalert/utils/DetectorAccidenteVuelco.java	
+@@ -1,103 +1,103 @@
+-package com.example.autoalert.utils;
+-
+-import static com.example.autoalert.utils.CalcularAngulo.calcularAngulo;
+-import static com.example.autoalert.utils.CambioBrusco.esCambioBrusco;
+-import static com.example.autoalert.utils.DesaceleracionBrusca.esDesaceleracionBrusca;
+-
+-import android.content.Context;
+-import android.util.Log;
+-import com.example.autoalert.model.entities.DatosMovimiento;
+-import com.example.autoalert.repository.DetectorAccidenteDataWriter;
+-
+-import java.util.LinkedList;
+-
+-public class DetectorAccidenteVuelco {
+-
+-    private static final double UMBRAL_CAMBIO_ORIENTACION = 60.0; // Grados (puede ajustarse)
+-    private static final double UMBRAL_DESACELERACION = 5.0;  // metros/seg^2
+-    private static final double UMBRAL_TIEMPO_ORIENTACION = 3; // Segundos de cambio mantenido
+-    private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();
+-    private boolean cambioBruscoDetectado = false;
+-    private Context context;
+-
+-    public DetectorAccidenteVuelco(Context context) {
+-        this.context = context.getApplicationContext();
+-    }
+-
+-    public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
+-        historialDatos.add(nuevoDato);
+-        if (historialDatos.size() > 3) {
+-            historialDatos.removeFirst();  // Mantén solo los últimos 3 datos
+-        }
+-
+-        if (!cambioBruscoDetectado && historialDatos.size() == 3) {
+-            if (analizarCondicionesPrevias()) {
+-                cambioBruscoDetectado = true;
+-                historialDatos.clear();
+-                Log.i("ACCIDENTE_VUELCO", "Condiciones previas de accidente por vuelco cumplidas.");
+-                return false;  // Aún no se ha confirmado el accidente, pero las condiciones previas se cumplieron
+-            }
+-        }
+-
+-        if (cambioBruscoDetectado && historialDatos.size() == 3) {
+-            if (analizarMovimientoPosterior()) {
+-                Log.i("ACCIDENTE_VUELCO", "Posible accidente de vuelco detectado.");
+-                DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTE POR VUELCO DETECTADO.");
+-                cambioBruscoDetectado = false;
+-                return true;  // Se detectó un accidente de vuelco
+-            } else {
+-                Log.i("ACCIDENTE_VUELCO", "No se detecta accidente por vuelco.");
+-                cambioBruscoDetectado = false;
+-            }
+-        }
+-
+-        return false;  // No se ha detectado un accidente de vuelco
+-    }
+-
+-    private boolean analizarCondicionesPrevias() {
+-        DatosMovimiento punto1 = historialDatos.get(0);
+-        DatosMovimiento punto2 = historialDatos.get(1);
+-        DatosMovimiento punto3 = historialDatos.get(2);
+-
+-        // Calcula el cambio en la orientación
+-        double cambioOrientacion = calcularAngulo(punto1, punto2, punto3);
+-        boolean cambioBrusco = esCambioBrusco(cambioOrientacion, UMBRAL_CAMBIO_ORIENTACION);
+-        Log.i("ACCIDENTE_VUELCO", "Cambio brusco de orientación: " + cambioBrusco);
+-
+-        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto2, punto3, UMBRAL_DESACELERACION);
+-        Log.i("ACCIDENTE_VUELCO", "Desaceleración brusca: " + desaceleracionBrusca);
+-
+-        if (cambioBrusco && desaceleracionBrusca) {
+-            Log.i("ACCIDENTE_VUELCO", "Condiciones previas de vuelco detectadas.");
+-            return true;  // Las condiciones de un vuelco potencial están presentes
+-        }
+-
+-        return false;
+-    }
+-
+-    private boolean analizarMovimientoPosterior() {
+-        DatosMovimiento punto4 = historialDatos.get(0);
+-        DatosMovimiento punto5 = historialDatos.get(1);
+-        DatosMovimiento punto6 = historialDatos.get(2);
+-
+-        // Analiza si el cambio de orientación se mantuvo por el tiempo requerido
+-        boolean cambioSostenido = verificarCambioSostenido(historialDatos);
+-        Log.i("ACCIDENTE_VUELCO", "Cambio de orientación sostenido: " + cambioSostenido);
+-
+-        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto4, punto5, UMBRAL_DESACELERACION);
+-
+-        return cambioSostenido && desaceleracionBrusca;
+-    }
+-
+-    private boolean verificarCambioSostenido(LinkedList<DatosMovimiento> historial) {
+-        // Verifica si el cambio de orientación se mantuvo durante los 3 puntos (tiempo simulado en segundos)
+-        if (historial.size() < 3) return false;
+-
+-        DatosMovimiento punto1 = historial.get(0);
+-        DatosMovimiento punto2 = historial.get(1);
+-        DatosMovimiento punto3 = historial.get(2);
+-
+-        double cambioOrientacion1 = calcularAngulo(punto1, punto2, punto3);
+-        return esCambioBrusco(cambioOrientacion1, UMBRAL_CAMBIO_ORIENTACION);
+-    }
+-}
++//package com.example.autoalert.utils;
++//
++//import static com.example.autoalert.utils.CalcularAngulo.calcularAngulo;
++//import static com.example.autoalert.utils.CambioBrusco.esCambioBrusco;
++//import static com.example.autoalert.utils.DesaceleracionBrusca.esDesaceleracionBrusca;
++//
++//import android.content.Context;
++//import android.util.Log;
++//import com.example.autoalert.model.entities.DatosMovimiento;
++//import com.example.autoalert.repository.DetectorAccidenteDataWriter;
++//
++//import java.util.LinkedList;
++//
++//public class DetectorAccidenteVuelco {
++//
++//    private static final double UMBRAL_CAMBIO_ORIENTACION = 60.0; // Grados (puede ajustarse)
++//    private static final double UMBRAL_DESACELERACION = 5.0;  // metros/seg^2
++//    private static final double UMBRAL_TIEMPO_ORIENTACION = 3; // Segundos de cambio mantenido
++//    private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();
++//    private boolean cambioBruscoDetectado = false;
++//    private Context context;
++//
++//    public DetectorAccidenteVuelco(Context context) {
++//        this.context = context.getApplicationContext();
++//    }
++//
++//    public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
++//        historialDatos.add(nuevoDato);
++//        if (historialDatos.size() > 3) {
++//            historialDatos.removeFirst();  // Mantén solo los últimos 3 datos
++//        }
++//
++//        if (!cambioBruscoDetectado && historialDatos.size() == 3) {
++//            if (analizarCondicionesPrevias()) {
++//                cambioBruscoDetectado = true;
++//                historialDatos.clear();
++//                Log.i("ACCIDENTE_VUELCO", "Condiciones previas de accidente por vuelco cumplidas.");
++//                return false;  // Aún no se ha confirmado el accidente, pero las condiciones previas se cumplieron
++//            }
++//        }
++//
++//        if (cambioBruscoDetectado && historialDatos.size() == 3) {
++//            if (analizarMovimientoPosterior()) {
++//                Log.i("ACCIDENTE_VUELCO", "Posible accidente de vuelco detectado.");
++//                DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTE POR VUELCO DETECTADO.");
++//                cambioBruscoDetectado = false;
++//                return true;  // Se detectó un accidente de vuelco
++//            } else {
++//                Log.i("ACCIDENTE_VUELCO", "No se detecta accidente por vuelco.");
++//                cambioBruscoDetectado = false;
++//            }
++//        }
++//
++//        return false;  // No se ha detectado un accidente de vuelco
++//    }
++//
++//    private boolean analizarCondicionesPrevias() {
++//        DatosMovimiento punto1 = historialDatos.get(0);
++//        DatosMovimiento punto2 = historialDatos.get(1);
++//        DatosMovimiento punto3 = historialDatos.get(2);
++//
++//        // Calcula el cambio en la orientación
++//        double cambioOrientacion = calcularAngulo(punto1, punto2, punto3);
++//        boolean cambioBrusco = esCambioBrusco(cambioOrientacion, UMBRAL_CAMBIO_ORIENTACION);
++//        Log.i("ACCIDENTE_VUELCO", "Cambio brusco de orientación: " + cambioBrusco);
++//
++//        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto2, punto3, UMBRAL_DESACELERACION);
++//        Log.i("ACCIDENTE_VUELCO", "Desaceleración brusca: " + desaceleracionBrusca);
++//
++//        if (cambioBrusco && desaceleracionBrusca) {
++//            Log.i("ACCIDENTE_VUELCO", "Condiciones previas de vuelco detectadas.");
++//            return true;  // Las condiciones de un vuelco potencial están presentes
++//        }
++//
++//        return false;
++//    }
++//
++//    private boolean analizarMovimientoPosterior() {
++//        DatosMovimiento punto4 = historialDatos.get(0);
++//        DatosMovimiento punto5 = historialDatos.get(1);
++//        DatosMovimiento punto6 = historialDatos.get(2);
++//
++//        // Analiza si el cambio de orientación se mantuvo por el tiempo requerido
++//        boolean cambioSostenido = verificarCambioSostenido(historialDatos);
++//        Log.i("ACCIDENTE_VUELCO", "Cambio de orientación sostenido: " + cambioSostenido);
++//
++//        boolean desaceleracionBrusca = esDesaceleracionBrusca(punto4, punto5, UMBRAL_DESACELERACION);
++//
++//        return cambioSostenido && desaceleracionBrusca;
++//    }
++//
++//    private boolean verificarCambioSostenido(LinkedList<DatosMovimiento> historial) {
++//        // Verifica si el cambio de orientación se mantuvo durante los 3 puntos (tiempo simulado en segundos)
++//        if (historial.size() < 3) return false;
++//
++//        DatosMovimiento punto1 = historial.get(0);
++//        DatosMovimiento punto2 = historial.get(1);
++//        DatosMovimiento punto3 = historial.get(2);
++//
++//        double cambioOrientacion1 = calcularAngulo(punto1, punto2, punto3);
++//        return esCambioBrusco(cambioOrientacion1, UMBRAL_CAMBIO_ORIENTACION);
++//    }
++//}
+Index: app/src/main/java/com/example/autoalert/view/activities/MessageReceiver.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.autoalert.view.activities;\n\nimport android.content.Context;\nimport android.util.Log;\n\nimport java.io.BufferedReader;\nimport java.io.InputStreamReader;\nimport java.net.ServerSocket;\nimport java.net.Socket;\n\npublic class MessageReceiver {\n\n    private Context context;\n    private final int LISTEN_PORT = 12345; // Puerto donde escuchar los mensajes\n\n\n    // Constructor que recibe el contexto de la actividad\n    public MessageReceiver(Context context) {\n        this.context = context;\n    }\n\n    public void startListening() {\n        new Thread(() -> {\n            try {\n                Log.i(\"Recepcion de mensajes\", \"Se creo hilo de recepcion de mensajes en el puerto: \" + LISTEN_PORT);\n\n                // Crear un socket servidor que escucha en el puerto definido\n                ServerSocket serverSocket = new ServerSocket(LISTEN_PORT);\n\n                while (true) {\n                    // Esperar a que un cliente se conecte\n                    Socket clientSocket = serverSocket.accept();\n                    BufferedReader input = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));\n\n                    // Obtener la IP del cliente\n                    String clientIp = clientSocket.getInetAddress().getHostAddress();\n\n                    // Leer el mensaje que envió el cliente\n                    String message = input.readLine();\n\n                    Log.i(\"Recepción de mensajes\", \"Se obtuvo mensaje de \" + clientIp + \" con \" + message);\n\n\n                    // Almacenar la IP y el mensaje recibido en el HashMap\n                    ((MainActivity)context).storeMessageFromIp(clientIp, message);\n\n                    if (message.startsWith(\"VOTO:\")) {\n                        Log.i(\"Recepción de mensajes\", \"Es un mensaje de ESTADO. Mensaje: \" + message);\n                        ((MainActivity)context).guardarVoto(clientIp, message);\n                    }\n\n                    if(message.equals(\"SI\")) {\n                        Log.i(\"Recepción de mensajes\", \"Es un mensaje de ACCIDENTE. Mensaje: \" + message);\n                        ((MainActivity)context).enviarEstado();\n                    }\n\n                    // Cerrar la conexión con el cliente\n                    input.close();\n                    clientSocket.close();\n\n                }\n            } catch (Exception e) {\n                e.printStackTrace();\n                Log.e(\"Recepción de mensajes\", \"Error en el hilo.\");\n            }\n        }).start();\n    }\n}\n\n
+===================================================================
+diff --git a/app/src/main/java/com/example/autoalert/view/activities/MessageReceiver.java b/app/src/main/java/com/example/autoalert/view/activities/MessageReceiver.java
+--- a/app/src/main/java/com/example/autoalert/view/activities/MessageReceiver.java	
++++ b/app/src/main/java/com/example/autoalert/view/activities/MessageReceiver.java	
+@@ -49,7 +49,7 @@
+                         ((MainActivity)context).guardarVoto(clientIp, message);
+                     }
+ 
+-                    if(message.equals("SI")) {
++                    if(message.equals("accidente")) {
+                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
+                         ((MainActivity)context).enviarEstado();
+                     }
