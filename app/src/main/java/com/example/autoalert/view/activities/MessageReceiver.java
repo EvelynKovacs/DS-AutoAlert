@@ -3,6 +3,7 @@ package com.example.autoalert.view.activities;
 
 import android.content.Context;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -62,11 +63,13 @@ public class MessageReceiver {
                     if (message.startsWith("VOTO:")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ESTADO. Mensaje: " + message);
                         //(MainActivity)context).guardarVoto(clientIp, message);
+
+                        Toast.makeText(context, "Llego al voto de messageReceiver" , Toast.LENGTH_SHORT).show();
                         mainActivity.guardarVoto(clientIp, message);
 
                     }
 
-                    if(message.equals("SI")) {
+                    if(message.equals("accidente")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
 
                         //((MainActivity)context).enviarEstado();

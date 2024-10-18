@@ -1,5 +1,7 @@
 package com.example.autoalert.view.activities;
 
+import static com.example.autoalert.viewmodel.SpeedViewModel.REQUEST_CHECK_SETTINGS;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -27,7 +29,10 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+
+
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 
 
@@ -35,10 +40,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.autoalert.R;
+import com.example.autoalert.utils.DetectorAccidente;
+import com.example.autoalert.utils.NotificadorAccidente;
 import com.example.autoalert.view.fragments.PasosASeguirFragment;
 import com.example.autoalert.view.fragments.PrincipalFragment;
+import com.example.autoalert.viewmodel.AccidentViewModel;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -58,6 +67,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.example.autoalert.viewmodel.SensorViewModel;
+import com.example.autoalert.viewmodel.SpeedViewModel;
+
 
 public class MainActivity extends AppCompatActivity implements PasosASeguirFragment.OnCompleteListener{
 
@@ -106,6 +119,9 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
 
     //private EditText aliasEditText;
 
+    private Boolean huboAccidente = false;
+    private Boolean isAccident = false;
+
     // HashMap para almacenar la asociación de IPs y alias
     public HashMap<String, String> ipAliasMap = new HashMap<>();
 
@@ -118,22 +134,34 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
     private static final String PREFS_NAME = "AppPreferences";
     private static final String FIRST_TIME_KEY = "isFirstTime";
 
+    private SharedPreferences sharedPref;
+    private SensorViewModel sensorViewModel;
+    private SpeedViewModel speedViewModel;
+    private TextView tvAddress;  // Nuevo TextView para la dirección
+    private boolean isMessageSent = false;  // Bandera para controlar el envío del mensaje
+    private DetectorAccidente accidentDetector; // Instancia de AccidentDetector
+
+//    private AccidentViewModel accidentViewModel;
+//    private boolean huboAccidente = false; // Esta variable se actualizará desde el ViewModel
+//    private boolean accidentt = false;
 
 
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_inicio);
 
         // Guardar los datos en SharedPreferences
-        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+         sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
         // Guardar nombre y edad
         editor.putStringSet("ipList",ipList);
         editor.putString("estadoAccidente","NO");
         editor.apply(); // Guardar los cambios
+
 
 
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -183,6 +211,13 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         Log.d("MainActivity", "Alias en MainActivity: " + getAlias());
 
 
+        accidentDetector = new DetectorAccidente(getApplicationContext());
+      //  accelerometerQueueRepository = new AccelerometerQueueRepository(getApplicationContext());
+
+        tvAddress = findViewById(R.id.tvAddress);  // TextView para la dirección
+
+        // Inicializar el ViewModel
+        speedViewModel = new ViewModelProvider(this).get(SpeedViewModel.class);
 
         // Iniciar la recepción de broadcasts y respuestas
         Log.i("MainActivity", "Escuchando mensajes de broadcast.");
@@ -200,12 +235,58 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
 
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(this, getMainLooper(), null);
+/*
+        // Observar los cambios de dirección
+        speedViewModel.getAddress().observe(this, address -> {
+            tvAddress.setText("Dirección: " + address);  // Actualizar el TextView de la dirección
+            System.out.println("DIRECCION: " + address);
+            String emergencyMessage = "Emergencia. Dirección: " + address;
+            System.out.println(emergencyMessage);
+            String sanitizedAddress = " Mensaje de Emergencia. La siguiente direccion podria no ser exacta. " + address.replaceAll("[^a-zA-Z0-9\s,.]", "");
 
 
+            //
+            //SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, sanitizedAddress);
+
+            if (!isMessageSent) {
+                //String emergencyMessage = "Mensaje de emergencia. Dirección: " + address;
+
+                //SmsUtils.checkAndSendSms(this, new String[]{"2804992455", "2804611882", "2804405851"}, sanitizedAddress);
+
+                isMessageSent = true;  // Marcar como enviado
+            }
+        });*/
+/*
+        accidentViewModel = new ViewModelProvider(this).get(AccidentViewModel.class);
+
+        // Pasar el ViewModel al NotificadorAccidente
+        NotificadorAccidente notificador = NotificadorAccidente.getInstancia();
+        notificador.setAccidentViewModel(accidentViewModel);
+
+        // Observar los cambios en el estado del accidente
+        accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
+            huboAccidente = true;
+            if (isConnectedToWifi() && !accidentt) {
+                enviarMensaje();
+            } else if (accidentDetected && !accidentt) {
+                Log.i("Accidente", "Se ha detectado un accidente.");
+                // Aquí puedes iniciar acciones como iniciarConteo()
+                iniciarConteo();
+
+            }
+
+        });
+*/
 
     }
 
+    public void setHuboAccidente(Boolean huboAccidente1){
+        this.huboAccidente = huboAccidente1;
+    }
 
+    public void setIsAccidente(Boolean accidente){
+        this.isAccident = accidente;
+    }
 
     // Método para actualizar la lista de IPs en el TextView
     public void updateIpList(String ip) {
@@ -277,6 +358,7 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
 
 // COSAS DEL SISTEMA DE VOTACION
     public void guardarVoto(String ip, String voto){
+        Toast.makeText(this, "Llego al guardarVoto" , Toast.LENGTH_SHORT).show();
         Log.i("Guardado de votos", "Se inicia el guardado de votos.");
         String[] votoArray = voto.split(":");
         String resultadoVoto = votoArray[1];
@@ -299,6 +381,8 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         Log.i("Guardado de votos", "El contador esta en " + cont);
 
         if(ipListNueva.size() == cont) {
+            Toast.makeText(this, "Conto todos los votos" , Toast.LENGTH_SHORT).show();
+
             Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
             iniciarConteo();
             cont = 0;
@@ -306,13 +390,15 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
     }
 
     public void iniciarConteo(){
+        Toast.makeText(this, "Llego iniciarConteo" , Toast.LENGTH_SHORT).show();
+
         int contPositivo = 0;
         int contNegativo = 0;
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
         Log.i("Conteo de votos", "Conteo de votos iniciado.");
 
-        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
-        String estadoAccidente = sharedPref.getString("estadoAccidente","NO");
+//        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+//        String estadoAccidente = sharedPref.getString("estadoAccidente","NO");
 
 
         for (String ip : ipMessageMap.keySet()) {
@@ -327,7 +413,7 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         }
 
         Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
-        if(estadoAccidente.equals("SI")){
+        if(huboAccidente){
             Log.i("Conteo de votos", "Se añade un VOTO:SI");
             contPositivo++;
         } else {
@@ -337,24 +423,33 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
 
 //        // Mostrar resultado basado en la cantidad de votos
         if (contPositivo >= contNegativo) {
+            isAccident = true;
             Log.i("Conteo de votos", "Hay Accidente");
             displayText.append("Resultado Votación: HAY ACCIDENTE").append("\n");
+            Toast.makeText(this, "Hay Accidenteee" , Toast.LENGTH_SHORT).show();
+
+
 
         } else {
             Log.i("Conteo de votos", "No hubo accidente");
             displayText.append("Resultado Votación: NO HUBO ACCIDENTE").append("\n");
+            Toast.makeText(this, "No hubo accidenteee" , Toast.LENGTH_SHORT).show();
 
         }
     }
 
     public void enviarEstado(){
+
+        //Toast.makeText(this, "Llego a EnviarEstado" , Toast.LENGTH_SHORT).show();
         String message;
         // Recuperar los datos desde SharedPreferences
-        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+      //  SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
 
         Log.i("Envio de Estado", "Enviando estado");
-        if(sharedPref.getString("estadoAccidente","NO").equals("SI")){
+        if(huboAccidente){
             message = "VOTO:SI";
+
+            //Toast.makeText(this, "VOTO SI" , Toast.LENGTH_SHORT).show();
             Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
 
         } else {
@@ -365,7 +460,6 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
 
 
         Set <String> ipListNueva = sharedPref.getStringSet("ipList", new HashSet<>());
-
 
 
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
@@ -408,6 +502,7 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                speedViewModel.checkLocationSettings(this);
                 // Permisos concedidos, puedes iniciar el hotspot
                 Log.i("PermissionSuccesfull", "Permiso de ubicación habilitados. Se puede iniciar el hotspot.");
             } else {
@@ -468,6 +563,7 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
     @Override
     protected void onResume() {
         super.onResume();
+        speedViewModel.checkLocationSettings(this);
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         registerReceiver(networkChangeReceiver, filter);
@@ -620,6 +716,19 @@ public class MainActivity extends AppCompatActivity implements PasosASeguirFragm
             alias = "aliasGenerico";
         }
         return alias.trim(); // Devuelve el alias generado
+    }
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CHECK_SETTINGS) {
+            if (resultCode == RESULT_OK) {
+                Log.i("MainActivity", "Location settings enabled by user.");
+                // Aquí puedes llamar a resumeLocationUpdates
+                speedViewModel.resumeLocationUpdates();
+            } else {
+                Log.e("MainActivity", "Location settings were not enabled.");
+            }
+        }
     }
 
     @Override

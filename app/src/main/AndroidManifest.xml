@@ -4,7 +4,7 @@
     package="com.example.autoalert">
 
     <!-- Todos los permisos que necesito -->
-    <uses-sdk android:minSdkVersion="14" />
+    <uses-sdk android:minSdkVersion="17" />
 
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />

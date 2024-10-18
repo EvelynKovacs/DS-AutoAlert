@@ -29,8 +29,12 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.autoalert.R;
+import com.example.autoalert.utils.NotificadorAccidente;
+import com.example.autoalert.viewmodel.AccidentViewModel;
+import com.example.autoalert.viewmodel.SpeedViewModel;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -50,6 +54,14 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private WifiHotspot hotspotManager;
+    private TextView tvAddress;  // Nuevo TextView para la dirección
+
+
+    private AccidentViewModel accidentViewModel;
+    private SpeedViewModel speedViewModel;
+    private boolean isMessageSent = false;  // Bandera para controlar el envío del mensaje
+
+
     //private TextView statusTextView;
     //private Button toggleHotspotButton;
     private boolean isHotspotActive = false;
@@ -66,13 +78,17 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
     private Handler handler = new Handler(Looper.getMainLooper());
     private TextView ipMessageTextView;
-    private Button btnYes;
-    private Button btnNo;
+//    private Button btnYes;
+//    private Button btnNo;
     private TextView statusBtnTextView;
     private TextView responseTextView;
     private TextView estadoRedTextView;
     private Button btnCreacionRed;
     private int cont = 0;
+
+    private boolean huboAccidente = false; // Esta variable se actualizará desde el ViewModel
+    private boolean accidentt = false;
+
 
     private TextView resultadoTextView;
     private boolean isSendingMessage = false;
@@ -106,21 +122,48 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
     //    passwordTextView = findViewById(R.id.passwordTextView);
     //    ssidEditText = findViewById(R.id.ssidEditText);
     //    passwordEditText = findViewById(R.id.passwordEditText);
-        Button btnSendMessages = findViewById(R.id.btnSendMessages);
+    //    Button btnSendMessages = findViewById(R.id.btnSendMessages);
         ipTextView = findViewById(R.id.ipTextView);
         Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);
     //    statusTextView = findViewById(R.id.statusTextView);
     //    toggleHotspotButton = findViewById(R.id.toggleHotspotButton);
         ipMessageTextView = findViewById(R.id.ipMessageTextView);
         myIpTextView = findViewById(R.id.myIpTextView);
+        /*
         btnYes = findViewById(R.id.btnYes);
         btnNo = findViewById(R.id.btnNo);
         statusBtnTextView = findViewById(R.id.statusBtnTextView);
-        responseTextView = findViewById(R.id.responseTextView);
+        responseTextView = findViewById(R.id.responseTextView);*/
     //    estadoRedTextView = findViewById(R.id.redStatusTextView);
         btnCreacionRed = findViewById(R.id.creacionRedbutton);
         resultadoTextView = findViewById(R.id.resultadoTextView);
         Log.i("RedActivity", "Componentes inicializados.");
+
+
+        tvAddress = findViewById(R.id.tvAddress);  // TextView para la dirección
+
+        speedViewModel = new ViewModelProvider(this).get(SpeedViewModel.class);
+
+        // Observar los cambios de dirección
+        speedViewModel.getAddress().observe(this, address -> {
+            tvAddress.setText("Dirección: " + address);  // Actualizar el TextView de la dirección
+            System.out.println("DIRECCION: " + address);
+            String emergencyMessage = "Emergencia. Dirección: " + address;
+            System.out.println(emergencyMessage);
+            String sanitizedAddress = " Mensaje de Emergencia. La siguiente direccion podria no ser exacta. " + address.replaceAll("[^a-zA-Z0-9\\s,.]", "");
+
+
+            //
+            //SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, sanitizedAddress);
+
+            if (!isMessageSent) {
+                //String emergencyMessage = "Mensaje de emergencia. Dirección: " + address;
+
+                //SmsUtils.checkAndSendSms(this, new String[]{"2804992455", "2804611882", "2804405851"}, sanitizedAddress);
+
+                isMessageSent = true;  // Marcar como enviado
+            }
+        });
 
         // Inicializamos wifiManager
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -148,6 +191,9 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
         myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
 
 
+        accidentViewModel = new ViewModelProvider(this).get(AccidentViewModel.class);
+
+
         // Registro del BroadcastReceiver dinámicamente
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(networkChangeReceiver, filter);
@@ -156,14 +202,15 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
         btnSendBroadcast.setOnClickListener(view -> {
             broadcastSender.sendBroadcast();
         });
-
+/*
         btnYes.setOnClickListener(view -> {
             setStatusTextViewOnYes();
         });
 
         btnNo.setOnClickListener(view -> {
             setStatusTextViewOnNo();
-        });
+        });*/
+
 
         btnCreacionRed.setOnClickListener(view -> {
             irACrecionRed(view);
@@ -174,6 +221,27 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
         checkPermissions();
 
 
+        // Pasar el ViewModel al NotificadorAccidente
+        NotificadorAccidente notificador = NotificadorAccidente.getInstancia();
+        notificador.setAccidentViewModel(accidentViewModel);
+
+        // Observar los cambios en el estado del accidente
+        accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
+            Toast.makeText(this, "Observer detector accidente" , Toast.LENGTH_SHORT).show();
+            huboAccidente = true;
+            mainActivity.setHuboAccidente(true);
+            if (isConnectedToWifi() && !accidentt) {
+                enviarMensaje();
+            } else if (accidentDetected && !accidentt) {
+                Log.i("Accidente", "Se ha detectado un accidente.");
+                // Aquí puedes iniciar acciones como iniciarConteo()
+                mainActivity.iniciarConteo();
+                accidentt = true;
+            }
+
+        });
+
+/*
         btnSendMessages.setOnClickListener(view -> {
             if (isConnectedToWifi()){
                 enviarMensaje();
@@ -181,6 +249,8 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
                 mainActivity.iniciarConteo();
             }
         });
+
+*/
 
 
     }
@@ -194,7 +264,10 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
     }
 
     public void enviarMensaje(){
-        String message = responseTextView.getText().toString();
+        //String message = responseTextView.getText().toString();
+
+        Toast.makeText(this, "Llego a Enviar Mensaje" , Toast.LENGTH_SHORT).show();
+        String message = "accidente";
 
         Log.i("Enviar Mensaje", "Enviando mensaje.");
 
@@ -218,10 +291,13 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
                 Toast.makeText(RedActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
 
             }
+            if(huboAccidente){
 
-            if(responseTextView.getText().equals("SI")){
+                //Toast.makeText(this, "Entro a hubo accidente" , Toast.LENGTH_SHORT).show();
                 mainActivity.enviarEstado();
+                Log.i("entroHuboAccidente", "Entro a hubo accidente");
             }
+
         } else {
             Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
             Toast.makeText(this, "No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
@@ -232,7 +308,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
         myIpTextView.setText(newIp);
     }
 
-
+/*
     public void setStatusTextViewOnYes() {
 
         SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
@@ -254,7 +330,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
 
         responseTextView.setText("NO");
     }
-
+*/
 
     // Método para verificar permisos en tiempo de ejecución
     private void checkPermissions() {
