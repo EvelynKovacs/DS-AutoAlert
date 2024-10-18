@@ -2,6 +2,8 @@ package com.example.autoalert.view.activities;
 
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -10,8 +12,8 @@ import com.example.autoalert.R;
 public class MainActivity extends AppCompatActivity {
 
     private TextView speedText;
-    private ImageButton sendMessageButton, createNetworkButton, viewUsersButton, editProfileButton;
-
+    private ImageButton  createNetworkButton, viewUsersButton, editProfileButton;
+    private Button sendMessageButton;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
