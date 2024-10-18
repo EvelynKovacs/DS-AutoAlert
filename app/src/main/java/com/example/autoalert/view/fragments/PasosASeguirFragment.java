@@ -9,7 +9,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.autoalert.R;
-import com.example.autoalert.view.activities.MenuInicioActivity;
+import com.example.autoalert.view.activities.MainActivity;
 import com.google.android.material.button.MaterialButton;
 
 public class PasosASeguirFragment extends Fragment {
@@ -49,7 +49,7 @@ public class PasosASeguirFragment extends Fragment {
             transaction.commit();
 
             // Marcar que ya no es la primera vez que ingresa
-            ((MenuInicioActivity) getActivity()).markFirstTimeCompleted();
+            ((MainActivity) getActivity()).markFirstTimeCompleted();
 
             if (listener != null) {
                 listener.onComplete();

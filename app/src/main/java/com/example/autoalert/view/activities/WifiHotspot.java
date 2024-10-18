@@ -47,7 +47,9 @@ public class WifiHotspot {
                 Log.d("Hotspot", "Hotspot iniciado. SSID: " + ssid + " Contraseña: " + password);
                 isHotspotEnabled = true;
 
+
                 // Notificar al listener (redActivity)
+
                 if (hotspotListener != null) {
                     hotspotListener.onHotspotStarted(ssid, password);
                 }

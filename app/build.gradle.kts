@@ -63,6 +63,8 @@ dependencies {
 
     implementation ("com.github.anastr:speedviewlib:1.6.1")
 
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
     // ROOM Librerías
     implementation("androidx.room:room-runtime:$room_version")
     annotationProcessor("androidx.room:room-compiler:$room_version")

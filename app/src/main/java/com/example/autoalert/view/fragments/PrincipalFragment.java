@@ -29,8 +29,8 @@ import com.google.android.material.button.MaterialButton;
 public class PrincipalFragment extends Fragment {
 
     private SimulacionFragment simulacionFragment;
-
     private ActivityResultLauncher<String[]> requestPermissionLauncher;
+    private SpeedView speedView; // Declare SpeedView variable
 
     public PrincipalFragment() {
         // Required empty public constructor
@@ -40,22 +40,24 @@ public class PrincipalFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        // Inflar el layout del fragmento
+        // Inflate the fragment layout
         View view = inflater.inflate(R.layout.fragment_principal, container, false);
 
-        // Inicializar el lanzador de permisos
+        // Initialize SpeedView after inflating the layout
+        speedView = view.findViewById(R.id.speedView); // Initialize SpeedView here
+
+        // Initialize permission launcher
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
             Boolean fineLocationGranted = result.get(Manifest.permission.ACCESS_FINE_LOCATION);
             Boolean writeStorageGranted = result.get(Manifest.permission.WRITE_EXTERNAL_STORAGE);
             Boolean readStorageGranted = result.get(Manifest.permission.READ_EXTERNAL_STORAGE);
 
-            // Si algún permiso no fue otorgado, mostrar un mensaje
             if (fineLocationGranted != null && !fineLocationGranted ||
                     writeStorageGranted != null && !writeStorageGranted ||
                     readStorageGranted != null && !readStorageGranted) {
-                // Aquí puedes manejar la negación de permisos según sea necesario
+                // Handle permission denial
             } else {
-                // Si todos los permisos son concedidos, inicia la simulación
+                // Start simulation if permissions are granted
                 startSimulation();
             }
         });
@@ -64,7 +66,7 @@ public class PrincipalFragment extends Fragment {
         ImageButton btnUsuario = view.findViewById(R.id.editProfileButton);
         ImageButton btnRed = view.findViewById(R.id.createNetworkButton);
 
-        // Crear instancia del SimulacionFragment
+        // Create instance of SimulacionFragment
         simulacionFragment = new SimulacionFragment();
 
         btnEnvioMensaje.setOnClickListener(v -> {
@@ -75,7 +77,6 @@ public class PrincipalFragment extends Fragment {
             }
         });
 
-        // Configurar el clic en el botón
         btnUsuario.setOnClickListener(v -> {
             FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
             transaction.replace(R.id.fcv_main_container, new VerUsuarioFragment());
@@ -88,21 +89,20 @@ public class PrincipalFragment extends Fragment {
             startActivity(intent);
         });
 
+        // Simulate speed updates every 2 seconds
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                updateSpeedometer(50f); // Simula que la velocidad es 50 km/h
-                // Repite cada 2 segundos para simular un cambio de velocidad
-                new Handler().postDelayed(this, 2000);
+                updateSpeedometer(); // Simulate speed as 50 km/h
+                new Handler().postDelayed(this, 2000); // Repeat every 2 seconds
             }
         }, 2000);
-
 
         return view;
     }
 
     private void startSimulation() {
-        // Iniciar transacción para cambiar al SimulacionFragment
+        // Start transaction to switch to SimulacionFragment
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
         transaction.replace(R.id.fcv_main_container, simulacionFragment);
         transaction.addToBackStack(null);
@@ -123,14 +123,10 @@ public class PrincipalFragment extends Fragment {
         });
     }
 
-    private void updateSpeedometer(float speed) {
-        SpeedView speedView = getView().findViewById(R.id.speedView);
-
-        speedView.setMaxSpeed(300);
-
-
-        // move to 50 Km/s
-        speedView.speedTo(50);
+    private void updateSpeedometer() {
+        if (speedView != null) {
+            speedView.setMaxSpeed(300);
+            speedView.speedTo(50); // Move to 50 Km/h
+        }
     }
-
 }

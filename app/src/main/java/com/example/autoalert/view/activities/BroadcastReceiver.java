@@ -7,6 +7,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+
+import java.util.Calendar;
 import java.util.Enumeration;
 
 public class BroadcastReceiver {
@@ -18,13 +20,13 @@ public class BroadcastReceiver {
     private DatagramSocket socket;
     private byte[] buffer = new byte[1024];
     private boolean running;
-    private RedActivity redActivity;
+
+    private MainActivity mainActivity;
 
 
+    public BroadcastReceiver(MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
 
-
-    public BroadcastReceiver(RedActivity redActivity) {
-        this.redActivity = redActivity;
     }
 
     public void startListening() {
@@ -44,59 +46,49 @@ public class BroadcastReceiver {
                     String myIpAddress = getDeviceIpAddress(); // Método para obtener la IP del dispositivo
                     String senderIp = receivePacket.getAddress().getHostAddress();
                     if(!senderIp.equals(myIpAddress)){
-                        if (message.startsWith("DISCOVER_IP_REQUEST")) {
+
+                        Log.d("BroadcastReceiver", "Mensaje recibido: " + message);
+                        String[] messagePartido = message.split("-");
+                        //Obtengo mensaje sin el timestamp
+                        message = messagePartido[1];
+                        Log.d("BroadcastReceiver", "Mensaje recibido, segunda parte: " + message);
+                        String timestamp = messagePartido[0];
+                        String senderAlias = messagePartido[2];
+                        if (message.equals("DISCOVER_IP_REQUEST")) {
+
                             Log.d("BroadCastReceiver", "El mensaje tiene: "+message);
 
                             String[] parts = message.split(":");
                             String requestType = parts[0];
-                            String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
-                            // Almacenar la IP y el alias en redActivity
-                            redActivity.storeAliasFromIp(senderIp, senderAlias);
+                            //String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
 
-                            redActivity.ipList.add(senderIp);
-                            redActivity.updateIpList(senderIp);
+                            // Almacenar la IP y el alias en MainActivity
+                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
+
+
+                            mainActivity.ipList.add(senderIp);
+                            mainActivity.updateIpList(senderIp);
 
                             // Guardar la IP del emisor
-                            redActivity.storeMessageFromIp(senderIp, message);
-
+                            mainActivity.storeMessageFromIp(senderIp, message);
+                            mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
                             // Enviar respuesta con la IP del receptor
+
                             sendResponse(senderIp, RESPONSE_PORT, myIpAddress);
                         }
 
-                        if (message.startsWith(BROADCAST_RESPONSE)){
-                            senderIp = receivePacket.getAddress().getHostAddress();
+                        if (message.equals(BROADCAST_RESPONSE)){
 
-                            String[] parts = message.split(":");
-                            String requestType = parts[0];
-                            String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
+                            // Almacenar la IP y el alias en MainActivity
+                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
 
-                            // Almacenar la IP y el alias en redActivity
-                            redActivity.storeAliasFromIp(senderIp, senderAlias);
-
-                            redActivity.ipList.add(senderIp);
-                            redActivity.updateIpList(senderIp);
-
-                            //redActivity.ipList.add(senderIp);
-                            redActivity.updateIpList(senderIp);
+                            mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
+                            //mainActivity.ipList.add(senderIp);
+                            mainActivity.updateIpList(senderIp);
                             // Guardar la IP del emisor
-                            redActivity.storeMessageFromIp(senderIp, message);
+                            mainActivity.storeMessageFromIp(senderIp, message);
                         }
                     }
-
-
-                    // Si el mensaje es el de descubrimiento, responder con la IP
-//                    if (message.equals("DISCOVER_IP_REQUEST")) {
-//                        InetAddress myIp = getLocalIPAddress();
-//                        if (myIp != null) {
-//                            byte[] sendData = BROADCAST_RESPONSE.getBytes();
-//                            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,
-//                                    receivePacket.getAddress(), receivePacket.getPort());
-//                            socket.send(sendPacket);
-//                            Log.d("BroadcastReceiver", "Mensaje de peticion broadcast recibida. Contestar con: " + myIp);
-//
-//                        }
-//                    }
-
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -114,19 +106,23 @@ public class BroadcastReceiver {
                 DatagramSocket socket = new DatagramSocket();
                 InetAddress receiverAddress = InetAddress.getByName(senderIp);
 
+                // Obtener el alias desde MainActivity
+                String alias = mainActivity.getAlias();
 
-                // Obtener el alias desde redActivity
-                String alias = redActivity.getAlias();
-                // Crear el mensaje de respuesta con la IP del receptor y su alias
-                String responseMessage = BROADCAST_RESPONSE + ":" + alias;
-                byte[] message = responseMessage.getBytes();
+
+                // Obtener la hora actual
+                Calendar calendar = Calendar.getInstance();
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                int second = calendar.get(Calendar.SECOND);
+
+                String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
+                // Crear el mensaje de respuesta con la IP del receptor
+                String messageToSend = timeString+"-"+BROADCAST_RESPONSE+"-"+alias;
+                byte[] message = messageToSend.getBytes();
+                //byte[] message = BROADCAST_RESPONSE.getBytes();
                 DatagramPacket responsePacket = new DatagramPacket(message, message.length, receiverAddress, port);
 
-
-
-                //byte[] sendData = BROADCAST_RESPONSE.getBytes();
-//                            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,
-//                                    receivePacket.getAddress(), receivePacket.getPort());
 
                 // Enviar el paquete de respuesta
                 socket.send(responsePacket);
