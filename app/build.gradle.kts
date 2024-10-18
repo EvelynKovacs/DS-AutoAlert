@@ -60,6 +60,9 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("de.hdodenhof:circleimageview:3.1.0")
 
+
+    implementation ("com.github.anastr:speedviewlib:1.6.1")
+
     // ROOM Librerías
     implementation("androidx.room:room-runtime:$room_version")
     annotationProcessor("androidx.room:room-compiler:$room_version")

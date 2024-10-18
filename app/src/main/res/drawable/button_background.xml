@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Estado cuando el botón está presionado -->
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#B0BEC5"/> <!-- Gris claro al presionar -->
+            <corners android:radius="12dp"/> <!-- Bordes ligeramente redondeados -->
+            <stroke android:width="2dp" android:color="#37474F"/> <!-- Borde gris oscuro al presionar -->
+        </shape>
+    </item>
+
+    <!-- Estado normal del botón -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#ECEFF1"/> <!-- Gris muy claro en estado normal -->
+            <corners android:radius="12dp"/>
+            <stroke android:width="2dp" android:color="#90A4AE"/> <!-- Borde gris suave -->
+        </shape>
+    </item>
+</selector>

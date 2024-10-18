@@ -15,6 +15,7 @@ import android.os.Bundle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -22,6 +23,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.CountDownTimer;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -84,18 +86,11 @@ public class SimulacionFragment extends Fragment {
             requestPermissions();
         }
 
-
+        // Inicializa los botones y la barra de progreso
         play = root.findViewById(R.id.button2);
         stop = root.findViewById(R.id.button_stop);
         progressBar = root.findViewById(R.id.progress_circular);
         showMessage = root.findViewById(R.id.button_msg_accidente);
-
-        play.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                AudioMediaPlayer();
-            }
-        });
 
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,8 +107,26 @@ public class SimulacionFragment extends Fragment {
             }
         });
 
+        showMessage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isConfirmationPressed = true; // Marca que el botón de confirmación fue presionado
+                Log.i("EnvioMensaje","Se presiono el botonEnviarMensaje");
+                enviarMensaje(v);
+            }
+        });
+
         return root;
     }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+
+        // Llama a AudioMediaPlayer al entrar a la pantalla
+        AudioMediaPlayer();
+    }
+
 
     public void AudioMediaPlayer() {
         if (mp != null) {
@@ -184,7 +197,13 @@ public class SimulacionFragment extends Fragment {
     }
 
     public void enviarMensaje(View view) {
-        // Verifica y obtiene la ubicación actual
+        Log.i("DentroEnviar", "Estoy en enviarMensaje");
+
+        // Detenemos el temporizador si está corriendo
+        if (timer != null) {
+            timer.cancel();
+        }
+
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -195,9 +214,9 @@ public class SimulacionFragment extends Fragment {
                     // Una vez que se obtiene la ubicación, detenemos las actualizaciones
                     locationManager.removeUpdates(this);
 
-                    // Si obtenemos la ubicación, mostramos el mensaje de emergencia
+                    // Manejar la ubicación obtenida
                     manejarUbicacion(location);
-                    Log.d("UbicacionActual", "Le paso la ubicacion actual: " + location);
+                    Log.d("UbicacionActual", "Ubicación actual obtenida: " + location);
                 }
 
                 @Override
@@ -212,16 +231,25 @@ public class SimulacionFragment extends Fragment {
 
             // Solicita actualizaciones de ubicación (solo GPS)
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, locationListener);
-/*
-            // Si no se obtiene la ubicación actual, intenta usar la última ubicación conocida
-            Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (lastKnownLocation != null) {
-                manejarUbicacion(lastKnownLocation);
-                Log.d("UltimaUbicacion", "Le paso la ultima ubicacion: " + lastKnownLocation);
-            } else {
-                // Manejar el caso cuando no hay ubicación conocida disponible
-                Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última conocida", Toast.LENGTH_SHORT).show();
-            }*/
+
+            // Establece un temporizador para obtener la última ubicación conocida si no se obtiene la actual en 10 segundos
+            new Handler().postDelayed(() -> {
+                Log.d("UbicacionActual", "Intentando obtener la última ubicación conocida...");
+                Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                if (lastKnownLocation != null) {
+                    // Si no se obtuvo la ubicación actual en un tiempo razonable, maneja la última ubicación conocida
+                    locationManager.removeUpdates(locationListener);  // Detiene cualquier actualización pendiente
+                    manejarUbicacion(lastKnownLocation);
+                    Log.d("UltimaUbicacion", "Última ubicación conocida usada: " + lastKnownLocation);
+                } else {
+                    // Manejar el caso cuando no hay ubicación conocida disponible
+                    Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última conocida", Toast.LENGTH_SHORT).show();
+                }
+            }, 7);  // Espera 10 segundos para obtener la ubicación actual, luego intenta con la última conocida
+        } else {
+            // Solicitar permisos si no han sido otorgados
+            requestPermissions();
         }
     }
 
