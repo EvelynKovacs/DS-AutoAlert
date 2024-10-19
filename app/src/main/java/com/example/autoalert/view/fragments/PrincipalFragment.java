@@ -91,11 +91,12 @@ public class PrincipalFragment extends Fragment {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                updateSpeedometer(50f); // Simula que la velocidad es 50 km/h
-                // Repite cada 2 segundos para simular un cambio de velocidad
+                updateSpeedometer(view, 50f); // Pass the view and simulate speed as 50 km/h
+                // Repeats every 2 seconds to simulate a speed change
                 new Handler().postDelayed(this, 2000);
             }
         }, 2000);
+
 
 
         return view;
@@ -123,14 +124,14 @@ public class PrincipalFragment extends Fragment {
         });
     }
 
-    private void updateSpeedometer(float speed) {
-        SpeedView speedView = getView().findViewById(R.id.speedView);
+    private void updateSpeedometer(View view, float speed) {
+        SpeedView speedView = view.findViewById(R.id.speedView);
 
-        speedView.setMaxSpeed(300);
-
-
-        // move to 50 Km/s
-        speedView.speedTo(50);
+        if (speedView != null) {
+            speedView.setMaxSpeed(300);
+            speedView.speedTo(speed);
+        }
     }
+
 
 }
