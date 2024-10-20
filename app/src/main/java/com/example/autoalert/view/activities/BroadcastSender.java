@@ -15,6 +15,11 @@ public class BroadcastSender {
     private static final String BROADCAST_MESSAGE = "DISCOVER_IP_REQUEST";
     private MainActivity mainActivity;
 
+    private NetworkUtils networkUtils;
+
+    public BroadcastSender(){
+        this.networkUtils = new NetworkUtils();
+    }
     public void sendBroadcast() {
         new Thread(() -> {
             try {
@@ -40,7 +45,7 @@ public class BroadcastSender {
 
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);
-                InetAddress broadcastAddress = getBroadcastAddress();
+                InetAddress broadcastAddress = this.networkUtils.getBroadcastAddress();
 
                 byte[] sendData = message.getBytes();
                 //byte[] sendData = BROADCAST_MESSAGE.getBytes();

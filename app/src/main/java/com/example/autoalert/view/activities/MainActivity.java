@@ -41,7 +41,6 @@ public class MainActivity extends AppCompatActivity{
     private BroadcastReceiver broadcastReceiver;
     private MessageSender messageSender;
     private MessageReceiver messageReceiver;
-    //public List<String> ipList = new ArrayList<>(); // Lista de IPs obtenidas por broadcast
     public Set<String> ipList = new HashSet<>();
     private HashMap<String, String> ipMessageMap;
     private TextView ipMessageTextView;
