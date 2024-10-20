@@ -12,13 +12,13 @@ public class MessageReceiver {
 
     private Context context;
     private final int LISTEN_PORT = 12345; // Puerto donde escuchar los mensajes
-    private SistemaVotación sistemaVotacion;
+    private SistemaVotacion sistemaVotacion;
 
 
     // Constructor que recibe el contexto de la actividad
     public MessageReceiver(Context context) {
         this.context = context;
-        this.sistemaVotacion = new SistemaVotación((MainActivity) context);
+        this.sistemaVotacion = new SistemaVotacion((MainActivity) context);
     }
 
     public void startListening() {
@@ -63,12 +63,6 @@ public class MessageReceiver {
                         //((MainActivity)context).enviarEstado();
                         sistemaVotacion.enviarEstado();
                     }
-
-                    /*if(message.equals("Desconexion")) {
-                        Log.i("Recepción de mensajes", "Es un mensaje de DESCONEXION. Mensaje: " + message);
-                        ((MainActivity)context).eliminarIp(clientIp);
-                    }
-                    */
 
                     // Cerrar la conexión con el cliente
                     input.close();

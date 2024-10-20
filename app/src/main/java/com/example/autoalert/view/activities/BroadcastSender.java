@@ -19,30 +19,24 @@ public class BroadcastSender {
         new Thread(() -> {
             try {
 
-                // Obtener el alias desde MainActivity
-                /* String alias = mainActivity.getAlias(); // Asegúrate de que este método esté devolviendo el valor correcto
-                if (alias == null || alias.isEmpty()) {
-                    Log.e("BroadcastSender", "Alias está vacío o nulo.");
-                    return; // No continuar si el alias está vacío
-                }
-
-                 */
-
-                // Incorporar el alias en el mensaje
-                /*String messageWithAlias = BROADCAST_MESSAGE + ":" + alias;
-                Log.d("BroadCastSender", "El mensaje que envio: "+messageWithAlias);
-                byte[] sendData = messageWithAlias.getBytes();
-                 */
-
-                // Obtener la hora actual
+                //ESTO PUEDO SACARLO Y PONERLO EN UNA FUNCION
+                // Obtener la hora actual en milisegundos
                 Calendar calendar = Calendar.getInstance();
+                long primerTimestamp = calendar.getTimeInMillis();
+                String primerTimestampString = Long.toString(primerTimestamp);
+                Log.i("Diferencia de Tiempo", "Primer timestamp en String: " + primerTimestampString);
+
+
+                //ESTO ES LO QUE LE MUESTRO AL USUARIO
                 int hour = calendar.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar.get(Calendar.MINUTE);
                 int second = calendar.get(Calendar.SECOND);
-
                 String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
+                Log.i("Diferencia de Tiempo","Primer tiempo: " + timeString);
 
-                String message = timeString + "-" + BROADCAST_MESSAGE;
+                String message = primerTimestampString + "-" +  timeString + "-" + BROADCAST_MESSAGE;
+                Log.i("Diferencia de Tiempo","Primer tiempo: " + timeString);
+                //HASTA ACA
 
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);

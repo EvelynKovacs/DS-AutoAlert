@@ -1,16 +1,13 @@
 package com.example.autoalert.view.activities;
 
 import android.util.Log;
-import android.widget.Toast;
 
-import java.util.HashMap;
-
-public class SistemaVotación {
+public class SistemaVotacion {
 
     private MainActivity mainActivity;
     private MessageSender messageSender;
 
-    public SistemaVotación(MainActivity mainActivity) {
+    public SistemaVotacion(MainActivity mainActivity) {
         this.mainActivity = mainActivity;
     }
 
@@ -86,10 +83,6 @@ public class SistemaVotación {
             Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
 
         }
-
-
-
-        // Supongamos que quieres enviar el mensaje a la primera IP de la lista
         if(mainActivity.getIpList().isEmpty()){
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
             for(String targetIp : mainActivity.getIpList()) {
