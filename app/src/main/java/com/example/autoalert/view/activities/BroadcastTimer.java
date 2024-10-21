@@ -15,7 +15,11 @@ import java.util.Date;
 public class BroadcastTimer {
 
     private BroadcastSender broadcastSender = new BroadcastSender();
-    private MainActivity mainActivity = new MainActivity();
+    private MainActivity mainActivity;
+
+    public BroadcastTimer(MainActivity mainActivity) {
+        this.mainActivity = mainActivity;
+    }
     public void startBroadcastTimer() {
         new Thread(() -> {
             while(true) {

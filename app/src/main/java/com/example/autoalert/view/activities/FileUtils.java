@@ -9,14 +9,16 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
-public class ArchiveUtils {
+public class FileUtils {
 
     private Context context;
 
-    public ArchiveUtils(Context context){
+    public FileUtils(Context context){
         this.context = context;
     }
 
@@ -120,6 +122,114 @@ public class ArchiveUtils {
         // Guardar la lista actualizada en el archivo
         guardarListaEnArchivo(listaIps);
     }
+
+    public void addAndRefreshMap(String fileName, String ip, String message){
+        HashMap<String, String> resultMap = readMapfromFile(fileName);
+
+        resultMap.put(ip, message);
+
+        saveMapInFile(fileName, resultMap);
+    }
+
+    public HashMap<String, String> readMapfromFile(String fileName) {
+        HashMap<String, String> resultMap = new HashMap<>();
+        FileInputStream fis = null;
+        try {
+            fis = context.openFileInput(fileName);
+            InputStreamReader isr = new InputStreamReader(fis);
+            BufferedReader br = new BufferedReader(isr);
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                String[] readLine = linea.split("-");
+                resultMap.put(readLine[0], readLine[1]); // Añadir cada línea a la lista
+                Log.i("Archivo", "Se añadio a la lista: " + readLine[0]  + " con " + readLine[1]);
+            }
+            Log.i("Archivo", "Mapa de " + fileName + "leída exitosamente.");
+        } catch (FileNotFoundException e) {
+            Log.e("Archivo", "El archivo no existe: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e("Archivo", "Error al leer el archivo: " + e.getMessage());
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return resultMap;
+    }
+
+    public void saveMapInFile(String fileName, HashMap<String, String> mapToSave) {
+        FileOutputStream fos = null;
+        try {
+            fos = context.openFileOutput(fileName, Context.MODE_PRIVATE); // Sobrescribir el archivo
+            for (Map.Entry<String, String> line : mapToSave.entrySet()) {
+                fos.write((line.getKey() + "-" + line.getValue() + "\n").getBytes()); // Escribir cada nombre en una nueva línea
+            }
+            Log.i("Archivo", "Map "+ fileName + " guardada exitosamente.");
+        } catch (IOException e) {
+            Log.e("Archivo", "Error al guardar la lista en el archivo: " + e.getMessage());
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public String readState(){
+        String state = "";
+        FileInputStream fis = null;
+        try {
+            fis = context.openFileInput("state");
+            InputStreamReader isr = new InputStreamReader(fis);
+            BufferedReader br = new BufferedReader(isr);
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                state = linea;
+                Log.i("Archivo", "Se obtuvo el estado: " + state);
+            }
+            Log.i("Archivo", "Archivo de Estado leída exitosamente.");
+        } catch (FileNotFoundException e) {
+            Log.e("Archivo", "El archivo no existe: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e("Archivo", "Error al leer el archivo: " + e.getMessage());
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return state;
+    }
+
+    public void saveStateInFile(String state) {
+        FileOutputStream fos = null;
+        try {
+            fos = context.openFileOutput("state", Context.MODE_PRIVATE); // Sobrescribir el archivo
+            fos.write((state.getBytes())); // Escribir cada nombre en una nueva línea
+            Log.i("Archivo", "Archivo Estado guardado exitosamente con: " + state);
+        } catch (IOException e) {
+            Log.e("Archivo", "Error al guardar la lista en el archivo: " + e.getMessage());
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
 
 
 }

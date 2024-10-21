@@ -13,12 +13,14 @@ public class MessageReceiver {
     private Context context;
     private final int LISTEN_PORT = 12345; // Puerto donde escuchar los mensajes
     private SistemaVotacion sistemaVotacion;
+    private FileUtils archivoUtils;
 
 
     // Constructor que recibe el contexto de la actividad
     public MessageReceiver(Context context) {
         this.context = context;
         this.sistemaVotacion = new SistemaVotacion((MainActivity) context);
+        this.archivoUtils = new FileUtils(context);
     }
 
     public void startListening() {
@@ -51,17 +53,21 @@ public class MessageReceiver {
                     // Almacenar la IP y el mensaje recibido en el HashMap
                     ((MainActivity)context).storeMessageFromIp(clientIp, message);
 
+                    ((MainActivity)context).addAndRefreshMap("map-ip-message", clientIp, message);
+
                     if (message.startsWith("VOTO:")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ESTADO. Mensaje: " + message);
                         //(MainActivity)context).guardarVoto(clientIp, message);
-                        sistemaVotacion.guardarVoto(clientIp, message);
+                        ((MainActivity)context).saveVote(clientIp, message);
+                        //((MainActivity)context).addAndRefreshMap("map-ip-voto", clientIp, message);
 
                     }
 
                     if(message.equals("SI")) {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
                         //((MainActivity)context).enviarEstado();
-                        sistemaVotacion.enviarEstado();
+                        //sistemaVotacion.enviarEstado();
+                        ((MainActivity)context).enviarEstado();
                     }
 
                     // Cerrar la conexión con el cliente

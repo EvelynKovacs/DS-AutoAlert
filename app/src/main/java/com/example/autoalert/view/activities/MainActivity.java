@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity{
 
     private WifiHotspot hotspotManager;
 
-    private ArchiveUtils archiveUtils;
+    private FileUtils fileUtils;
 
     @SuppressLint("MissingInflatedId")
     @Override
@@ -99,14 +99,14 @@ public class MainActivity extends AppCompatActivity{
 
 
         ///////////////////////
-        archiveUtils = new ArchiveUtils(this);
+        fileUtils = new FileUtils(this);
 
         // Inicializar los componentes
         Log.i("MainActivity", "Inicio de hilos");
         broadcastSender = new BroadcastSender();
         broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
-        broadcastTimer = new BroadcastTimer();
+        broadcastTimer = new BroadcastTimer(this);
         networkUtils = new NetworkUtils();
         sistemaVotacion = new SistemaVotacion(this);
         ipMessageMap = new HashMap<>();
@@ -125,9 +125,13 @@ public class MainActivity extends AppCompatActivity{
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(this, getMainLooper(), null);
 
-        archiveUtils.crearOReiniciarArchivoIps();
-        archiveUtils.crearOReiniciarArchivo("lista-ip");
-        archiveUtils.crearOReiniciarArchivo("lista-ip-message");
+        //fileUtils.crearOReiniciarArchivoIps();
+        fileUtils.crearOReiniciarArchivo("lista-ip");
+        fileUtils.crearOReiniciarArchivo("map-ip-message");
+        fileUtils.crearOReiniciarArchivo("map-ip-voto");
+        fileUtils.crearOReiniciarArchivo("map-ip-timestamp");
+        fileUtils.crearOReiniciarArchivo("map-conf-red");
+        fileUtils.crearOReiniciarArchivo("state");
 
         // Enviar mensaje de broadcast cuando se haga clic en el botón
         btnSendBroadcast.setOnClickListener(view -> {
@@ -151,7 +155,10 @@ public class MainActivity extends AppCompatActivity{
                 enviarMensaje();
                 // Una vez que el mensaje se haya enviado, reiniciar el estado
             if (responseTextView.getText().equals("SI") && ipList.isEmpty()){
-                sistemaVotacion.iniciarConteo();
+                StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+                displayText.append("Resultado Votación: HUBO ACCIDENTE").append("\n");
+                setResultadoText("Resultado Votación: HAY ACCIDENTE");
+                //sistemaVotacion.iniciarConteo();
             }
         });
 
@@ -175,10 +182,11 @@ public class MainActivity extends AppCompatActivity{
 
     public void enviarMensaje(){
         String message = responseTextView.getText().toString();
+        message = fileUtils.readState();
 
         Log.i("Enviar Mensaje", "Enviando mensaje.");
 
-        Set<String> ipListArchivo = archiveUtils.leerListaIpsEnArchivo();
+        Set<String> ipListArchivo = fileUtils.leerListaIpsEnArchivo();
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
         if (!ipListArchivo.isEmpty()) {
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
@@ -189,8 +197,10 @@ public class MainActivity extends AppCompatActivity{
 
             }
 
-            if(responseTextView.getText().equals("SI")){
-                sistemaVotacion.enviarEstado();
+
+            if(message.equals("SI")){
+            //if(responseTextView.getText().equals("SI")){
+                enviarEstado();
             }
         } else {
             Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
@@ -221,7 +231,7 @@ public class MainActivity extends AppCompatActivity{
 //            });
 //        }
 
-        Set<String> ipListArchivo = archiveUtils.leerListaIpsEnArchivo();
+        Set<String> ipListArchivo = fileUtils.leerListaIpsEnArchivo();
 
         // Actualizar el TextView con todas las IPs acumuladas
         runOnUiThread(() -> {
@@ -243,11 +253,13 @@ public class MainActivity extends AppCompatActivity{
 
 
     public void setStatusTextViewOnYes() {
+        fileUtils.saveStateInFile("SI");
         responseTextView.setText("SI");
     }
 
 
     public void setStatusTextViewOnNo() {
+        fileUtils.saveStateInFile("NO");
         responseTextView.setText("NO");
     }
 
@@ -372,6 +384,7 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void actualizarIpTimeStamp(String senderIp, String timestamp) {
+        fileUtils.addAndRefreshMap("map-ip-timestamp", senderIp, timestamp);
         ipTimestamp.put(senderIp, timestamp);
         Log.d("Actualizar Timestamp", "Se actualiza la ip con timestamp con ip: " + senderIp + " y " + timestamp);
         for(Map.Entry<String, String> disp : ipTimestamp.entrySet()){
@@ -380,53 +393,100 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void verificarConexion() throws ParseException {
+        HashMap<String, String> ipTimestampFromFile = fileUtils.readMapfromFile("map-ip-timestamp");
         Log.i("Verificacion Conexion", "Verificando conexion de dispositivos");
-        if(ipTimestamp.size() == 0){
+        if(ipTimestampFromFile.isEmpty()){
             Log.d("Verificacion Conexion", "EH AMIGO ME RE FUI. TA VACIO ACA");
             return;
         }
 
-        for(Map.Entry<String, String> dispositivo : ipTimestamp.entrySet()){
+        for(Map.Entry<String, String> dispositivo : ipTimestampFromFile.entrySet()){
             long diferenciaTiempo = calcularDiferenciaTiempo(dispositivo.getValue());
             Log.i("Verificacion Conexion", "Verificando conexion de: " + dispositivo.getKey());
             Log.i("Verificacion Conexion", "La diferencia de tiempo es de: " + diferenciaTiempo);
-            if(diferenciaTiempo > 3){
+            if(diferenciaTiempo > 4){
                 Log.i("Verificacion Conexion", "El dispositivo " + dispositivo.getKey() + " está DESCONECTADO");
+                fileUtils.addAndRefreshMap("map-ip-message", dispositivo.getKey(), "DESCONECTADO");
                 ipMessageMap.put(dispositivo.getKey(), "DESCONECTADO");
             }
-            //TERMINAR DE HACER ESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-            //Es el sistema de votacion con tempo
         }
     }
 
 
     public long calcularDiferenciaTiempo(String tiempoRecibido) throws ParseException {
-        // Formateador para convertir la cadena a un objeto Date
-        SimpleDateFormat formato = new SimpleDateFormat("HH:mm:ss");
 
-        // Parsear el tiempo recibido a un objeto Date
-        Date tiempoRecibidoDate = formato.parse(tiempoRecibido);
-
-        // Obtener el tiempo actual del sistema
-        Calendar ahora = Calendar.getInstance();
-        long timestampActual = ahora.getTimeInMillis();
-
-        // Convertir el tiempo recibido a milisegundos desde el comienzo del día
-        Calendar tiempoRecibidoCal = Calendar.getInstance();
-        tiempoRecibidoCal.setTime(tiempoRecibidoDate);
-        long timestampRecibido = tiempoRecibidoCal.getTimeInMillis();
-
-        // Calcular la diferencia en milisegundos y convertirla a segundos
-        long diferenciaEnMilisegundos = timestampActual - timestampRecibido;
+        long primerTimestampRecuperado = Long.parseLong(tiempoRecibido);
+        Log.i("Diferencia de Tiempo", "Primer tiempo de String a Long: " + primerTimestampRecuperado);
+        long segundoTimestamp = Calendar.getInstance().getTimeInMillis();
+        Log.i("Diferencia de Tiempo", "Segundo tiempo en milisegundos: " + segundoTimestamp);
+        // Calcular la diferencia en milisegundos
+        long diferenciaEnMilisegundos = segundoTimestamp - primerTimestampRecuperado;
         long diferenciaEnSegundos = diferenciaEnMilisegundos / 1000;
-
-        Log.i("Diferencia de Tiempo","Diferencia en segundos: " + diferenciaEnSegundos);
+        Log.i("Diferencia de Tiempo", "Diferencia en segundos: " + diferenciaEnSegundos);
 
         return diferenciaEnSegundos;
     }
 
     public void agregarIpYActualizarArchivo(String nuevaIp) {
-        archiveUtils.agregarIpYActualizarArchivo(nuevaIp);
+        fileUtils.agregarIpYActualizarArchivo(nuevaIp);
     }
 
+    public void addAndRefreshMap(String filename, String ip, String message){
+        fileUtils.addAndRefreshMap(filename, ip, message);
+    }
+
+    public void enviarEstado(){
+        Set<String> listaIps = fileUtils.leerListaIpsEnArchivo();
+        String estado = fileUtils.readState();
+        String message;
+        Log.i("Envio de Estado", "Enviando estado");
+        if(estado.equals("SI")){
+            message = "VOTO:SI";
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
+
+        } else {
+            message = "VOTO:NO";
+            Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
+
+        }
+        if(!listaIps.isEmpty()){
+            //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
+            for(String targetIp : listaIps) {
+                messageSender.sendMessage(targetIp, message);
+                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: " + message);
+            }
+        }
+    }
+
+    public void saveVote(String ip, String vote) {
+        Log.i("Guardado de votos", "Se inicia el guardado de votos.");
+        String[] votoArray = vote.split(":");
+        String resultadoVoto = votoArray[1];
+        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
+
+        storeMessageFromIp(ip, resultadoVoto);
+        fileUtils.addAndRefreshMap("map-ip-message", ip, resultadoVoto);
+
+        // Mostrar el mensaje recibido en la interfaz
+        // Actualizar la interfaz con el contenido del HashMap
+
+        sumarContador();
+        Log.i("Guardado de votos", "El contador esta en " + getContador());
+
+        if(fileUtils.leerListaIpsEnArchivo().size() == getContador()){
+            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
+            HashMap<String, String> votos = fileUtils.readMapfromFile("map-ip-voto");
+            String myOwnVote = fileUtils.readState();
+            votos.put(networkUtils.getDeviceIpAddress(), myOwnVote);
+            boolean veredicto = sistemaVotacion.iniciarConteo(votos);
+            reiniciarContador();
+
+            if(veredicto) {
+                setResultadoText("HAY ACCIDENTE");
+            } else {
+                setResultadoText("NO HAY AACIDENTE");
+            }
+        }
+
+    }
 }
