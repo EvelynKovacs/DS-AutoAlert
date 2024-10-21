@@ -17,8 +17,10 @@ public class BroadcastSender {
 
     private NetworkUtils networkUtils;
 
-    public BroadcastSender(){
+    public BroadcastSender(MainActivity mainActivity){
+
         this.networkUtils = new NetworkUtils();
+        this.mainActivity = mainActivity;
     }
     public void sendBroadcast() {
         new Thread(() -> {
@@ -29,7 +31,6 @@ public class BroadcastSender {
                 Calendar calendar = Calendar.getInstance();
                 long primerTimestamp = calendar.getTimeInMillis();
                 String primerTimestampString = Long.toString(primerTimestamp);
-                Log.i("Diferencia de Tiempo", "Primer timestamp en String: " + primerTimestampString);
 
 
                 //ESTO ES LO QUE LE MUESTRO AL USUARIO
@@ -37,11 +38,8 @@ public class BroadcastSender {
                 int minute = calendar.get(Calendar.MINUTE);
                 int second = calendar.get(Calendar.SECOND);
                 String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
-                Log.i("Diferencia de Tiempo","Primer tiempo: " + timeString);
 
                 String message = primerTimestampString + "-" +  timeString + "-" + BROADCAST_MESSAGE;
-                Log.i("Diferencia de Tiempo","Primer tiempo: " + timeString);
-                //HASTA ACA
 
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);
@@ -55,8 +53,12 @@ public class BroadcastSender {
                 socket.send(sendPacket);
 
                 socket.close();
-                Log.d("BroadcastSender", "Mensaje a enviar: " + message);
                 Log.d("BroadcastSender", "Mensaje de peticion broadcast enviada.");
+
+                Log.i("Verificacion Conexion", "Empieza timer de 4seg");
+                Thread.sleep(4000);
+                Log.i("Verificacion Conexion", "Terminó Timer. Comienza verificacion de conexion");
+                mainActivity.verificarConexion();
 
             } catch (Exception e) {
                 e.printStackTrace();

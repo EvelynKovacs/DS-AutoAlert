@@ -18,6 +18,11 @@ import java.util.Enumeration;
 public class NetworkChangeReceiver extends BroadcastReceiver {
 
     private BroadcastSender broadcastSender;
+    private MainActivity mainActivity;
+
+    public NetworkChangeReceiver(MainActivity mainActivity){
+        this.mainActivity = mainActivity;
+    }
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -30,13 +35,13 @@ public class NetworkChangeReceiver extends BroadcastReceiver {
                 //mainActivity.limpiarListasIp();
 
                 // Llamar a un método en MainActivity o acceder a variables
-                mainActivity.setMyIpTextView("Mi IP:" + getDeviceIpAddress());
+                //mainActivity.setMyIpTextView("Mi IP:" + getDeviceIpAddress());
 
                 //mainActivity.getBtnCreacionRed().setEnabled(false);
                 //mainActivity.limpiarListasIp();
-                broadcastSender = new BroadcastSender();
-                broadcastSender.sendBroadcast();
-
+                //broadcastSender = new BroadcastSender();
+                //broadcastSender.sendBroadcast();
+                mainActivity.sendBroadcast();
             } else {
                 //mainActivity.getBtnCreacionRed().setEnabled(true);
                 Log.i("NetworkChangeReceiver", "Dispositivo desconectado de la red.");

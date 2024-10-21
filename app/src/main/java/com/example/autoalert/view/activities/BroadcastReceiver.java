@@ -28,7 +28,6 @@ public class BroadcastReceiver {
     public void startListening() {
         new Thread(() -> {
             try {
-                Log.i("Hilo BroadcastReceiver", "Se creo hilo de BroadcastReceiver.");
                 DatagramSocket socket = new DatagramSocket(BROADCAST_PORT);
                 socket.setBroadcast(true);
                 byte[] receiveBuffer = new byte[1024];
@@ -49,11 +48,9 @@ public class BroadcastReceiver {
 
                         // Obtener el tiempo actual del sistema nuevamente
                         long timestampRecuperado = Long.parseLong(messagePartido[0]);
-                        Log.i("Diferencia de Tiempo", "Primer tiempo de String a Long: " + timestampRecuperado);
 
                         //Obtengo mensaje sin el timestamp
                         message = messagePartido[2];
-                        Log.d("BroadcastReceiver", "Mensaje recibido, segunda parte: " + message);
                         String timestamp = messagePartido[0];
 
                         if (message.equals("DISCOVER_IP_REQUEST")) {
@@ -102,7 +99,6 @@ public class BroadcastReceiver {
     private void sendResponse(String senderIp, int port, String myIpAddress) {
         new Thread(() -> {
             try {
-                Log.e("BroadcastReceiver", "Preparando mensaje de respuesta.");
 
                 // Crear el socket para enviar la respuesta
                 DatagramSocket socket = new DatagramSocket();
@@ -116,9 +112,6 @@ public class BroadcastReceiver {
                 Calendar calendar = Calendar.getInstance();
                 long primerTimestamp = calendar.getTimeInMillis();
                 String primerTimestampString = Long.toString(primerTimestamp);
-                Log.i("Diferencia de Tiempo", "Primer timestamp en String: " + primerTimestampString);
-
-
                 int hour = calendar.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar.get(Calendar.MINUTE);
                 int second = calendar.get(Calendar.SECOND);

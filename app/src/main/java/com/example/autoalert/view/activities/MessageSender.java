@@ -11,6 +11,7 @@ public class MessageSender {
 
     int port = 12345; // Puedes definir el puerto a utilizar
 
+
     public void sendMessage(String ipAddress, String message) {
         new Thread(() -> {
             try {
@@ -20,8 +21,6 @@ public class MessageSender {
                 Calendar calendar = Calendar.getInstance();
                 long primerTimestamp = calendar.getTimeInMillis();
                 String primerTimestampString = Long.toString(primerTimestamp);
-                Log.i("Diferencia de Tiempo", "Primer timestamp en String: " + primerTimestampString);
-
 
                 // Obtener la hora actual
                 int hour = calendar.get(Calendar.HOUR_OF_DAY);

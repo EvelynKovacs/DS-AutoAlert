@@ -1,121 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-
-    <FrameLayout
-        android:id="@+id/fragment_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-    <!--
-    <TextView
-        android:id="@+id/ssidLabel"
-        android:layout_width="51dp"
-        android:layout_height="25dp"
-        android:layout_marginTop="32dp"
-        android:text="SSID:"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.038"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/ssidEditText"
-        android:layout_width="325dp"
-        android:layout_height="40dp"
-        android:layout_marginTop="4dp"
-        android:hint="Nombre"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.29"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ssidLabel" />
-
-    <TextView
-        android:id="@+id/passwordLabel"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:text="Contraseña:"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.046"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ssidEditText" />
-
-    <com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/passwordEditText"
-        android:layout_width="333dp"
-        android:layout_height="42dp"
-        android:hint="contraseña"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.32"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/passwordLabel" />
-
-    <TextView
-        android:id="@+id/statusTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="156dp"
-        android:layout_marginTop="4dp"
-        android:text="Estado de la Red:"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.287"
-        app:layout_constraintStart_toEndOf="@+id/ssidTextView"
-        app:layout_constraintTop_toBottomOf="@+id/toggleHotspotButton" />
-
-    <Button
-        android:id="@+id/toggleHotspotButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="Activar Red"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/passwordEditText" />
-
-    <TextView
-        android:id="@+id/ssidTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="4dp"
-        android:text="SSID:"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toggleHotspotButton" />
-
-    <TextView
-        android:id="@+id/passwordTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="4dp"
-        android:text="Contraseña:"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ssidTextView" />
-    -->
-
-    <!--
-    <TextView
-        android:id="@+id/redStatusTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Estado:"
-        app:layout_constraintBottom_toTopOf="@+id/btnSendBroadcast"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.26"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/passwordTextView"
-        app:layout_constraintVertical_bias="0.592" />
-    -->
-
-    <!--
     <TextView
         android:id="@+id/myIpTextView"
         android:layout_width="wrap_content"
@@ -236,18 +125,5 @@
         app:layout_constraintStart_toEndOf="@+id/ipTextView"
         app:layout_constraintTop_toBottomOf="@+id/btnSendBroadcast"
         app:layout_constraintVertical_bias="0.0" />
-
--->
-    <!--<com.google.android.material.textfield.TextInputEditText
-        android:id="@+id/aliasEditText"
-        android:layout_width="225dp"
-        android:layout_height="46dp"
-        android:hint="Ingresa tu alias"
-        app:layout_constraintBottom_toTopOf="@+id/btnSendBroadcast"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/creacionRedbutton"
-        app:layout_constraintVertical_bias="0.516" /> -->
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

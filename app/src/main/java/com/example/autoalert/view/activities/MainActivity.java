@@ -21,8 +21,11 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import com.example.autoalert.R;
+import com.example.autoalert.view.fragments.ConexionFragment;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -53,7 +56,7 @@ public class MainActivity extends AppCompatActivity{
     private TextView resultadoTextView;
     private int cont = 0;
     private WifiManager wifiManager;
-    private NetworkChangeReceiver networkChangeReceiver = new NetworkChangeReceiver();
+    private NetworkChangeReceiver networkChangeReceiver = new NetworkChangeReceiver(this);
     private ConnectivityManager connectivityManager;
     private ConnectivityManager.NetworkCallback networkCallback;
     private WifiP2pManager wifiP2pManager;
@@ -72,23 +75,26 @@ public class MainActivity extends AppCompatActivity{
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Log.d("MainActivity", "Inicio de componentes visuales.");
 
-        Button btnSendMessages = findViewById(R.id.btnSendMessages);
-        ipTextView = findViewById(R.id.ipTextView);
-        Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);
-        ipMessageTextView = findViewById(R.id.ipMessageTextView);
-        myIpTextView = findViewById(R.id.myIpTextView);
-        btnYes = findViewById(R.id.btnYes);
-        btnNo = findViewById(R.id.btnNo);
-        responseTextView = findViewById(R.id.responseTextView);
-        btnCreacionRed = findViewById(R.id.creacionRedbutton);
-        resultadoTextView = findViewById(R.id.resultadoTextView);
-        //aliasEditText = findViewById(R.id.aliasEditText);
-        Log.i("MainActivity", "Componentes inicializados.");
+
+//        Button btnSendMessages = findViewById(R.id.btnSendMessages);
+//        ipTextView = findViewById(R.id.ipTextView);
+//        Button btnSendBroadcast = findViewById(R.id.btnSendBroadcast);
+//        ipMessageTextView = findViewById(R.id.ipMessageTextView);
+//        myIpTextView = findViewById(R.id.myIpTextView);
+//        btnYes = findViewById(R.id.btnYes);
+//        btnNo = findViewById(R.id.btnNo);
+//        responseTextView = findViewById(R.id.responseTextView);
+//        btnCreacionRed = findViewById(R.id.creacionRedbutton);
+//        resultadoTextView = findViewById(R.id.resultadoTextView);
+//        //aliasEditText = findViewById(R.id.aliasEditText);
+//        Log.i("MainActivity", "Componentes inicializados.");
 
         // Inicializamos wifiManager
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -102,8 +108,8 @@ public class MainActivity extends AppCompatActivity{
         fileUtils = new FileUtils(this);
 
         // Inicializar los componentes
-        Log.i("MainActivity", "Inicio de hilos");
-        broadcastSender = new BroadcastSender();
+
+        broadcastSender = new BroadcastSender(this);
         broadcastReceiver = new BroadcastReceiver(this);
         messageSender = new MessageSender();
         broadcastTimer = new BroadcastTimer(this);
@@ -111,19 +117,21 @@ public class MainActivity extends AppCompatActivity{
         sistemaVotacion = new SistemaVotacion(this);
         ipMessageMap = new HashMap<>();
         messageReceiver = new MessageReceiver(this);
-        Log.i("MainActivity", "Inicio de Gestionador de Red.");
+
         // Iniciar la recepción de broadcasts y respuestas
-        Log.i("MainActivity", "Escuchando mensajes de broadcast.");
+
         broadcastReceiver.startListening();
         broadcastTimer.startBroadcastTimer();
         messageReceiver.startListening();
 
         // Verificar y solicitar permisos necesarios
-        Log.i("MainActivity", "Verificando permisos....");
+
         checkPermissions();
 
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(this, getMainLooper(), null);
+
+        fileUtils.clearAppFilesContent();
 
         //fileUtils.crearOReiniciarArchivoIps();
         fileUtils.crearOReiniciarArchivo("lista-ip");
@@ -133,58 +141,64 @@ public class MainActivity extends AppCompatActivity{
         fileUtils.crearOReiniciarArchivo("map-conf-red");
         fileUtils.crearOReiniciarArchivo("state");
 
-        // Enviar mensaje de broadcast cuando se haga clic en el botón
-        btnSendBroadcast.setOnClickListener(view -> {
-            broadcastSender.sendBroadcast();
-        });
+//        // Enviar mensaje de broadcast cuando se haga clic en el botón
+//        btnSendBroadcast.setOnClickListener(view -> {
+//            broadcastSender.sendBroadcast();
+//        });
+//
+//        btnYes.setOnClickListener(view -> {
+//            setStatusTextViewOnYes();
+//        });
+//
+//        btnNo.setOnClickListener(view -> {
+//            setStatusTextViewOnNo();
+//        });
+//
+//        btnCreacionRed.setOnClickListener(view -> {
+//            irACrecionRed(view);
+//        });
+//
+//        btnSendMessages.setOnClickListener(view -> {
+//                Log.i("Envio de mensaje", "ESTOY POR ENVIAR UN MENSAJE. PERO UNO NOMAS");
+//                enviarMensaje();
+//                // Una vez que el mensaje se haya enviado, reiniciar el estado
+//            if (responseTextView.getText().equals("SI") && ipList.isEmpty()){
+//                StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+//                displayText.append("Resultado Votación: HUBO ACCIDENTE").append("\n");
+//                setResultadoText("Resultado Votación: HAY ACCIDENTE");
+//                //sistemaVotacion.iniciarConteo();
+//            }
+//        });
+//
+//        // Obtener y mostrar la IP del dispositivo
+//        Log.i("MainActivity", "Mostrando IP....");
+//        String deviceIpAddress = networkUtils.getDeviceIpAddress();
+//        ipTextView.setText("Lista de IPs" + deviceIpAddress);
+//
+//        String myDeviceIpAddress = networkUtils.getDeviceIpAddress();
+//        myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
 
-        btnYes.setOnClickListener(view -> {
-            setStatusTextViewOnYes();
-        });
+        // Cargar el fragmento
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-        btnNo.setOnClickListener(view -> {
-            setStatusTextViewOnNo();
-        });
-
-        btnCreacionRed.setOnClickListener(view -> {
-            irACrecionRed(view);
-        });
-
-        btnSendMessages.setOnClickListener(view -> {
-                Log.i("Envio de mensaje", "ESTOY POR ENVIAR UN MENSAJE. PERO UNO NOMAS");
-                enviarMensaje();
-                // Una vez que el mensaje se haya enviado, reiniciar el estado
-            if (responseTextView.getText().equals("SI") && ipList.isEmpty()){
-                StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
-                displayText.append("Resultado Votación: HUBO ACCIDENTE").append("\n");
-                setResultadoText("Resultado Votación: HAY ACCIDENTE");
-                //sistemaVotacion.iniciarConteo();
-            }
-        });
-
-        // Obtener y mostrar la IP del dispositivo
-        Log.i("MainActivity", "Mostrando IP....");
-        String deviceIpAddress = networkUtils.getDeviceIpAddress();
-        ipTextView.setText("Lista de IPs" + deviceIpAddress);
-
-        String myDeviceIpAddress = networkUtils.getDeviceIpAddress();
-        myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
+        ConexionFragment conexionFragment = new ConexionFragment();
+        fragmentTransaction.replace(R.id.fragment_container, conexionFragment);
+        fragmentTransaction.commit();
 
 
     }
 
 
-    public void irACrecionRed(View view){
-        Intent i = new Intent(this, CreacionRedActivity.class);
-        startActivity(i);
-    }
+//    public void irACrecionRed(View view){
+//        Intent i = new Intent(this, CreacionRedActivity.class);
+//        startActivity(i);
+//    }
 
 
     public void enviarMensaje(){
-        String message = responseTextView.getText().toString();
-        message = fileUtils.readState();
-
-        Log.i("Enviar Mensaje", "Enviando mensaje.");
+        //String message = responseTextView.getText().toString();
+        String message = fileUtils.readState();
 
         Set<String> ipListArchivo = fileUtils.leerListaIpsEnArchivo();
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
@@ -193,11 +207,7 @@ public class MainActivity extends AppCompatActivity{
             for(String targetIp : ipListArchivo) {
                 messageSender.sendMessage(targetIp, message);
                 Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
-                Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
-
             }
-
-
             if(message.equals("SI")){
             //if(responseTextView.getText().equals("SI")){
                 enviarEstado();
@@ -211,7 +221,7 @@ public class MainActivity extends AppCompatActivity{
 
     // Método para actualizar la lista de IPs en el TextView
     public void updateIpList(String ip) {
-        Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
+
 
 //        // Comprobar si la IP ya está en la lista
 //        if (!ipList.contains(ip)) {
@@ -241,8 +251,8 @@ public class MainActivity extends AppCompatActivity{
                 Log.i("Lista de IPs", "IP guardada: " + savedIp); // Log para cada IP
 
             }
-            ipTextView.setText(ips.toString());
-            Log.i("Actualizacion de lista", "Lista actualizada en pantalla.");
+            //ipTextView.setText(ips.toString());
+
         });
     }
 
@@ -275,14 +285,14 @@ public class MainActivity extends AppCompatActivity{
 
     // Método para actualizar el TextView con el contenido del HashMap
     private void updateIpMessageView() {
-        Log.i("Actualizar IP-Mensaje", "Se actualiza lista de mensajes.");
+
 
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
         for (String ip : ipMessageMap.keySet()) {
             displayText.append("IP: ").append(ip).append(" - Mensaje: ").append(ipMessageMap.get(ip)).append("\n");
         }
         // Actualizar el TextView en el hilo de la UI
-        runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
+        //runOnUiThread(() -> ipMessageTextView.setText(displayText.toString()));
     }
 
 
@@ -380,13 +390,12 @@ public class MainActivity extends AppCompatActivity{
     public void setResultadoText(String message){
         StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
         displayText.append(message).append("\n");
-        resultadoTextView.setText(message);
+        //resultadoTextView.setText(message);
     }
 
     public void actualizarIpTimeStamp(String senderIp, String timestamp) {
         fileUtils.addAndRefreshMap("map-ip-timestamp", senderIp, timestamp);
         ipTimestamp.put(senderIp, timestamp);
-        Log.d("Actualizar Timestamp", "Se actualiza la ip con timestamp con ip: " + senderIp + " y " + timestamp);
         for(Map.Entry<String, String> disp : ipTimestamp.entrySet()){
             Log.d("Actualizar Timestamp", "IP" + disp.getKey() + " y " + disp.getValue());
         }
@@ -396,33 +405,32 @@ public class MainActivity extends AppCompatActivity{
         HashMap<String, String> ipTimestampFromFile = fileUtils.readMapfromFile("map-ip-timestamp");
         Log.i("Verificacion Conexion", "Verificando conexion de dispositivos");
         if(ipTimestampFromFile.isEmpty()){
-            Log.d("Verificacion Conexion", "EH AMIGO ME RE FUI. TA VACIO ACA");
+            Log.d("Verificacion Conexion", "Lista de ips vacia");
             return;
         }
 
         for(Map.Entry<String, String> dispositivo : ipTimestampFromFile.entrySet()){
             long diferenciaTiempo = calcularDiferenciaTiempo(dispositivo.getValue());
             Log.i("Verificacion Conexion", "Verificando conexion de: " + dispositivo.getKey());
-            Log.i("Verificacion Conexion", "La diferencia de tiempo es de: " + diferenciaTiempo);
             if(diferenciaTiempo > 4){
                 Log.i("Verificacion Conexion", "El dispositivo " + dispositivo.getKey() + " está DESCONECTADO");
                 fileUtils.addAndRefreshMap("map-ip-message", dispositivo.getKey(), "DESCONECTADO");
                 ipMessageMap.put(dispositivo.getKey(), "DESCONECTADO");
+                deleteIpFromListAndMap(dispositivo.getKey());
+            } else {
+                Log.i("Verificacion Conexion", "El dispositivo " + dispositivo.getKey() + " está CONECTADO");
+                ipMessageMap.put(dispositivo.getKey(), "CONECTADO");
             }
         }
     }
 
 
     public long calcularDiferenciaTiempo(String tiempoRecibido) throws ParseException {
-
         long primerTimestampRecuperado = Long.parseLong(tiempoRecibido);
-        Log.i("Diferencia de Tiempo", "Primer tiempo de String a Long: " + primerTimestampRecuperado);
         long segundoTimestamp = Calendar.getInstance().getTimeInMillis();
-        Log.i("Diferencia de Tiempo", "Segundo tiempo en milisegundos: " + segundoTimestamp);
         // Calcular la diferencia en milisegundos
         long diferenciaEnMilisegundos = segundoTimestamp - primerTimestampRecuperado;
         long diferenciaEnSegundos = diferenciaEnMilisegundos / 1000;
-        Log.i("Diferencia de Tiempo", "Diferencia en segundos: " + diferenciaEnSegundos);
 
         return diferenciaEnSegundos;
     }
@@ -439,11 +447,9 @@ public class MainActivity extends AppCompatActivity{
         Set<String> listaIps = fileUtils.leerListaIpsEnArchivo();
         String estado = fileUtils.readState();
         String message;
-        Log.i("Envio de Estado", "Enviando estado");
         if(estado.equals("SI")){
             message = "VOTO:SI";
             Log.i("Envio de Estado", "Enviando mensaje: VOTO:SI");
-
         } else {
             message = "VOTO:NO";
             Log.i("Envio de Estado", "Enviando mensaje: VOTO:NO");
@@ -459,16 +465,12 @@ public class MainActivity extends AppCompatActivity{
     }
 
     public void saveVote(String ip, String vote) {
-        Log.i("Guardado de votos", "Se inicia el guardado de votos.");
         String[] votoArray = vote.split(":");
         String resultadoVoto = votoArray[1];
-        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto);
+        Log.i("Guardado de votos", "Se obtiene voto: " + resultadoVoto + " de " + ip);
 
         storeMessageFromIp(ip, resultadoVoto);
         fileUtils.addAndRefreshMap("map-ip-message", ip, resultadoVoto);
-
-        // Mostrar el mensaje recibido en la interfaz
-        // Actualizar la interfaz con el contenido del HashMap
 
         sumarContador();
         Log.i("Guardado de votos", "El contador esta en " + getContador());
@@ -489,4 +491,20 @@ public class MainActivity extends AppCompatActivity{
         }
 
     }
+
+    public Set<String> leerListaIpsEnArchivo(){
+        return fileUtils.leerListaIpsEnArchivo();
+    }
+     public void saveStateInFile(String state) {
+        fileUtils.saveStateInFile(state);
+     }
+
+     public void sendBroadcast(){
+        this.broadcastSender.sendBroadcast();
+     }
+
+     public void deleteIpFromListAndMap(String ip){
+        fileUtils.deleteIpFromListAndMap(ip);
+     }
+
 }

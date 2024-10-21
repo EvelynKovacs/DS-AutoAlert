@@ -26,7 +26,6 @@ public class MessageReceiver {
     public void startListening() {
         new Thread(() -> {
             try {
-                Log.i("Recepcion de mensajes", "Se creo hilo de recepcion de mensajes en el puerto: " + LISTEN_PORT);
 
                 // Crear un socket servidor que escucha en el puerto definido
                 ServerSocket serverSocket = new ServerSocket(LISTEN_PORT);
@@ -46,8 +45,7 @@ public class MessageReceiver {
 
                     message = messagePartido[2];
 
-                    Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " a las " + messagePartido[1]);
-                    Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " con " + message);
+                    Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " a las " + messagePartido[1] + " con " + message);
 
 
                     // Almacenar la IP y el mensaje recibido en el HashMap

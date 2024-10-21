@@ -14,7 +14,7 @@ import java.util.Date;
 
 public class BroadcastTimer {
 
-    private BroadcastSender broadcastSender = new BroadcastSender();
+    //private BroadcastSender broadcastSender = new BroadcastSender();
     private MainActivity mainActivity;
 
     public BroadcastTimer(MainActivity mainActivity) {
@@ -44,12 +44,10 @@ public class BroadcastTimer {
 //
 //                    Log.i("Diferencia de Tiempo","Primer tiempo: " + timeString);
                     ///////////////////////////////////
-                    broadcastSender.sendBroadcast();
-                    Log.d("BroadcastTimer", "Timer! Mensaje broadcast enviado!.");
-                    Log.i("Verificacion Conexion", "Empieza timer de 4seg");
-                    Thread.sleep(4000);
-                    Log.i("Verificacion Conexion", "Terminó Timer. Comienza verificacion de conexion");
-                    mainActivity.verificarConexion();
+                    mainActivity.sendBroadcast();
+//                    Thread.sleep(4000);
+//                    Log.i("Verificacion Conexion", "Terminó Timer. Comienza verificacion de conexion");
+//                    mainActivity.verificarConexion();
 
                     /////////////////////////////////////////
 //                    // Obtener el tiempo actual del sistema nuevamente

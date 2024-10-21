@@ -47,10 +47,8 @@ public class SistemaVotacion {
             String voto = ipVoto.getValue();
             if ("SI".equals(voto)) {
                 contPositivo++;
-                Log.i("Conteo de votos", "VOTO:SI");
             } else if ("NO".equals(voto)) {
                 contNegativo++;
-                Log.i("Conteo de votos", "VOTO:NO");
             }
         }
 

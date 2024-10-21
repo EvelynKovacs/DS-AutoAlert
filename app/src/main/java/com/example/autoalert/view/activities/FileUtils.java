@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -144,7 +145,7 @@ public class FileUtils {
                 resultMap.put(readLine[0], readLine[1]); // Añadir cada línea a la lista
                 Log.i("Archivo", "Se añadio a la lista: " + readLine[0]  + " con " + readLine[1]);
             }
-            Log.i("Archivo", "Mapa de " + fileName + "leída exitosamente.");
+            Log.i("Archivo", "Mapa de " + fileName + " leída exitosamente.");
         } catch (FileNotFoundException e) {
             Log.e("Archivo", "El archivo no existe: " + e.getMessage());
         } catch (IOException e) {
@@ -228,6 +229,36 @@ public class FileUtils {
                 }
             }
         }
+    }
+
+    public void clearAppFilesContent() {
+        File dir = context.getFilesDir();
+        if (dir != null && dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    try (FileOutputStream fos = new FileOutputStream(file)) {
+                        // Escribir un contenido vacío para vaciar el archivo
+                        fos.write(new byte[0]);
+                        Log.i("FileClear", "Archivo " + file.getName() + " vaciado");
+                    } catch (IOException e) {
+                        Log.e("FileClear", "Error al vaciar el archivo " + file.getName(), e);
+                    }
+                }
+            }
+        }
+    }
+
+    public void deleteIpFromListAndMap(String ip) {
+        Set<String> ipList = leerListaIpsEnArchivo();
+        ipList.remove(ip);
+        guardarListaEnArchivo(ipList);
+
+        HashMap<String, String> votosMap = readMapfromFile("map-ip-vote");
+        votosMap.remove(ip);
+        saveMapInFile("map-ip-vote", votosMap);
+
+        Log.i("Archivo", "Se elimino la ip " + ip + " de las listas");
     }
 
 
