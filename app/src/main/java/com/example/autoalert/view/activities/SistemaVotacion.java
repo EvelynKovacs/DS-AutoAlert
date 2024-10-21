@@ -87,7 +87,7 @@ public class SistemaVotacion {
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
             for(String targetIp : mainActivity.getIpList()) {
                 messageSender.sendMessage(targetIp, message);
-                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: VOTO:NO");
+                Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: " + message);
             }
         }
     }

@@ -23,6 +23,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import com.example.autoalert.R;
+
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -66,6 +67,8 @@ public class MainActivity extends AppCompatActivity{
 
     private WifiHotspot hotspotManager;
 
+    private ArchiveUtils archiveUtils;
+
     @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +98,9 @@ public class MainActivity extends AppCompatActivity{
         registerReceiver(networkChangeReceiver, filter);
 
 
+        ///////////////////////
+        archiveUtils = new ArchiveUtils(this);
+
         // Inicializar los componentes
         Log.i("MainActivity", "Inicio de hilos");
         broadcastSender = new BroadcastSender();
@@ -118,6 +124,10 @@ public class MainActivity extends AppCompatActivity{
 
         wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         channel = wifiP2pManager.initialize(this, getMainLooper(), null);
+
+        archiveUtils.crearOReiniciarArchivoIps();
+        archiveUtils.crearOReiniciarArchivo("lista-ip");
+        archiveUtils.crearOReiniciarArchivo("lista-ip-message");
 
         // Enviar mensaje de broadcast cuando se haga clic en el botón
         btnSendBroadcast.setOnClickListener(view -> {
@@ -168,10 +178,11 @@ public class MainActivity extends AppCompatActivity{
 
         Log.i("Enviar Mensaje", "Enviando mensaje.");
 
+        Set<String> ipListArchivo = archiveUtils.leerListaIpsEnArchivo();
         // Supongamos que quieres enviar el mensaje a la primera IP de la lista
-        if (!ipList.isEmpty()) {
+        if (!ipListArchivo.isEmpty()) {
             //String targetIp = ipList.get(0); // Usar la IP que quieras de la lista
-            for(String targetIp : ipList) {
+            for(String targetIp : ipListArchivo) {
                 messageSender.sendMessage(targetIp, message);
                 Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
                 Toast.makeText(MainActivity.this, "Mensaje enviado a: " + targetIp, Toast.LENGTH_SHORT).show();
@@ -192,23 +203,37 @@ public class MainActivity extends AppCompatActivity{
     public void updateIpList(String ip) {
         Log.i("Actualizacion de lista", "Actualizando lista de IP's.");
 
-        // Comprobar si la IP ya está en la lista
-        if (!ipList.contains(ip)) {
-            Log.i("Actualizacion de lista", "IP agregada: " + ip);
-            ipList.add(ip);  // Agregar IP a la lista interna
+//        // Comprobar si la IP ya está en la lista
+//        if (!ipList.contains(ip)) {
+//            Log.i("Actualizacion de lista", "IP agregada: " + ip);
+//            ipList.add(ip);  // Agregar IP a la lista interna
+//
+//            // Actualizar el TextView con todas las IPs acumuladas
+//            runOnUiThread(() -> {
+//                StringBuilder ips = new StringBuilder("IPs recibidas:\n");
+//                for (String savedIp : ipList) {
+//                    ips.append(savedIp).append("\n");
+//                    Log.i("Lista de IPs", "IP guardada: " + savedIp); // Log para cada IP
+//
+//                }
+//                ipTextView.setText(ips.toString());
+//                Log.i("Actualizacion de lista", "Lista actualizada en pantalla.");
+//            });
+//        }
 
-            // Actualizar el TextView con todas las IPs acumuladas
-            runOnUiThread(() -> {
-                StringBuilder ips = new StringBuilder("IPs recibidas:\n");
-                for (String savedIp : ipList) {
-                    ips.append(savedIp).append("\n");
-                    Log.i("Lista de IPs", "IP guardada: " + savedIp); // Log para cada IP
+        Set<String> ipListArchivo = archiveUtils.leerListaIpsEnArchivo();
 
-                }
-                ipTextView.setText(ips.toString());
-                Log.i("Actualizacion de lista", "Lista actualizada en pantalla.");
-            });
-        }
+        // Actualizar el TextView con todas las IPs acumuladas
+        runOnUiThread(() -> {
+            StringBuilder ips = new StringBuilder("IPs recibidas:\n");
+            for (String savedIp : ipListArchivo) {
+                ips.append(savedIp).append("\n");
+                Log.i("Lista de IPs", "IP guardada: " + savedIp); // Log para cada IP
+
+            }
+            ipTextView.setText(ips.toString());
+            Log.i("Actualizacion de lista", "Lista actualizada en pantalla.");
+        });
     }
 
 
@@ -398,6 +423,10 @@ public class MainActivity extends AppCompatActivity{
         Log.i("Diferencia de Tiempo","Diferencia en segundos: " + diferenciaEnSegundos);
 
         return diferenciaEnSegundos;
+    }
+
+    public void agregarIpYActualizarArchivo(String nuevaIp) {
+        archiveUtils.agregarIpYActualizarArchivo(nuevaIp);
     }
 
 }

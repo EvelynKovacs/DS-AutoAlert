@@ -14,8 +14,16 @@ public class MessageSender {
     public void sendMessage(String ipAddress, String message) {
         new Thread(() -> {
             try {
-                // Obtener la hora actual
+
+                //ESTO PUEDO SACARLO Y PONERLO EN UNA FUNCION
+                // Obtener la hora actual en milisegundos
                 Calendar calendar = Calendar.getInstance();
+                long primerTimestamp = calendar.getTimeInMillis();
+                String primerTimestampString = Long.toString(primerTimestamp);
+                Log.i("Diferencia de Tiempo", "Primer timestamp en String: " + primerTimestampString);
+
+
+                // Obtener la hora actual
                 int hour = calendar.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar.get(Calendar.MINUTE);
                 int second = calendar.get(Calendar.SECOND);
@@ -24,7 +32,7 @@ public class MessageSender {
 
                 Log.i("Envio de mensaje", "Se envia mensaje a " + ipAddress + " con " + timeString + "-" + message);
 
-                String timestampMessage = timeString + "-" + message;
+                String timestampMessage = primerTimestampString + "-" + timeString + "-" + message;
 
                 // Crear un socket TCP para enviar el mensaje al dispositivo con la IP recibida
                 Socket socket = new Socket(ipAddress, port);

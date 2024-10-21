@@ -42,9 +42,9 @@ public class MessageReceiver {
 
                     String[] messagePartido = message.split("-");
 
-                    message = messagePartido[1];
+                    message = messagePartido[2];
 
-                    Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " a las " + messagePartido[0]);
+                    Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " a las " + messagePartido[1]);
                     Log.i("Recepción de mensajes", "Se obtuvo mensaje de " + clientIp + " con " + message);
 
 

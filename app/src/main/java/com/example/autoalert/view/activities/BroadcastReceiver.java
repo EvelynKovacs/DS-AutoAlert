@@ -17,8 +17,11 @@ public class BroadcastReceiver {
 
     private MainActivity mainActivity;
 
+    private NetworkUtils networkUtils;
+
 
     public BroadcastReceiver(MainActivity mainActivity) {
+        this.networkUtils = new NetworkUtils();
         this.mainActivity = mainActivity;
     }
 
@@ -36,7 +39,7 @@ public class BroadcastReceiver {
                     socket.receive(receivePacket);
 
                     String message = new String(receivePacket.getData(), 0, receivePacket.getLength());
-                    String myIpAddress = getDeviceIpAddress(); // Método para obtener la IP del dispositivo
+                    String myIpAddress = networkUtils.getDeviceIpAddress(); // Método para obtener la IP del dispositivo
                     String senderIp = receivePacket.getAddress().getHostAddress();
                     if(!senderIp.equals(myIpAddress)){
                         //Mensaje recibido de la forma:
@@ -64,6 +67,7 @@ public class BroadcastReceiver {
 //                            // Almacenar la IP y el alias en MainActivity
 //                            mainActivity.storeAliasFromIp(senderIp, senderAlias);
 
+                            mainActivity.agregarIpYActualizarArchivo(senderIp);
 
                             mainActivity.ipList.add(senderIp);
                             mainActivity.updateIpList(senderIp);
@@ -78,6 +82,7 @@ public class BroadcastReceiver {
 
                         if (message.equals(BROADCAST_RESPONSE)){
                             senderIp = receivePacket.getAddress().getHostAddress();
+                            mainActivity.agregarIpYActualizarArchivo(senderIp);
                             mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
                             mainActivity.updateIpList(senderIp);
                             // Guardar la IP del emisor
