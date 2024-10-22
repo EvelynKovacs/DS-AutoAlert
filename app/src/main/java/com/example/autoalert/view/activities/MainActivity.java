@@ -140,6 +140,9 @@ public class MainActivity extends AppCompatActivity{
         fileUtils.crearOReiniciarArchivo("map-ip-timestamp");
         fileUtils.crearOReiniciarArchivo("map-conf-red");
         fileUtils.crearOReiniciarArchivo("state");
+        fileUtils.crearOReiniciarArchivo("conf-red");
+
+        fileUtils.addAndRefreshMap("conf-red", "creada", "false");
 
 //        // Enviar mensaje de broadcast cuando se haga clic en el botón
 //        btnSendBroadcast.setOnClickListener(view -> {
@@ -505,6 +508,14 @@ public class MainActivity extends AppCompatActivity{
 
      public void deleteIpFromListAndMap(String ip){
         fileUtils.deleteIpFromListAndMap(ip);
+     }
+
+     public HashMap<String, String> readMapFromFile(String fileName){
+        return fileUtils.readMapfromFile(fileName);
+     }
+
+     public void saveMapInFile(String filenName, HashMap<String, String> mapToSave){
+        fileUtils.saveMapInFile(filenName, mapToSave);
      }
 
 }

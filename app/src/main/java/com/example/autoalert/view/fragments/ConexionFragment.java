@@ -163,7 +163,7 @@ public class ConexionFragment extends Fragment {
         });
 
         btnCreacionRed.setOnClickListener(view -> {
-            //irACrecionRed(view);
+            irACrecionRed(view);
         });
 
         btnSendMessages.setOnClickListener(view -> {
@@ -193,10 +193,12 @@ public class ConexionFragment extends Fragment {
 
 
 
-//    public void irACrecionRed(View view){
-//        Intent i = new Intent(this, CreacionRedActivity.class);
-//        startActivity(i);
-//    }
+    public void irACrecionRed(View view){
+        mainActivity.getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, new CreacionRedFragment()).
+                addToBackStack(null)
+                .commit();
+    }
 
 
     public void enviarMensaje(){

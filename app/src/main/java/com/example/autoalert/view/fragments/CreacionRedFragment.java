@@ -44,7 +44,8 @@ import java.util.List;
 
 
 
-public class CreacionRedFragment extends Fragment implements WifiHotspot.HotspotListener{
+public class CreacionRedFragment extends Fragment implements WifiHotspot.HotspotListener {
+
 
     private WifiHotspot hotspotManager;
     private TextView statusTextView;
@@ -64,11 +65,15 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
 
     private WifiManager wifiManager;
 
+    private MainActivity mainActivity;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
                              @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.activity_creacion_red, container, false);
+
+        mainActivity = (MainActivity) requireActivity();
 
         redCreada = false;
 
@@ -80,21 +85,34 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
         toggleHotspotButton = view.findViewById(R.id.toggleHotspotButton);
         estadoRedTextView = view.findViewById(R.id.redStatusTextView);
 
-        hotspotManager = new WifiHotspot(getActivity(), this);
+        hotspotManager = new WifiHotspot(mainActivity, this);
         // Inicializamos wifiManager
-        wifiManager = (WifiManager) getActivity().getApplicationContext().getSystemService(Context.WIFI_SERVICE);
-
-        
+        wifiManager = (WifiManager) mainActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
 
 
-        // Recuperar los datos desde SharedPreferences
-        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
-        redCreada = sharedPref.getBoolean("redCreada", false);
+        configuracion = mainActivity.readMapFromFile("conf-red");
 
-        if(redCreada){
-            Log.i("Verificacion de Red", "Ya existe una red. Obteniendo datos de SharedPreferences.");
-            String nombreRed = sharedPref.getString("nombreRed", "Nombre no encontrado");
-            String contrasenia = sharedPref.getString("contraseña", "Contraseña no encontrada"); // El segundo valor es el valor por defecto
+//        // Recuperar los datos desde SharedPreferences
+//        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+//        redCreada = sharedPref.getBoolean("redCreada", false);
+//
+//        if(redCreada){
+//            Log.i("Verificacion de Red", "Ya existe una red. Obteniendo datos de SharedPreferences.");
+//            String nombreRed = sharedPref.getString("nombreRed", "Nombre no encontrado");
+//            String contrasenia = sharedPref.getString("contraseña", "Contraseña no encontrada"); // El segundo valor es el valor por defecto
+//            Log.i("Verificacion de red", "La red existente es " + nombreRed + " con password " + contrasenia);
+//            ssidTextView.setText(nombreRed);
+//            ssidEditText.setText(nombreRed);
+//            passwordEditText.setText(contrasenia);
+//            passwordTextView.setText(contrasenia);
+//            toggleHotspotButton.setText("Desactivar Hotspot");
+//            isHotspotActive = true;
+//        }
+
+
+        if (configuracion.get("creada").equals("true")) {
+            String nombreRed = configuracion.get("nombreRed");
+            String contrasenia = configuracion.get("contrasenia");
             Log.i("Verificacion de red", "La red existente es " + nombreRed + " con password " + contrasenia);
             ssidTextView.setText(nombreRed);
             ssidEditText.setText(nombreRed);
@@ -102,13 +120,15 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
             passwordTextView.setText(contrasenia);
             toggleHotspotButton.setText("Desactivar Hotspot");
             isHotspotActive = true;
+
         }
 
-        toggleHotspotButton.setOnClickListener(view -> {
+        toggleHotspotButton.setOnClickListener(view1 -> {
             crearRed();
         });
-    }
 
+        return view;
+    }
 
 
     public void crearRed() {
@@ -169,16 +189,22 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
         // Mostrar SSID y contraseña en los TextViews
         ssidTextView.setText("SSID: " + ssid);
         passwordTextView.setText("Contraseña: " + password);
+//
+//        // Guardar los datos en SharedPreferences
+//        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+//        SharedPreferences.Editor editor = sharedPref.edit();
+//
+//        // Guardar nombre y edad
+//        editor.putString("nombreRed", ssid);
+//        editor.putString("contraseña", password);
+//        editor.putBoolean("redCreada", true);
+//        editor.apply(); // Guardar los cambios
+//
+        configuracion.put("nombreRed", ssid);
+        configuracion.put("contrasenia", password);
+        configuracion.put("creada", "true");
 
-        // Guardar los datos en SharedPreferences
-        SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-
-        // Guardar nombre y edad
-        editor.putString("nombreRed", ssid);
-        editor.putString("contraseña", password);
-        editor.putBoolean("redCreada", true);
-        editor.apply(); // Guardar los cambios
+        mainActivity.saveMapInFile("conf-red", configuracion);
 
         MainActivity mainActivity = (MainActivity) context;
 
@@ -211,7 +237,7 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
     }
 
     public boolean isConnectedToWifi() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connectivityManager = (ConnectivityManager) mainActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
 
         return networkInfo != null && networkInfo.isConnected();
@@ -219,7 +245,7 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
 
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         super.onDestroy();
 
         // Detener el hotspot al cerrar la aplicación
@@ -227,11 +253,9 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
     }
 
 
-
-
     // Método para verificar el estado del hotspot en versiones anteriores a Android 10
     private boolean checkHotspotStatus() {
-        WifiManager wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
+        WifiManager wifiManager = (WifiManager) mainActivity.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
         try {
             // Usamos reflexión para acceder al método privado isWifiApEnabled en versiones anteriores a Android 10
             Method method = wifiManager.getClass().getDeclaredMethod("isWifiApEnabled");
@@ -245,7 +269,7 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
 
     // Método adicional para manejar Android 10 y superiores
     private boolean isHotspotActiveForAndroid10() {
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connectivityManager = (ConnectivityManager) mainActivity.getSystemService(Context.CONNECTIVITY_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             Network network = connectivityManager.getActiveNetwork();
@@ -274,11 +298,15 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
             // Detener el Hotspot con Wi-Fi Direct
             stopWifiDirectHotspot();
 
-            // Guardar los datos en SharedPreferences
-            SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putBoolean("redCreada", false);
-            editor.apply(); // Guardar los cambios
+            configuracion = mainActivity.readMapFromFile("conf-red");
+            configuracion.put("creada", "false");
+            mainActivity.saveMapInFile("conf-red", configuracion);
+
+//            // Guardar los datos en SharedPreferences
+//            SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
+//            SharedPreferences.Editor editor = sharedPref.edit();
+//            editor.putBoolean("redCreada", false);
+//            editor.apply(); // Guardar los cambios
         }
 
         isHotspotActive = !isHotspotActive; // Cambiar el estado
@@ -295,8 +323,8 @@ public class CreacionRedFragment extends Fragment implements WifiHotspot.Hotspot
 
     // Método para detener la red Wi-Fi Direct
     public void stopWifiDirectHotspot() {
-        WifiP2pManager wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
-        WifiP2pManager.Channel channel = wifiP2pManager.initialize(this, getMainLooper(), null);
+        WifiP2pManager wifiP2pManager = (WifiP2pManager) mainActivity.getSystemService(Context.WIFI_P2P_SERVICE);
+        WifiP2pManager.Channel channel = wifiP2pManager.initialize(mainActivity, mainActivity.getMainLooper(), null);
 
         wifiP2pManager.removeGroup(channel, new WifiP2pManager.ActionListener() {
             @Override
