@@ -66,6 +66,7 @@ public class MessageReceiver {
                         //((MainActivity)context).enviarEstado();
                         //sistemaVotacion.enviarEstado();
                         ((MainActivity)context).enviarEstado();
+                        //((MainActivity)context).iniciarTemporizador();
                     }
 
                     // Cerrar la conexión con el cliente

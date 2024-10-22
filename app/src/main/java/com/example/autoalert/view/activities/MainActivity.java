@@ -12,6 +12,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -415,13 +416,14 @@ public class MainActivity extends AppCompatActivity{
         for(Map.Entry<String, String> dispositivo : ipTimestampFromFile.entrySet()){
             long diferenciaTiempo = calcularDiferenciaTiempo(dispositivo.getValue());
             Log.i("Verificacion Conexion", "Verificando conexion de: " + dispositivo.getKey());
-            if(diferenciaTiempo > 4){
+            if(diferenciaTiempo > 10){
                 Log.i("Verificacion Conexion", "El dispositivo " + dispositivo.getKey() + " está DESCONECTADO");
                 fileUtils.addAndRefreshMap("map-ip-message", dispositivo.getKey(), "DESCONECTADO");
                 ipMessageMap.put(dispositivo.getKey(), "DESCONECTADO");
                 deleteIpFromListAndMap(dispositivo.getKey());
             } else {
                 Log.i("Verificacion Conexion", "El dispositivo " + dispositivo.getKey() + " está CONECTADO");
+                fileUtils.addAndRefreshMap("map-ip-message", dispositivo.getKey(), "CONECTADO");
                 ipMessageMap.put(dispositivo.getKey(), "CONECTADO");
             }
         }
@@ -448,6 +450,7 @@ public class MainActivity extends AppCompatActivity{
 
     public void enviarEstado(){
         Set<String> listaIps = fileUtils.leerListaIpsEnArchivo();
+        fileUtils.clearVotoFileContent();
         String estado = fileUtils.readState();
         String message;
         if(estado.equals("SI")){
@@ -465,6 +468,8 @@ public class MainActivity extends AppCompatActivity{
                 Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: " + message);
             }
         }
+
+        startVotacionTimer();
     }
 
     public void saveVote(String ip, String vote) {
@@ -474,24 +479,27 @@ public class MainActivity extends AppCompatActivity{
 
         storeMessageFromIp(ip, resultadoVoto);
         fileUtils.addAndRefreshMap("map-ip-message", ip, resultadoVoto);
+        fileUtils.addAndRefreshMap("map-ip-voto", ip, resultadoVoto);
 
-        sumarContador();
-        Log.i("Guardado de votos", "El contador esta en " + getContador());
-
-        if(fileUtils.leerListaIpsEnArchivo().size() == getContador()){
-            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
-            HashMap<String, String> votos = fileUtils.readMapfromFile("map-ip-voto");
-            String myOwnVote = fileUtils.readState();
-            votos.put(networkUtils.getDeviceIpAddress(), myOwnVote);
-            boolean veredicto = sistemaVotacion.iniciarConteo(votos);
-            reiniciarContador();
-
-            if(veredicto) {
-                setResultadoText("HAY ACCIDENTE");
-            } else {
-                setResultadoText("NO HAY AACIDENTE");
-            }
-        }
+//        sumarContador();
+//        Log.i("Guardado de votos", "El contador esta en " + getContador());
+//
+//        if(fileUtils.leerListaIpsEnArchivo().size() == getContador()){
+//            Log.i("Recoleccion de estados", "Se obtuvieron los estados de todos los dispositivos. Se inicia el conteo de votos.");
+//            HashMap<String, String> votos = fileUtils.readMapfromFile("map-ip-voto");
+//            String myOwnVote = fileUtils.readState();
+//            votos.put(networkUtils.getDeviceIpAddress(), myOwnVote);
+//            boolean veredicto = sistemaVotacion.iniciarConteo(votos);
+//            reiniciarContador();
+//
+//            if(veredicto) {
+//                Log.i("Votacion", "HAY ACCIDENTE");
+//                setResultadoText("HAY ACCIDENTE");
+//            } else {
+//                Log.i("Votacion", "NO HAY ACCIDENTE");
+//                setResultadoText("NO HAY ACCIDENTE");
+//            }
+//        }
 
     }
 
@@ -517,5 +525,67 @@ public class MainActivity extends AppCompatActivity{
      public void saveMapInFile(String filenName, HashMap<String, String> mapToSave){
         fileUtils.saveMapInFile(filenName, mapToSave);
      }
+
+     public void iniciarTemporizador() {
+         new CountDownTimer(5000, 1000) { // 5000 ms = 5 segundos, 1000 ms = 1 segundo (intervalo de tick)
+
+             public void onTick(long millisUntilFinished) {
+                 // Este método se llama cada segundo (o el intervalo que definas)
+                 // Puedes mostrar el tiempo restante o realizar otra acción si es necesario
+                 Log.d("Timer", "Tiempo restante: " + millisUntilFinished / 1000);
+             }
+
+             public void onFinish() {
+                 // Este método se llama cuando se termina el temporizador (después de 5 segundos)
+                 HashMap<String, String> votos = fileUtils.readMapfromFile("map-ip-voto");
+                 String myOwnVote = fileUtils.readState();
+                 votos.put(networkUtils.getDeviceIpAddress(), myOwnVote);
+                 boolean veredicto = sistemaVotacion.iniciarConteo(votos);
+                 reiniciarContador();
+
+                 if(veredicto) {
+                     Log.i("Votacion", "HAY ACCIDENTE");
+                     setResultadoText("HAY ACCIDENTE");
+                 } else {
+                     Log.i("Votacion", "NO HAY ACCIDENTE");
+                     setResultadoText("NO HAY ACCIDENTE");
+                 }
+
+             }
+         }.start();
+     }
+
+    public void startVotacionTimer() {
+        new Thread(() -> {
+
+                try {
+                    // Pausa el hilo durante 30 segundos (30000 milisegundos)
+                    Thread.sleep(5000);
+//
+                    // Este método se llama cuando se termina el temporizador (después de 5 segundos)
+                    HashMap<String, String> votos = fileUtils.readMapfromFile("map-ip-voto");
+                    String myOwnVote = fileUtils.readState();
+                    votos.put(networkUtils.getDeviceIpAddress(), myOwnVote);
+                    boolean veredicto = sistemaVotacion.iniciarConteo(votos);
+                    reiniciarContador();
+
+                    if(veredicto) {
+                        Log.i("Votacion", "HAY ACCIDENTE");
+                        setResultadoText("HAY ACCIDENTE");
+                    } else {
+                        Log.i("Votacion", "NO HAY ACCIDENTE");
+                        setResultadoText("NO HAY ACCIDENTE");
+                    }
+
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Log.e("Hilo contador", "Error al al contar votos" + e.getMessage());
+
+                }
+
+        }).start();
+    }
+
 
 }

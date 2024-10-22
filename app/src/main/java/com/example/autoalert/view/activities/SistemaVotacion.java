@@ -45,12 +45,16 @@ public class SistemaVotacion {
 
         for (Map.Entry<String, String> ipVoto : mapVotes.entrySet()) {
             String voto = ipVoto.getValue();
+
+            Log.i("Conteo de votos", "El voto es: " + voto);
             if ("SI".equals(voto)) {
                 contPositivo++;
             } else if ("NO".equals(voto)) {
                 contNegativo++;
             }
         }
+
+        Log.d("Conteo de votos", "Contador Positivo: " + contPositivo + ". Contador Negativo: " + contNegativo);
 
 //        Log.i("Conteo de votos", "Añadiendo voto del propio dispositivo.");
 //        if(mainActivity.getResponseText().equals("SI")){

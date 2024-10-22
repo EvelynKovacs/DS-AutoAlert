@@ -13,6 +13,7 @@ import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -85,6 +86,9 @@ public class ConexionFragment extends Fragment {
     private WifiHotspot hotspotManager;
 
     private FileUtils fileUtils;
+
+    private Handler handler;
+    private Runnable runnable;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -186,7 +190,47 @@ public class ConexionFragment extends Fragment {
         myIpTextView.setText("Mi IP: " + myDeviceIpAddress);
 
 
+        // Instancia el Handler
+        handler = new Handler();
+
+        // Crea una tarea que se repite cada 5 segundos
+        runnable = new Runnable() {
+            @Override
+            public void run() {
+                // Llama a la función que actualiza los TextView
+                actualizarTextViews();
+
+                // Vuelve a ejecutar la tarea después de 5 segundos
+                handler.postDelayed(this, 5000);
+            }
+        };
+
+        // Comienza la tarea
+        handler.postDelayed(runnable, 5000);
+
+
         return rootView;
+
+    }
+
+
+
+    private void actualizarTextViews() {
+        StringBuilder displayText = new StringBuilder("Mensajes recibidos:\n");
+        for (Map.Entry<String, String> ip : mainActivity.readMapFromFile("map-ip-message").entrySet()) {
+            displayText.append("IP: ").append(ip.getKey()).append(" - Mensaje: ").append(ip.getValue()).append("\n");
+        }
+        // Actualizar el TextView en el hilo de la UI
+        ipMessageTextView.setText(displayText.toString());
+
+        ipList = mainActivity.leerListaIpsEnArchivo();
+
+        StringBuilder ips = new StringBuilder("IPs recibidas:\n");
+        for (String savedIp : ipList) {
+            ips.append(savedIp).append("\n");
+
+        }
+        ipTextView.setText(ips.toString());
 
     }
 
@@ -336,6 +380,8 @@ public class ConexionFragment extends Fragment {
     public void onPause() {
         super.onPause();
         //unregisterReceiver(networkChangeReceiver);
+
+        handler.removeCallbacks(runnable);
     }
 
     @Override
@@ -343,6 +389,9 @@ public class ConexionFragment extends Fragment {
         super.onResume();
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        // Inicia el runnable cuando el fragmento se reanuda
+        handler.post(runnable);
+
         //registerReceiver(networkChangeReceiver, filter);
     }
 

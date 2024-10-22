@@ -56,7 +56,7 @@ public class BroadcastSender {
                 Log.d("BroadcastSender", "Mensaje de peticion broadcast enviada.");
 
                 Log.i("Verificacion Conexion", "Empieza timer de 4seg");
-                Thread.sleep(4000);
+                Thread.sleep(2000);
                 Log.i("Verificacion Conexion", "Terminó Timer. Comienza verificacion de conexion");
                 mainActivity.verificarConexion();
 

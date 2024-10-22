@@ -29,7 +29,7 @@ public class FileUtils {
             // Sobrescribir o crear el archivo con el nombre recibido como parámetro
             fos = context.openFileOutput(nombreArchivo, Context.MODE_PRIVATE);
             // Al usar Context.MODE_PRIVATE, el archivo se sobrescribe (se limpia)
-            Log.i("Archivo", "El archivo '" + nombreArchivo + "' ha sido creado o limpiado exitosamente.");
+
         } catch (IOException e) {
             Log.e("Archivo", "Error al crear o limpiar el archivo '" + nombreArchivo + "': " + e.getMessage());
         } finally {
@@ -49,7 +49,7 @@ public class FileUtils {
             // Sobrescribir o crear el archivo 'nombres'
             fos = context.openFileOutput("lista-ips", Context.MODE_PRIVATE);
             // Al usar Context.MODE_PRIVATE, el archivo se sobrescribe (se limpia)
-            Log.i("Archivo", "El archivo 'lista-ips' ha sido creado o limpiado exitosamente.");
+
         } catch (IOException e) {
             Log.e("Archivo", "Error al crear o limpiar el archivo 'lista-ips': " + e.getMessage());
         } finally {
@@ -70,7 +70,7 @@ public class FileUtils {
             for (String nombre : ipList) {
                 fos.write((nombre + "\n").getBytes()); // Escribir cada nombre en una nueva línea
             }
-            Log.i("Archivo", "Lista de ips guardada exitosamente.");
+
         } catch (IOException e) {
             Log.e("Archivo", "Error al guardar la lista en el archivo: " + e.getMessage());
         } finally {
@@ -94,9 +94,9 @@ public class FileUtils {
             String linea;
             while ((linea = br.readLine()) != null) {
                 listaIps.add(linea); // Añadir cada línea a la lista
-                Log.i("Archivo", "Se añadio a la lista: " + linea);
+
             }
-            Log.i("Archivo", "Lista de nombres leída exitosamente.");
+
         } catch (FileNotFoundException e) {
             Log.e("Archivo", "El archivo no existe: " + e.getMessage());
         } catch (IOException e) {
@@ -143,9 +143,9 @@ public class FileUtils {
             while ((linea = br.readLine()) != null) {
                 String[] readLine = linea.split("-");
                 resultMap.put(readLine[0], readLine[1]); // Añadir cada línea a la lista
-                Log.i("Archivo", "Se añadio a la lista: " + readLine[0]  + " con " + readLine[1]);
+
             }
-            Log.i("Archivo", "Mapa de " + fileName + " leída exitosamente.");
+
         } catch (FileNotFoundException e) {
             Log.e("Archivo", "El archivo no existe: " + e.getMessage());
         } catch (IOException e) {
@@ -169,7 +169,6 @@ public class FileUtils {
             for (Map.Entry<String, String> line : mapToSave.entrySet()) {
                 fos.write((line.getKey() + "-" + line.getValue() + "\n").getBytes()); // Escribir cada nombre en una nueva línea
             }
-            Log.i("Archivo", "Map "+ fileName + " guardada exitosamente.");
         } catch (IOException e) {
             Log.e("Archivo", "Error al guardar la lista en el archivo: " + e.getMessage());
         } finally {
@@ -193,9 +192,7 @@ public class FileUtils {
             String linea;
             while ((linea = br.readLine()) != null) {
                 state = linea;
-                Log.i("Archivo", "Se obtuvo el estado: " + state);
             }
-            Log.i("Archivo", "Archivo de Estado leída exitosamente.");
         } catch (FileNotFoundException e) {
             Log.e("Archivo", "El archivo no existe: " + e.getMessage());
         } catch (IOException e) {
@@ -217,7 +214,6 @@ public class FileUtils {
         try {
             fos = context.openFileOutput("state", Context.MODE_PRIVATE); // Sobrescribir el archivo
             fos.write((state.getBytes())); // Escribir cada nombre en una nueva línea
-            Log.i("Archivo", "Archivo Estado guardado exitosamente con: " + state);
         } catch (IOException e) {
             Log.e("Archivo", "Error al guardar la lista en el archivo: " + e.getMessage());
         } finally {
@@ -246,6 +242,21 @@ public class FileUtils {
                     }
                 }
             }
+        }
+    }
+
+    public void clearVotoFileContent(){
+        File file = new File(context.getFilesDir(), "map-ip-voto");
+        if (file.exists()) {
+            try (FileOutputStream fos = new FileOutputStream(file)) {
+                // Escribir un contenido vacío para vaciar el archivo
+                fos.write(new byte[0]);
+                Log.i("FileClear", "Archivo 'votos' vaciado");
+            } catch (IOException e) {
+                Log.e("FileClear", "Error al vaciar el archivo 'votos'", e);
+            }
+        } else {
+            Log.e("FileClear", "El archivo 'votos' no existe");
         }
     }
 

@@ -47,7 +47,7 @@ public class BroadcastReceiver {
                         String[] messagePartido = message.split("-");
 
                         // Obtener el tiempo actual del sistema nuevamente
-                        long timestampRecuperado = Long.parseLong(messagePartido[0]);
+                        //long timestampRecuperado = Long.parseLong(messagePartido[0]);
 
                         //Obtengo mensaje sin el timestamp
                         message = messagePartido[2];
