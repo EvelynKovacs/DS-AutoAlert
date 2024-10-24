@@ -1,6 +1,5 @@
 package com.example.autoalert.view.activities;
 
-
 import android.content.Context;
 import android.net.wifi.p2p.WifiP2pConfig;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -26,7 +25,6 @@ public class WifiHotspot {
 
     }
 
-    // Método para iniciar el Hotspot usando Wi-Fi Direct (Android Q o superior)
     @RequiresApi(api = Build.VERSION_CODES.Q)
     public void startWifiDirectHotspot(String ssid, String password) {
         if (manager == null || channel == null) {
@@ -46,8 +44,6 @@ public class WifiHotspot {
             public void onSuccess() {
                 Log.d("Hotspot", "Hotspot iniciado. SSID: " + ssid + " Contraseña: " + password);
                 isHotspotEnabled = true;
-
-                // Notificar al listener (redActivity)
                 if (hotspotListener != null) {
                     hotspotListener.onHotspotStarted(ssid, password);
                 }
@@ -57,12 +53,10 @@ public class WifiHotspot {
             public void onFailure(int reason) {
                 Log.e("HotspotError", "Error al iniciar el hotspot. Razón: " + reason);
                 Context context = null;
-                //Toast.makeText(context, "Error al iniciar el hotspot", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    // Método para detener el Hotspot
     public void stopHotspot() {
         if (isHotspotEnabled && manager != null && channel != null) {
             manager.removeGroup(channel, new WifiP2pManager.ActionListener() {
@@ -82,7 +76,6 @@ public class WifiHotspot {
         }
     }
 
-    // Interface para comunicar el SSID y la contraseña
     public interface HotspotListener {
         void onHotspotStarted(String ssid, String password);
     }

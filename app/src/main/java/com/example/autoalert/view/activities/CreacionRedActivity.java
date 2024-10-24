@@ -29,15 +29,14 @@ import com.example.autoalert.R;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.util.ArrayList;
+
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.List;
 
 
 
-public class CreacionRedActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{
 
+public class CreacionRedActivity extends AppCompatActivity{
+/*
     private WifiHotspot hotspotManager;
     private TextView statusTextView;
     private Button toggleHotspotButton;
@@ -61,7 +60,7 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_creacion_red);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.red), (v, insets) -> {
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
@@ -262,36 +261,23 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
                 hotspotManager.startWifiDirectHotspot(ssid, password);
             }
         } else {
-            // Detener el Hotspot
             hotspotManager.stopHotspot();
-
-            // Detener el Hotspot con Wi-Fi Direct
             stopWifiDirectHotspot();
-
-            // Guardar los datos en SharedPreferences
             SharedPreferences sharedPref = getSharedPreferences("MiPref", Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putBoolean("redCreada", false);
-            editor.apply(); // Guardar los cambios
+            editor.apply();
         }
-
         isHotspotActive = !isHotspotActive; // Cambiar el estado
         String statusMessage = isHotspotActive ? "Hotspot activado" : "Hotspot desactivado";
-
-        // Mostrar un mensaje de éxito o error
-        //Toast.makeText(this, statusMessage, Toast.LENGTH_SHORT).show();
-
-        // Actualizar la interfaz
         statusTextView.setText(statusMessage);
         toggleHotspotButton.setText(isHotspotActive ? "Desactivar Hotspot" : "Activar Hotspot");
 
     }
 
-    // Método para detener la red Wi-Fi Direct
     public void stopWifiDirectHotspot() {
         WifiP2pManager wifiP2pManager = (WifiP2pManager) getSystemService(Context.WIFI_P2P_SERVICE);
         WifiP2pManager.Channel channel = wifiP2pManager.initialize(this, getMainLooper(), null);
-
         wifiP2pManager.removeGroup(channel, new WifiP2pManager.ActionListener() {
             @Override
             public void onSuccess() {
@@ -307,5 +293,5 @@ public class CreacionRedActivity extends AppCompatActivity implements WifiHotspo
             }
         });
     }
-
+*/
 }

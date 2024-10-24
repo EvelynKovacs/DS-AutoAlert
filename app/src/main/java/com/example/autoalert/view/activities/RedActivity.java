@@ -44,8 +44,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
-public class RedActivity extends AppCompatActivity implements WifiHotspot.HotspotListener{
-
+public class RedActivity extends AppCompatActivity {
+/*
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
     private WifiHotspot hotspotManager;
     //private TextView statusTextView;
@@ -177,7 +177,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
         toggleHotspotButton.setOnClickListener(view -> {
             crearRed();
         });*/
-
+/*
 
         btnSendMessages.setOnClickListener(view -> {
             if (isConnectedToWifi()){
@@ -318,7 +318,7 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
         }
 
     }*/
-
+/*
 
     // Método para verificar el estado del hotspot en versiones anteriores a Android 10
     private boolean checkHotspotStatus() {
@@ -627,5 +627,5 @@ public class RedActivity extends AppCompatActivity implements WifiHotspot.Hotspo
         // Detener el hotspot al cerrar la aplicación
         hotspotManager.stopHotspot();
     }
-
+*/
 }

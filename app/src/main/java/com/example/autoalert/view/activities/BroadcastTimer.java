@@ -7,20 +7,24 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 
 public class BroadcastTimer {
 
-    private BroadcastSender broadcastSender = new BroadcastSender();
+    private MenuInicioActivity mainActivity;
+
+    public BroadcastTimer(MenuInicioActivity mainActivity) {
+        this.mainActivity = mainActivity;
+    }
     public void startBroadcastTimer() {
         new Thread(() -> {
             while(true) {
                 try {
-                    // Pausa el hilo durante 30 segundos (30000 milisegundos)
                     Thread.sleep(30000);
-                    broadcastSender.sendBroadcast();
-                    Log.d("BroadcastTimer", "Timer! Mensaje broadcast enviado!.");
-
+                    mainActivity.sendBroadcast();
                 } catch (Exception e) {
                     e.printStackTrace();
                     Log.e("BroadcastTimer", "Error al enviar el mensaje de broadcast: " + e.getMessage());

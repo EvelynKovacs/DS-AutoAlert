@@ -80,8 +80,10 @@ public class PrincipalFragment extends Fragment {
         });
 
         btnRed.setOnClickListener(v -> {
-            Intent intent = new Intent(getActivity(), RedActivity.class);
-            startActivity(intent);
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fcv_main_container, new ConexionFragment());
+            transaction.addToBackStack(null);
+            transaction.commit();
         });
 
         // Actualiza el velocímetro cada 2 segundos

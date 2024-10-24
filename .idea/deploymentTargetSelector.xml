@@ -4,6 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
+<<<<<<< HEAD
         <DropdownSelection timestamp="2024-10-14T15:17:56.471214819Z">
           <Target type="DEFAULT_BOOT">
             <handle>
@@ -11,15 +12,20 @@
             </handle>
           </Target>
         </DropdownSelection>
+=======
+>>>>>>> origin/solo-conexiones
         <DialogSelection>
           <targets>
             <Target type="DEFAULT_BOOT">
               <handle>
+<<<<<<< HEAD
                 <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY32D5S5BG" />
               </handle>
             </Target>
             <Target type="DEFAULT_BOOT">
               <handle>
+=======
+>>>>>>> origin/solo-conexiones
                 <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY32BRNDZZ" />
               </handle>
             </Target>
@@ -28,6 +34,14 @@
                 <DeviceId pluginId="PhysicalDevice" identifier="serial=LMX520VCAMFA9TMVZT" />
               </handle>
             </Target>
+<<<<<<< HEAD
+=======
+            <Target type="DEFAULT_BOOT">
+              <handle>
+                <DeviceId pluginId="PhysicalDevice" identifier="serial=ZY32D5S5BG" />
+              </handle>
+            </Target>
+>>>>>>> origin/solo-conexiones
           </targets>
         </DialogSelection>
       </SelectionState>

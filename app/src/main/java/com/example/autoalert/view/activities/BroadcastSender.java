@@ -1,64 +1,50 @@
 package com.example.autoalert.view.activities;
 
-
 import android.util.Log;
+
+import com.example.autoalert.utils.NetworkUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
-import java.util.Collections;
+import java.util.Calendar;
 
 public class BroadcastSender {
     private static final int BROADCAST_PORT = 8888;
     private static final String BROADCAST_MESSAGE = "DISCOVER_IP_REQUEST";
+    private MenuInicioActivity mainActivity;
 
-    private RedActivity redActivity;
-    // Método setter para asignar redActivity
-    public void setRedActivity(RedActivity redActivity) {
-        this.redActivity = redActivity;
+    private NetworkUtils networkUtils;
+
+    public BroadcastSender(MenuInicioActivity mainActivity){
+        this.networkUtils = new NetworkUtils();
+        this.mainActivity = mainActivity;
     }
-
-
     public void sendBroadcast() {
         new Thread(() -> {
             try {
-
-                if (redActivity == null) {
-                    Log.e("BroadcastSender", "RedActivity es nulo. No se puede obtener el alias.");
-                    return;
-                }
-                // Obtener el alias desde RedActivity
-                String alias = redActivity.getAlias(); // Asegúrate de que este método esté devolviendo el valor correcto
-                if (alias == null || alias.isEmpty()) {
-                    Log.e("BroadcastSender", "Alias está vacío o nulo.");
-                    return; // No continuar si el alias está vacío
-                }
-                // Verificar si el alias está vacío
-                if (alias.isEmpty()) {
-                    Log.e("BroadcastSender", "No se puede enviar el mensaje de broadcast: alias vacío.");
-                    return; // Salir del método si el alias está vacío
-                }
+                Calendar calendar = Calendar.getInstance();
+                long primerTimestamp = calendar.getTimeInMillis();
+                String primerTimestampString = Long.toString(primerTimestamp);
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                int second = calendar.get(Calendar.SECOND);
+                String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
+                String alias = this.mainActivity.getAlias();
+                String message = primerTimestampString + "-" +  timeString + "-" + BROADCAST_MESSAGE + "-"+ alias;
 
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);
-                InetAddress broadcastAddress = getBroadcastAddress();
-
-
-                // Incorporar el alias en el mensaje
-                String messageWithAlias = BROADCAST_MESSAGE + ":" + alias;
-                Log.d("BroadCastSender", "El mensaje que envio: "+messageWithAlias);
-                byte[] sendData = messageWithAlias.getBytes();
-
-                Log.d("BroadCastSender", "El mensaje en SendData: "+sendData.toString());
-
-
+                InetAddress broadcastAddress = this.networkUtils.getBroadcastAddress();
+                byte[] sendData = message.getBytes();
                 DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcastAddress, BROADCAST_PORT);
                 socket.send(sendPacket);
-
                 socket.close();
                 Log.d("BroadcastSender", "Mensaje de peticion broadcast enviada.");
+                Log.i("Verificacion Conexion", "Empieza timer de 4seg");
+                Thread.sleep(2000);
+                Log.i("Verificacion Conexion", "Terminó Timer. Comienza verificacion de conexion");
+                mainActivity.verificarConexion();
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -66,22 +52,6 @@ public class BroadcastSender {
 
             }
         }).start();
-    }
-
-    // Obtener la dirección de broadcast de la red a la cual estás conectado
-    private InetAddress getBroadcastAddress() throws Exception {
-        // Recorre las interfaces de red disponibles y obtén la dirección de broadcast
-        for (NetworkInterface networkInterface : Collections.list(NetworkInterface.getNetworkInterfaces())) {
-            if (networkInterface.isUp() && !networkInterface.isLoopback()) {
-                for (InterfaceAddress interfaceAddress : networkInterface.getInterfaceAddresses()) {
-                    InetAddress broadcast = interfaceAddress.getBroadcast();
-                    if (broadcast != null) {
-                        return broadcast;
-                    }
-                }
-            }
-        }
-        throw new Exception("No se pudo obtener la dirección de broadcast");
     }
 }
 

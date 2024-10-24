@@ -1,13 +1,13 @@
 package com.example.autoalert.view.activities;
 
-
 import android.util.Log;
+
+import com.example.autoalert.utils.NetworkUtils;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.util.Enumeration;
+import java.util.Calendar;
 
 public class BroadcastReceiver {
     private static final int BROADCAST_PORT = 8888;
@@ -15,22 +15,19 @@ public class BroadcastReceiver {
 
     private static final int RESPONSE_PORT = 8888; // Puerto para responder
 
-    private DatagramSocket socket;
-    private byte[] buffer = new byte[1024];
-    private boolean running;
-    private RedActivity redActivity;
+    private MenuInicioActivity mainActivity;
+
+    private NetworkUtils networkUtils;
 
 
-
-
-    public BroadcastReceiver(RedActivity redActivity) {
-        this.redActivity = redActivity;
+    public BroadcastReceiver(MenuInicioActivity mainActivity) {
+        this.networkUtils = new NetworkUtils();
+        this.mainActivity = mainActivity;
     }
 
     public void startListening() {
         new Thread(() -> {
             try {
-                Log.i("Hilo BroadcastReceiver", "Se creo hilo de BroadcastReceiver.");
                 DatagramSocket socket = new DatagramSocket(BROADCAST_PORT);
                 socket.setBroadcast(true);
                 byte[] receiveBuffer = new byte[1024];
@@ -41,62 +38,35 @@ public class BroadcastReceiver {
                     socket.receive(receivePacket);
 
                     String message = new String(receivePacket.getData(), 0, receivePacket.getLength());
-                    String myIpAddress = getDeviceIpAddress(); // Método para obtener la IP del dispositivo
+                    String myIpAddress = networkUtils.getDeviceIpAddress(); // Método para obtener la IP del dispositivo
                     String senderIp = receivePacket.getAddress().getHostAddress();
                     if(!senderIp.equals(myIpAddress)){
-                        if (message.startsWith("DISCOVER_IP_REQUEST")) {
-                            Log.d("BroadCastReceiver", "El mensaje tiene: "+message);
+                        // timestampOriginal - timestampFormateado [HH:MM:SS] - mensaje - alias
+                        Log.d("BroadcastReceiver", "Mensaje recibido: " + message);
+                        String[] messagePartido = message.split("-");
+                        message = messagePartido[2];
+                        String timestamp = messagePartido[0];
+                        String alias = messagePartido[3];
 
-                            String[] parts = message.split(":");
-                            String requestType = parts[0];
-                            String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
-                            // Almacenar la IP y el alias en redActivity
-                            redActivity.storeAliasFromIp(senderIp, senderAlias);
-
-                            redActivity.ipList.add(senderIp);
-                            redActivity.updateIpList(senderIp);
-
-                            // Guardar la IP del emisor
-                            redActivity.storeMessageFromIp(senderIp, message);
-
-                            // Enviar respuesta con la IP del receptor
+                        if (message.equals("DISCOVER_IP_REQUEST")) {
+                            mainActivity.agregarIpYActualizarArchivo(senderIp);
+                            mainActivity.ipList.add(senderIp);
+                            mainActivity.updateIpList(senderIp);
+                            mainActivity.storeMessageFromIp(senderIp, message);
+                            mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
+                            // esto es lo del alias
+                            mainActivity.addAndRefreshMap("map-ip-alias",senderIp,alias);
                             sendResponse(senderIp, RESPONSE_PORT, myIpAddress);
                         }
 
-                        if (message.startsWith(BROADCAST_RESPONSE)){
+                        if (message.equals(BROADCAST_RESPONSE)){
                             senderIp = receivePacket.getAddress().getHostAddress();
-
-                            String[] parts = message.split(":");
-                            String requestType = parts[0];
-                            String senderAlias = parts.length > 1 ? parts[1] : "SinAlias"; // Si no hay alias, usar "SinAlias"
-
-                            // Almacenar la IP y el alias en redActivity
-                            redActivity.storeAliasFromIp(senderIp, senderAlias);
-
-                            redActivity.ipList.add(senderIp);
-                            redActivity.updateIpList(senderIp);
-
-                            //redActivity.ipList.add(senderIp);
-                            redActivity.updateIpList(senderIp);
-                            // Guardar la IP del emisor
-                            redActivity.storeMessageFromIp(senderIp, message);
+                            mainActivity.agregarIpYActualizarArchivo(senderIp);
+                            mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
+                            mainActivity.updateIpList(senderIp);
+                            mainActivity.storeMessageFromIp(senderIp, message);
                         }
                     }
-
-
-                    // Si el mensaje es el de descubrimiento, responder con la IP
-//                    if (message.equals("DISCOVER_IP_REQUEST")) {
-//                        InetAddress myIp = getLocalIPAddress();
-//                        if (myIp != null) {
-//                            byte[] sendData = BROADCAST_RESPONSE.getBytes();
-//                            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,
-//                                    receivePacket.getAddress(), receivePacket.getPort());
-//                            socket.send(sendPacket);
-//                            Log.d("BroadcastReceiver", "Mensaje de peticion broadcast recibida. Contestar con: " + myIp);
-//
-//                        }
-//                    }
-
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -108,27 +78,22 @@ public class BroadcastReceiver {
     private void sendResponse(String senderIp, int port, String myIpAddress) {
         new Thread(() -> {
             try {
-                Log.e("BroadcastReceiver", "Preparando mensaje de respuesta.");
-
-                // Crear el socket para enviar la respuesta
                 DatagramSocket socket = new DatagramSocket();
                 InetAddress receiverAddress = InetAddress.getByName(senderIp);
+                Calendar calendar = Calendar.getInstance();
+                long primerTimestamp = calendar.getTimeInMillis();
+                String primerTimestampString = Long.toString(primerTimestamp);
+                int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                int minute = calendar.get(Calendar.MINUTE);
+                int second = calendar.get(Calendar.SECOND);
+                String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
+                String alias = mainActivity.getAlias();
 
+                String messageToSend = primerTimestampString + "-" + timeString + "-" + BROADCAST_RESPONSE + "-" + alias;
+                byte[] message = messageToSend.getBytes();
 
-                // Obtener el alias desde redActivity
-                String alias = redActivity.getAlias();
-                // Crear el mensaje de respuesta con la IP del receptor y su alias
-                String responseMessage = BROADCAST_RESPONSE + ":" + alias;
-                byte[] message = responseMessage.getBytes();
                 DatagramPacket responsePacket = new DatagramPacket(message, message.length, receiverAddress, port);
 
-
-
-                //byte[] sendData = BROADCAST_RESPONSE.getBytes();
-//                            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length,
-//                                    receivePacket.getAddress(), receivePacket.getPort());
-
-                // Enviar el paquete de respuesta
                 socket.send(responsePacket);
                 socket.close();
 
@@ -140,41 +105,5 @@ public class BroadcastReceiver {
             }
         }).start();
     }
-
-    private InetAddress getLocalIPAddress() {
-        try {
-            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
-            while (interfaces.hasMoreElements()) {
-                NetworkInterface networkInterface = interfaces.nextElement();
-                Enumeration<InetAddress> addresses = networkInterface.getInetAddresses();
-                while (addresses.hasMoreElements()) {
-                    InetAddress addr = addresses.nextElement();
-                    if (!addr.isLoopbackAddress() && addr instanceof java.net.Inet4Address) {
-                        return addr;
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    // Método para obtener la IP del dispositivo
-    private String getDeviceIpAddress() {
-        try {
-            for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements(); ) {
-                NetworkInterface intf = en.nextElement();
-                for (Enumeration<InetAddress> enumIpAddr = intf.getInetAddresses(); enumIpAddr.hasMoreElements(); ) {
-                    InetAddress inetAddress = enumIpAddr.nextElement();
-                    if (!inetAddress.isLoopbackAddress() && inetAddress.isSiteLocalAddress()) {
-                        return inetAddress.getHostAddress();
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return "IP no disponible";
-    }
 }
+
