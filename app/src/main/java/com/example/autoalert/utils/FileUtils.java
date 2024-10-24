@@ -1,4 +1,4 @@
-package com.example.autoalert.view.activities;
+package com.example.autoalert.utils;
 
 import android.content.Context;
 import android.util.Log;
@@ -26,32 +26,9 @@ public class FileUtils {
     public void crearOReiniciarArchivo(String nombreArchivo){
         FileOutputStream fos = null;
         try {
-            // Sobrescribir o crear el archivo con el nombre recibido como parámetro
             fos = context.openFileOutput(nombreArchivo, Context.MODE_PRIVATE);
-            // Al usar Context.MODE_PRIVATE, el archivo se sobrescribe (se limpia)
-
         } catch (IOException e) {
             Log.e("Archivo", "Error al crear o limpiar el archivo '" + nombreArchivo + "': " + e.getMessage());
-        } finally {
-            if (fos != null) {
-                try {
-                    fos.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    public void crearOReiniciarArchivoIps() {
-        FileOutputStream fos = null;
-        try {
-            // Sobrescribir o crear el archivo 'nombres'
-            fos = context.openFileOutput("lista-ips", Context.MODE_PRIVATE);
-            // Al usar Context.MODE_PRIVATE, el archivo se sobrescribe (se limpia)
-
-        } catch (IOException e) {
-            Log.e("Archivo", "Error al crear o limpiar el archivo 'lista-ips': " + e.getMessage());
         } finally {
             if (fos != null) {
                 try {
@@ -114,21 +91,14 @@ public class FileUtils {
     }
 
     public void agregarIpYActualizarArchivo(String nuevaIp) {
-        // Leer los nombres actuales del archivo
         Set<String> listaIps = leerListaIpsEnArchivo();
-
-        // Añadir el nuevo nombre a la lista
         listaIps.add(nuevaIp);
-
-        // Guardar la lista actualizada en el archivo
         guardarListaEnArchivo(listaIps);
     }
 
     public void addAndRefreshMap(String fileName, String ip, String message){
         HashMap<String, String> resultMap = readMapfromFile(fileName);
-
         resultMap.put(ip, message);
-
         saveMapInFile(fileName, resultMap);
     }
 

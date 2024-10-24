@@ -1,4 +1,4 @@
-package com.example.autoalert.view.activities;
+package com.example.autoalert.utils;
 
 import java.net.InetAddress;
 import java.net.InterfaceAddress;
