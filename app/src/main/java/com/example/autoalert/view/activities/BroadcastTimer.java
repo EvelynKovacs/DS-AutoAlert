@@ -23,7 +23,7 @@ public class BroadcastTimer {
         new Thread(() -> {
             while(true) {
                 try {
-                    Thread.sleep(30000);
+                    Thread.sleep(15000);
                     mainActivity.sendBroadcast();
                 } catch (Exception e) {
                     e.printStackTrace();
