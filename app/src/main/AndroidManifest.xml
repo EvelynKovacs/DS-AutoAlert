@@ -22,6 +22,9 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
+
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
@@ -36,7 +39,9 @@
         tools:targetApi="31">
         <activity
             android:name=".view.activities.MenuInicioActivity"
-            android:exported="true">
+            android:exported="true"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -44,8 +49,12 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".view.activities.CreacionRedActivity" />
-        <activity android:name=".view.activities.RedActivity" />
+        <activity android:name=".view.activities.CreacionRedActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"    />
+        <activity android:name=".view.activities.RedActivity"
+            android:configChanges="orientation"
+            android:screenOrientation="portrait"/>
 
         <receiver android:name=".view.activities.NetworkChangeReceiver" android:exported="false">
             <intent-filter>

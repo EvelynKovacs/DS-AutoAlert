@@ -60,8 +60,14 @@ dependencies {
     implementation("com.google.code.gson:gson:2.10.1")
     implementation("de.hdodenhof:circleimageview:3.1.0")
 
-
+    // velocimetro dependency
     implementation ("com.github.anastr:speedviewlib:1.6.1")
+
+    // WorkManager dependency
+    implementation ("androidx.work:work-runtime:2.8.0")
+
+    implementation ("com.google.android.gms:play-services-location:21.0.1")
+
 
     // ROOM Librerías
     implementation("androidx.room:room-runtime:$room_version")

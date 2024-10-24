@@ -9,6 +9,7 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 
@@ -36,6 +37,8 @@ import com.example.autoalert.R;
 import com.example.autoalert.utils.SmsUtils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+
+import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileReader;
@@ -92,6 +95,11 @@ public class SimulacionFragment extends Fragment {
         progressBar = root.findViewById(R.id.progress_circular);
         showMessage = root.findViewById(R.id.button_msg_accidente);
 
+        // Check if progressBar is null
+        if (progressBar == null) {
+            Log.e("SimulacionFragment", "ProgressBar is null");
+        }
+
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -140,12 +148,13 @@ public class SimulacionFragment extends Fragment {
             timer.cancel();
         }
 
-        /* ESTO ES EL SONIDOOOOO
+        // ESTO ES EL SONIDOOOOO
         // Ajustar el volumen del dispositivo al máximo
         AudioManager audioManager = (AudioManager) getActivity().getSystemService(Context.AUDIO_SERVICE);
         if (audioManager != null) {
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC), 0);
-        }*/
+            int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volumeToSet = (int) (maxVolume * 0.25); // Calculate 25% of max volume
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeToSet, 0);
+        }
 
         mp = MediaPlayer.create(getActivity(), R.raw.sound_long);
         mp.start();
@@ -199,23 +208,28 @@ public class SimulacionFragment extends Fragment {
     public void enviarMensaje(View view) {
         Log.i("DentroEnviar", "Estoy en enviarMensaje");
 
-        // Detenemos el temporizador si está corriendo
-        if (timer != null) {
-            timer.cancel();
-        }
+        // Detenemos el temporizador y el sonido si están corriendo
+        stopSoundAndTimer();
 
         LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 
         if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+
+            // Bandera para evitar manejar más de una ubicación
+            final boolean[] ubicacionYaEnviada = {false};
+
             // Crea un LocationListener para recibir la ubicación actual
             LocationListener locationListener = new LocationListener() {
                 @Override
                 public void onLocationChanged(Location location) {
+                    // Si ya hemos manejado una ubicación, no hacemos nada
+                    if (ubicacionYaEnviada[0]) return;
                     // Una vez que se obtiene la ubicación, detenemos las actualizaciones
                     locationManager.removeUpdates(this);
 
                     // Manejar la ubicación obtenida
                     manejarUbicacion(location);
+                    ubicacionYaEnviada[0] = true;  // Marcamos que ya se ha manejado la ubicación
                     Log.d("UbicacionActual", "Ubicación actual obtenida: " + location);
                 }
 
@@ -234,19 +248,23 @@ public class SimulacionFragment extends Fragment {
 
             // Establece un temporizador para obtener la última ubicación conocida si no se obtiene la actual en 10 segundos
             new Handler().postDelayed(() -> {
+                // Si ya hemos manejado una ubicación, no hacemos nada
+                Log.d("Handlerr", "el boolean tiene: "+ubicacionYaEnviada[0]);
+                if (ubicacionYaEnviada[0]) return;
                 Log.d("UbicacionActual", "Intentando obtener la última ubicación conocida...");
                 Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-                if (lastKnownLocation != null) {
-                    // Si no se obtuvo la ubicación actual en un tiempo razonable, maneja la última ubicación conocida
-                    locationManager.removeUpdates(locationListener);  // Detiene cualquier actualización pendiente
-                    manejarUbicacion(lastKnownLocation);
-                    Log.d("UltimaUbicacion", "Última ubicación conocida usada: " + lastKnownLocation);
+                // Intenta obtener la ubicación desde el archivo JSON
+                Location ultimaUbicacionJson = obtenerUltimaUbicacion();
+                if (ultimaUbicacionJson != null) {
+                    manejarUbicacion(ultimaUbicacionJson);
+                    ubicacionYaEnviada[0] = true;  // Marcamos que ya se ha manejado la ubicación
+                    Log.d("UbicacionJSON", "Ubicación obtenida del archivo JSON: " + ultimaUbicacionJson);
                 } else {
-                    // Manejar el caso cuando no hay ubicación conocida disponible
-                    Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última conocida", Toast.LENGTH_SHORT).show();
+                    // Manejar el caso cuando no hay ubicación disponible en absoluto
+                    Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la del archivo JSON", Toast.LENGTH_SHORT).show();
                 }
-            }, 7);  // Espera 10 segundos para obtener la ubicación actual, luego intenta con la última conocida
+            }, 6000);
         } else {
             // Solicitar permisos si no han sido otorgados
             requestPermissions();
@@ -354,6 +372,38 @@ public class SimulacionFragment extends Fragment {
         return datos.trim(); // Devuelve los datos del usuario
     }
 
+    // Método para obtener la última ubicación desde el archivo JSON
+    private Location obtenerUltimaUbicacion() {
+        Location location = null;
+        try {
+            File file = new File(requireActivity().getFilesDir(), "ultima_ubicacion.json");
+
+            if (file.exists()) {
+                FileReader fileReader = new FileReader(file);
+                char[] buffer = new char[(int) file.length()];
+                fileReader.read(buffer);
+                fileReader.close();
+
+                // Parsear el contenido JSON
+                String json = new String(buffer);
+                JSONObject jsonObject = new JSONObject(json);
+                double latitud = jsonObject.getDouble("latitud");
+                double longitud = jsonObject.getDouble("longitud");
+
+                // Crear una instancia de Location con los datos del JSON
+                location = new Location(LocationManager.GPS_PROVIDER);
+                location.setLatitude(latitud);
+                location.setLongitude(longitud);
+            } else {
+                Log.e("SimulacionFragment", "El archivo ubicacion.json no existe.");
+            }
+        } catch (Exception e) {
+            Log.e("SimulacionFragment", "Error al leer la última ubicación del archivo JSON.", e);
+        }
+
+        return location;
+    }
+
     // Method to request permissions
     private void requestPermissions() {
         requestPermissionLauncher.launch(new String[]{
@@ -368,7 +418,7 @@ public class SimulacionFragment extends Fragment {
         return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-                 && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED; // Verificar permiso para SMS
+                && ContextCompat.checkSelfPermission(getContext(), Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED; // Verificar permiso para SMS
     }
 
     @Override

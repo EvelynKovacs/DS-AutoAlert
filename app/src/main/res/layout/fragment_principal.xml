@@ -31,13 +31,13 @@
             app:layout_constraintTop_toBottomOf="@id/bannerImage">
 
                 <com.github.anastr.speedviewlib.SpeedView
-                android:id="@+id/speedView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_gravity="center_horizontal"
-                app:sv_tickNumber="6"
-                app:sv_speedTextColor="@color/backgroundColor"
-                app:sv_textColor="@color/backgroundColor"
+                    android:id="@+id/speedView"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center_horizontal"
+                    app:sv_tickNumber="6"
+                    app:sv_speedTextColor="@color/backgroundColor"
+                    app:sv_textColor="@color/backgroundColor"
                     app:sv_speedTextSize="40sp"
                     app:sv_textSize="20sp"
                     app:sv_withIndicatorLight="true"

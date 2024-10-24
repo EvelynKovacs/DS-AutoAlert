@@ -7,7 +7,6 @@ import android.os.Bundle;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -20,11 +19,10 @@ import android.widget.ImageButton;
 
 import com.example.autoalert.R;
 import com.example.autoalert.view.activities.RedActivity;
-import com.github.anastr.speedviewlib.ImageLinearGauge;
-import com.github.anastr.speedviewlib.ImageSpeedometer;
-import com.github.anastr.speedviewlib.PointerSpeedometer;
 import com.github.anastr.speedviewlib.SpeedView;
 import com.google.android.material.button.MaterialButton;
+
+
 
 public class PrincipalFragment extends Fragment {
 
@@ -39,7 +37,6 @@ public class PrincipalFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-
         // Inflar el layout del fragmento
         View view = inflater.inflate(R.layout.fragment_principal, container, false);
 
@@ -53,13 +50,13 @@ public class PrincipalFragment extends Fragment {
             if (fineLocationGranted != null && !fineLocationGranted ||
                     writeStorageGranted != null && !writeStorageGranted ||
                     readStorageGranted != null && !readStorageGranted) {
-                // Aquí puedes manejar la negación de permisos según sea necesario
+                // Manejo de la negación de permisos
             } else {
-                // Si todos los permisos son concedidos, inicia la simulación
                 startSimulation();
             }
         });
 
+        // Botones de la interfaz
         MaterialButton btnEnvioMensaje = view.findViewById(R.id.sendMessageButton);
         ImageButton btnUsuario = view.findViewById(R.id.editProfileButton);
         ImageButton btnRed = view.findViewById(R.id.createNetworkButton);
@@ -75,7 +72,6 @@ public class PrincipalFragment extends Fragment {
             }
         });
 
-        // Configurar el clic en el botón
         btnUsuario.setOnClickListener(v -> {
             FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
             transaction.replace(R.id.fcv_main_container, new VerUsuarioFragment());
@@ -88,16 +84,14 @@ public class PrincipalFragment extends Fragment {
             startActivity(intent);
         });
 
+        // Actualiza el velocímetro cada 2 segundos
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                updateSpeedometer(view, 50f); // Pass the view and simulate speed as 50 km/h
-                // Repeats every 2 seconds to simulate a speed change
+                updateSpeedometer(view, 50f); // Simula velocidad de 50 km/h
                 new Handler().postDelayed(this, 2000);
             }
         }, 2000);
-
-
 
         return view;
     }
@@ -129,9 +123,10 @@ public class PrincipalFragment extends Fragment {
 
         if (speedView != null) {
             speedView.setMaxSpeed(300);
-            speedView.speedTo(speed);
+            speedView.speedTo(speed); // Solo una llamada a speedTo
         }
     }
+
 
 
 }

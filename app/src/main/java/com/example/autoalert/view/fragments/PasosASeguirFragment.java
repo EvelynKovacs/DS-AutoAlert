@@ -6,10 +6,12 @@ import androidx.fragment.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.TextView;
 
 import com.example.autoalert.R;
-import com.example.autoalert.view.activities.MenuInicioActivity;
+//import com.example.autoalert.view.activities.MenuInicioActivity;
 import com.google.android.material.button.MaterialButton;
 
 public class PasosASeguirFragment extends Fragment {
@@ -42,6 +44,8 @@ public class PasosASeguirFragment extends Fragment {
 
         // Configurar el clic en el botón
         btnContinue.setOnClickListener(v -> {
+            Animation anim = AnimationUtils.loadAnimation(getContext(), R.anim.button_scale);
+            v.startAnimation(anim);
             // Iniciar transacción para cambiar al Usuario
             FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
             transaction.replace(R.id.fcv_main_container, new AddProjectFragment());
@@ -49,7 +53,7 @@ public class PasosASeguirFragment extends Fragment {
             transaction.commit();
 
             // Marcar que ya no es la primera vez que ingresa
-            ((MenuInicioActivity) getActivity()).markFirstTimeCompleted();
+//            ((MenuInicioActivity) getActivity()).markFirstTimeCompleted();
 
             if (listener != null) {
                 listener.onComplete();
