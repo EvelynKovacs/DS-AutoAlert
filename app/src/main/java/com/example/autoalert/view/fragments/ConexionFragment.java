@@ -131,7 +131,7 @@ public class ConexionFragment extends Fragment {
 
     public void irACrecionRed(View view){
         mainActivity.getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, new CreacionRedFragment()).
+                .replace(R.id.fcv_main_container, new CreacionRedFragment()).
                 addToBackStack(null)
                 .commit();
     }
