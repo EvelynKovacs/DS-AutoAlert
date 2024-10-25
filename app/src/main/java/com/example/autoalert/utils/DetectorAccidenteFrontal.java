@@ -94,7 +94,7 @@ import java.util.LinkedList;
 
 public class DetectorAccidenteFrontal {
 
-    private static final double VELOCIDAD_MINIMA = 12.0;  // Velocidad mínima para considerar desaceleración brusca
+    private static final double VELOCIDAD_MINIMA = 20.0;  // Velocidad mínima para considerar desaceleración brusca
     private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();
     private Context context;
     private boolean desaceleracionBruscaConfirmada = false;
@@ -143,6 +143,7 @@ public class DetectorAccidenteFrontal {
                 Log.i("ACCIDENTE_FRONTAL", "Accidente frontal detectado.");
                 DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTE FRONTAL DETECTADO.");
                 desaceleracionBruscaConfirmada = false;
+                contadorCero=0;
                 historialDatos.clear();  // Limpiar el historial tras detectar el accidente
 
                 return true;  // Accidente detectado
@@ -171,13 +172,13 @@ public class DetectorAccidenteFrontal {
 
         // Ignorar evaluaciones si la velocidad del primer dato es menor a 12 km/h
         if (punto1.getVelocidad() < VELOCIDAD_MINIMA) {
-            Log.i("ACCIDENTE_FRONTAL", "Velocidad inicial menor a 12 km/h: no se evalúa la desaceleración.");
+            Log.i("ACCIDENTE_FRONTAL", "Velocidad inicial menor a 20 km/h: no se evalúa la desaceleración.");
             umbralVariable = 0;
             diferenciaVelocidad =0;
             return false;  // No evaluar, simplemente seguir acumulando datos
         }
 
-         umbralVariable = punto1.getVelocidad() * 0.5;  // 50% de la velocidad del primer dato
+         umbralVariable = punto1.getVelocidad() * 0.8;  // 50% de la velocidad del primer dato
          diferenciaVelocidad = punto1.getVelocidad() - punto2.getVelocidad();
         Log.i("ACCIDENTE_FRONTAL", "Diferencia de velocidad: " + diferenciaVelocidad + ", Umbral variable: " + umbralVariable);
 
@@ -195,16 +196,16 @@ public class DetectorAccidenteFrontal {
 
         //DatosMovimiento anteultimoDato=historialDatos.get(historialDatos.size()-2);
         // Verificar que se mantenga el patrón de desaceleración con una disminución mínima de 5 km/h
-        for (int i = 1; i < historialDatos.size(); i++) {
-            DatosMovimiento anterior = historialDatos.get(i - 1);
-            DatosMovimiento actual = historialDatos.get(i);
-
-            double diferenciaVelocidad = anterior.getVelocidad() - actual.getVelocidad();
-            if (diferenciaVelocidad!=0 && diferenciaVelocidad < 5) {
-                Log.i("ACCIDENTE_FRONTAL", "El patrón de desaceleración se ha roto. Diferencia menor a 5 km/h.");
-                return false;  // El patrón se rompe, reiniciar la evaluación
-            }
-        }
+//        for (int i = 1; i < historialDatos.size(); i++) {
+//            DatosMovimiento anterior = historialDatos.get(i - 1);
+//            DatosMovimiento actual = historialDatos.get(i);
+//
+//            double diferenciaVelocidad = anterior.getVelocidad() - actual.getVelocidad();
+//            if (diferenciaVelocidad!=0 && diferenciaVelocidad < 5) {
+//                Log.i("ACCIDENTE_FRONTAL", "El patrón de desaceleración se ha roto. Diferencia menor a 5 km/h.");
+//                return false;  // El patrón se rompe, reiniciar la evaluación
+//            }
+//        }
 
         // Si el vehículo llega a velocidad 0 y se mantiene por al menos 3 datos consecutivos, se confirma el accidente
         if (ultimoDato.getVelocidad() == 0) {

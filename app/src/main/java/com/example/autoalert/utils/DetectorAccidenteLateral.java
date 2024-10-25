@@ -13,9 +13,7 @@ import com.example.autoalert.model.entities.DatosMovimiento;
 import com.example.autoalert.repository.CsvAccLateral;
 import com.example.autoalert.repository.DetectorAccidenteDataWriter;
 
-import org.junit.runner.RunWith;
-import org.robolectric.RobolectricTestRunner;
-import org.robolectric.annotation.Config;
+
 
 import java.util.LinkedList;
 
