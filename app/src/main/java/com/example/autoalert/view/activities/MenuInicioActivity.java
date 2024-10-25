@@ -40,6 +40,7 @@ import com.example.autoalert.utils.NotificadorAccidente;
 import com.example.autoalert.view.fragments.PantallaBienvenidaFragment;
 import com.example.autoalert.view.fragments.PasosASeguirFragment;
 import com.example.autoalert.view.fragments.PrincipalFragment;
+import com.example.autoalert.view.fragments.SimulacionFragment;
 import com.example.autoalert.viewmodel.AccidentViewModel;
 import com.example.autoalert.viewmodel.SpeedViewModel;
 import com.google.gson.Gson;
@@ -91,6 +92,8 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private boolean isMessageSent = false;  // Bandera para controlar el envío del mensaje
     private boolean accidenteDetectado=false;
     private ActivityResultLauncher<Intent> checkSettingsLauncher;
+    private SimulacionFragment simulacionFragment;
+
 
 
 
@@ -114,6 +117,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         // Inicia el WorkManager para ejecutar LocationWorker cada 30 segundos
         startPeriodicLocationWorker();
+        simulacionFragment = new SimulacionFragment();
 
 
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
@@ -340,6 +344,11 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
             } else {
                 Log.e("Envio de mensaje", "HUBO ACCIDENTE pero No hay IPs disponibles para enviar el mensaje.");
                 Toast.makeText(this, "HUBO ACCIDENTE pero No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
+                FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                transaction.replace(R.id.fcv_main_container, simulacionFragment);
+                transaction.addToBackStack(null);
+                transaction.commit();
+
             }
 
     }
