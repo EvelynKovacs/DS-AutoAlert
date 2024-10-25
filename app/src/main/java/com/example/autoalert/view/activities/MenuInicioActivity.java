@@ -2,7 +2,9 @@ package com.example.autoalert.view.activities;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -14,11 +16,14 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.NetworkType;
@@ -31,9 +36,12 @@ import com.example.autoalert.R;
 import com.example.autoalert.utils.FileUtils;
 import com.example.autoalert.utils.LocationWorker;
 import com.example.autoalert.utils.NetworkUtils;
+import com.example.autoalert.utils.NotificadorAccidente;
 import com.example.autoalert.view.fragments.PantallaBienvenidaFragment;
 import com.example.autoalert.view.fragments.PasosASeguirFragment;
 import com.example.autoalert.view.fragments.PrincipalFragment;
+import com.example.autoalert.viewmodel.AccidentViewModel;
+import com.example.autoalert.viewmodel.SpeedViewModel;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -46,6 +54,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import android.widget.TextView;
+
+
 
 public class MenuInicioActivity extends AppCompatActivity implements PantallaBienvenidaFragment.OnCompleteListener {
 
@@ -73,6 +84,18 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private NetworkUtils networkUtils;
     private HashMap<String, String> ipTimestamp = new HashMap<>();
 
+
+    private AccidentViewModel accidentViewModel;
+    private SpeedViewModel speedViewModel;
+    private TextView tvAddress;  // Nuevo TextView para la dirección
+    private boolean isMessageSent = false;  // Bandera para controlar el envío del mensaje
+    private boolean accidenteDetectado=false;
+    private ActivityResultLauncher<Intent> checkSettingsLauncher;
+
+
+
+
+
     private WifiHotspot hotspotManager;
 
     private FileUtils fileUtils;
@@ -83,6 +106,8 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inicio);
+        //tvAddress = findViewById(R.id.tvAddress);  // TextView para la dirección
+
 
         // Solicitar los permisos al iniciar la actividad
         checkPermissions();
@@ -94,6 +119,20 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         boolean isFirstTime = preferences.getBoolean(FIRST_TIME_KEY, true);
         Log.d("MenuInicioActivity", "isFirstTime: " + isFirstTime);
+
+        // Inicializa el launcher para manejar el resultado de REQUEST_CHECK_SETTINGS
+        checkSettingsLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> {
+                    if (result.getResultCode() == Activity.RESULT_OK) {
+                        Log.i("MainActivity", "Location settings enabled by user.");
+                        // Llama a resumeLocationUpdates aquí
+                        speedViewModel.resumeLocationUpdates();
+                    } else {
+                        Log.e("MainActivity", "Location settings were not enabled.");
+                    }
+                }
+        );
 
         // COSAS DE CONEXIONES
 
@@ -140,6 +179,49 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         // HASTA ACA
 
+        //PARTE EVE
+
+
+        // Inicializar el ViewModel
+        speedViewModel = new ViewModelProvider(this).get(SpeedViewModel.class);
+
+        // Observar los cambios de dirección
+//        speedViewModel.getAddress().observe(this, address -> {
+//            tvAddress.setText("Dirección: " + address);  // Actualizar el TextView de la dirección
+//            System.out.println("DIRECCION: " + address);
+//            String emergencyMessage = "Emergencia. Dirección: " + address;
+//            System.out.println(emergencyMessage);
+//            String sanitizedAddress = " Mensaje de Emergencia. La siguiente direccion podria no ser exacta. " + address.replaceAll("[^a-zA-Z0-9\\s,.]", "");
+//
+//
+//            //
+//            //SmsUtils.checkAndSendSms(this, new String[]{"2804559405", "2804611882", "2804382723"}, sanitizedAddress);
+//
+//            if (!isMessageSent) {
+//                //String emergencyMessage = "Mensaje de emergencia. Dirección: " + address;
+//
+//                //SmsUtils.checkAndSendSms(this, new String[]{"2804992455", "2804611882", "2804405851"}, sanitizedAddress);
+//
+//                isMessageSent = true;  // Marcar como enviado
+//            }
+//        });
+
+        // Obtén el AccidentViewModel con un contexto de actividad para que sea compartido
+        accidentViewModel = new ViewModelProvider(this).get(AccidentViewModel.class);
+
+        // Pasar el ViewModel al NotificadorAccidente
+        NotificadorAccidente notificador = NotificadorAccidente.getInstancia();
+        notificador.setAccidentViewModel(accidentViewModel);
+
+        // Observar los cambios en el estado del accidente
+        accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
+            fileUtils.saveStateInFile("SI");
+            if(!accidenteDetectado) {
+                enviarMensaje();
+            }
+        });
+
+        //TERMINA EVE
 
 
         if (savedInstanceState == null) {
@@ -245,20 +327,21 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     // DESDE ACA EN ADELANTE TODO ES CONEXIONES, TODOOO HE DICHO!!
 
     public void enviarMensaje(){
-        String message = fileUtils.readState();
-        Set<String> ipListArchivo = fileUtils.leerListaIpsEnArchivo();
-        if (!ipListArchivo.isEmpty()) {
-            for(String targetIp : ipListArchivo) {
-                messageSender.sendMessage(targetIp, message);
-                Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
+            String message = fileUtils.readState();
+            Set<String> ipListArchivo = fileUtils.leerListaIpsEnArchivo();
+            if (!ipListArchivo.isEmpty()) {
+                for (String targetIp : ipListArchivo) {
+                    messageSender.sendMessage(targetIp, message);
+                    Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
+                }
+                if (message.equals("SI")) {
+                    enviarEstado();
+                }
+            } else {
+                Log.e("Envio de mensaje", "HUBO ACCIDENTE pero No hay IPs disponibles para enviar el mensaje.");
+                Toast.makeText(this, "HUBO ACCIDENTE pero No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
             }
-            if(message.equals("SI")){
-                enviarEstado();
-            }
-        } else {
-            Log.e("Envio de mensaje", "No hay IPs disponibles para enviar el mensaje.");
-            Toast.makeText(this, "No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
-        }
+
     }
 
 
@@ -303,6 +386,8 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                speedViewModel.checkLocationSettings(this); // Inicia la verificación de la configuración de ubicación
+
                 // Permisos concedidos, puedes iniciar el hotspot
                 Log.i("PermissionSuccesfull", "Permiso de ubicación habilitados. Se puede iniciar el hotspot.");
             } else {
@@ -332,9 +417,11 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     @Override
     protected void onResume() {
         super.onResume();
+        speedViewModel.checkLocationSettings(this); // Verifica la configuración de ubicación cada vez que se reanuda la actividad
         IntentFilter filter = new IntentFilter();
         filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
         registerReceiver(networkChangeReceiver, filter);
+
     }
 
     public void reiniciarContador(){
@@ -463,6 +550,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                 boolean veredicto = sistemaVotacion.iniciarConteo(votos);
                 reiniciarContador();
                 if(veredicto) {
+                    accidenteDetectado=true;
                     Log.i("Votacion", "HAY ACCIDENTE");
                     setResultadoText("HAY ACCIDENTE");
                 } else {
@@ -513,4 +601,6 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         return alias.trim(); // Devuelve el alias generado
     }
 // ACA TERMINA ALIAS
+
+
 }

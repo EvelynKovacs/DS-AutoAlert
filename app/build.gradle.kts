@@ -64,7 +64,7 @@ dependencies {
     implementation ("com.github.anastr:speedviewlib:1.6.1")
 
     // WorkManager dependency
-    implementation ("androidx.work:work-runtime:2.8.0")
+    implementation ("androidx.work:work-runtime:2.8.0" )
 
     implementation ("com.google.android.gms:play-services-location:21.0.1")
 

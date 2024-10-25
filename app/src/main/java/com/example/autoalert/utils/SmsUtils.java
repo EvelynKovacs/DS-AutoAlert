@@ -1,6 +1,5 @@
 package com.example.autoalert.utils;
 
-
 import android.Manifest;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -8,8 +7,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.os.Build;
-import android.os.Handler;
 import android.telephony.SmsManager;
 import android.widget.Toast;
 
@@ -30,47 +27,43 @@ public class SmsUtils {
         String DELIVERED = "SMS_DELIVERED";
 
         // Registrar los intentos de envío
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.registerReceiver(new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    switch (getResultCode()) {
-                        case AppCompatActivity.RESULT_OK:
-                            Toast.makeText(context, "SMS enviado", Toast.LENGTH_SHORT).show();
-                            break;
-                        case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
-                            Toast.makeText(context, "Error genérico en el envío", Toast.LENGTH_SHORT).show();
-                            break;
-                        case SmsManager.RESULT_ERROR_NO_SERVICE:
-                            Toast.makeText(context, "No hay servicio disponible", Toast.LENGTH_SHORT).show();
-                            break;
-                        case SmsManager.RESULT_ERROR_NULL_PDU:
-                            Toast.makeText(context, "PDU nulo", Toast.LENGTH_SHORT).show();
-                            break;
-                        case SmsManager.RESULT_ERROR_RADIO_OFF:
-                            Toast.makeText(context, "Error: Radio apagada", Toast.LENGTH_SHORT).show();
-                            break;
-                    }
+        context.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (getResultCode()) {
+                    case AppCompatActivity.RESULT_OK:
+                        Toast.makeText(context, "SMS enviado", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_GENERIC_FAILURE:
+                        Toast.makeText(context, "Error genérico en el envío", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_NO_SERVICE:
+                        Toast.makeText(context, "No hay servicio disponible", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_NULL_PDU:
+                        Toast.makeText(context, "PDU nulo", Toast.LENGTH_SHORT).show();
+                        break;
+                    case SmsManager.RESULT_ERROR_RADIO_OFF:
+                        Toast.makeText(context, "Error: Radio apagada", Toast.LENGTH_SHORT).show();
+                        break;
                 }
-            }, new IntentFilter(SENT), Context.RECEIVER_NOT_EXPORTED);
-        }
+            }
+        }, new IntentFilter(SENT));
 
         // Registrar los intentos de entrega
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.registerReceiver(new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    switch (getResultCode()) {
-                        case AppCompatActivity.RESULT_OK:
-                            Toast.makeText(context, "SMS entregado", Toast.LENGTH_SHORT).show();
-                            break;
-                        case AppCompatActivity.RESULT_CANCELED:
-                            Toast.makeText(context, "Error: SMS no entregado", Toast.LENGTH_SHORT).show();
-                            break;
-                    }
+        context.registerReceiver(new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (getResultCode()) {
+                    case AppCompatActivity.RESULT_OK:
+                        Toast.makeText(context, "SMS entregado", Toast.LENGTH_SHORT).show();
+                        break;
+                    case AppCompatActivity.RESULT_CANCELED:
+                        Toast.makeText(context, "Error: SMS no entregado", Toast.LENGTH_SHORT).show();
+                        break;
                 }
-            }, new IntentFilter(DELIVERED), Context.RECEIVER_NOT_EXPORTED);
-        }
+            }
+        }, new IntentFilter(DELIVERED));
 
         for (int i = 0; i < numeros.length; i++) {
             String numero = numeros[i];
@@ -86,7 +79,7 @@ public class SmsUtils {
                 deliveredIntents.add(PendingIntent.getBroadcast(context, 0, new Intent(DELIVERED), PendingIntent.FLAG_IMMUTABLE));
             }
 
-            new Handler().postDelayed(() -> {
+            new android.os.Handler().postDelayed(() -> {
                 // Dividir el mensaje si es muy largo
                 ArrayList<String> partes = smsManager.divideMessage(mensaje);
 

@@ -29,8 +29,8 @@ public class ConexionFragment extends Fragment {
     private TextView myIpTextView;
     public Set<String> ipList = new HashSet<>();
     private TextView ipMessageTextView;
-    private Button btnYes;
-    private Button btnNo;
+    //private Button btnYes;
+    //private Button btnNo;
     private TextView responseTextView;
     private Button btnCreacionRed;
     private TextView resultadoTextView;
@@ -49,13 +49,13 @@ public class ConexionFragment extends Fragment {
 
         mainActivity = (MenuInicioActivity) requireActivity();
 
-        Button btnSendMessages = rootView.findViewById(R.id.btnSendMessages);
+       // Button btnSendMessages = rootView.findViewById(R.id.btnSendMessages);
         ipTextView = rootView.findViewById(R.id.ipTextView);
         Button btnSendBroadcast = rootView.findViewById(R.id.btnSendBroadcast);
         ipMessageTextView = rootView.findViewById(R.id.ipMessageTextView);
         myIpTextView = rootView.findViewById(R.id.myIpTextView);
-        btnYes = rootView.findViewById(R.id.btnYes);
-        btnNo = rootView.findViewById(R.id.btnNo);
+        //btnYes = rootView.findViewById(R.id.btnYes);
+        //btnNo = rootView.findViewById(R.id.btnNo);
         responseTextView = rootView.findViewById(R.id.responseTextView);
         btnCreacionRed = rootView.findViewById(R.id.creacionRedbutton);
         resultadoTextView = rootView.findViewById(R.id.resultadoTextView);
@@ -66,21 +66,21 @@ public class ConexionFragment extends Fragment {
             this.mainActivity.sendBroadcast();
         });
 
-        btnYes.setOnClickListener(view -> {
-            setStatusTextViewOnYes();
-        });
-
-        btnNo.setOnClickListener(view -> {
-            setStatusTextViewOnNo();
-        });
+//        btnYes.setOnClickListener(view -> {
+//            setStatusTextViewOnYes();
+//        });
+//
+//        btnNo.setOnClickListener(view -> {
+//            setStatusTextViewOnNo();
+//        });
 
         btnCreacionRed.setOnClickListener(view -> {
             irACrecionRed(view);
         });
 
-        btnSendMessages.setOnClickListener(view -> {
-            this.mainActivity.enviarMensaje();
-        });
+//        btnSendMessages.setOnClickListener(view -> {
+//            this.mainActivity.enviarMensaje();
+//        });
 
         String deviceIpAddress = networkUtils.getDeviceIpAddress();
         ipTextView.setText("Lista de IPs" + deviceIpAddress);
@@ -136,15 +136,15 @@ public class ConexionFragment extends Fragment {
                 .commit();
     }
 
-    public void setStatusTextViewOnYes() {
-        mainActivity.saveStateInFile("SI");
-        responseTextView.setText("SI");
-    }
-
-    public void setStatusTextViewOnNo() {
-        mainActivity.saveStateInFile("NO");
-        responseTextView.setText("NO");
-    }
+//    public void setStatusTextViewOnYes() {
+//        mainActivity.saveStateInFile("SI");
+//        responseTextView.setText("SI");
+//    }
+//
+//    public void setStatusTextViewOnNo() {
+//        mainActivity.saveStateInFile("NO");
+//        responseTextView.setText("NO");
+//    }
 
     @Override
     public void onDestroy() {
