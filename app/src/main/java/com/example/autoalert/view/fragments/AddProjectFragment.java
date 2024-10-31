@@ -100,6 +100,7 @@ public class AddProjectFragment extends Fragment {
     TextInputEditText edtFechaNacimiento;
     Calendar calendar;
 
+    private String numero;
 
     // Launchers for contacts and images
     private final ActivityResultLauncher<String> requestContactPermissionLauncher =
@@ -155,6 +156,8 @@ public class AddProjectFragment extends Fragment {
         spinnerGrupoSanguineo = view.findViewById(R.id.edtGrupoSanguineo); // Initialize Spinner
 
 
+
+
         projectViewModel = new ViewModelProvider(requireActivity()).get(ProjectViewModel.class);
 
         contactNamesSet = new HashSet<>();
@@ -186,6 +189,8 @@ public class AddProjectFragment extends Fragment {
                 binding.edtFechaNacimiento.setText(projectModel.getFechaNacimiento());
                 binding.edtDatosMedicos.setText(projectModel.getDatosMedicos());
                 spinnerGrupoSanguineo.setSelection(Arrays.asList(grupoSanguineo).indexOf(projectModel.getGrupoSanguineo()));
+
+                binding.edtMiNumero.setText((projectModel.getMiNumero()));
 
                 // Decodificar y mostrar la imagen si existe
                 String base64Image = projectModel.getFoto();
@@ -272,6 +277,8 @@ public class AddProjectFragment extends Fragment {
         String datosMedicos = binding.edtDatosMedicos.getText().toString().trim();
         String grupoSanguineo = spinnerGrupoSanguineo.getSelectedItem().toString();
 
+        String miNumero = binding.edtMiNumero.getText().toString().trim();
+
         Uri imageUri = getImageUriFromProfileImg(); // Obtener URI actualizada
         String base64Image = encodeImageToBase64(imageUri); // Codificar la imagen en base64
 
@@ -283,9 +290,9 @@ public class AddProjectFragment extends Fragment {
 
         // Crear o actualizar el proyecto según el caso
         if (isEdit) {
-            updateProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr, datosMedicos, grupoSanguineo, base64Image, contactNamesList);
+            updateProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr, datosMedicos, grupoSanguineo, base64Image, contactNamesList,miNumero);
         } else {
-            createProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr, datosMedicos, grupoSanguineo, base64Image, contactNamesList);
+            createProject(nombreUsuario, apellidoUsuario, dni, fechaNacimientoStr, datosMedicos, grupoSanguineo, base64Image, contactNamesList,miNumero);
         }
     }
 
@@ -300,6 +307,7 @@ public class AddProjectFragment extends Fragment {
         String edadStr = binding.edtFechaNacimiento.getText().toString().trim();
         String fechaNacimientoStr = binding.edtFechaNacimiento.getText().toString().trim();
         String grupoSanguineo = spinnerGrupoSanguineo.getSelectedItem().toString();
+        String miNumero = binding.edtMiNumero.getText().toString().trim();
 
         // Validación de campos vacíos
         if (nombreUsuario.isEmpty() || apellidoUsuario.isEmpty() || edadStr.isEmpty() || dni.isEmpty() || grupoSanguineo.isEmpty() || contactNamesList.isEmpty()) {
@@ -371,7 +379,7 @@ public class AddProjectFragment extends Fragment {
 
 
     private void updateProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,
-                               String datosMedicos, String grupoSanguineo, String base64Image, List<String> contactosList) {
+                               String datosMedicos, String grupoSanguineo, String base64Image, List<String> contactosList,String miNumero) {
         if (projectModel != null) {
             projectModel.setUsuarioId(1);
             projectModel.setNombreUsuario(nombreUsuario);
@@ -382,6 +390,8 @@ public class AddProjectFragment extends Fragment {
             projectModel.setGrupoSanguineo(grupoSanguineo);
             projectModel.setFoto(base64Image); // Establecer la nueva imagen codificada
             projectModel.setContactos(contactosList);
+
+            projectModel.setMiNumero(miNumero);
 
             // Actualizar archivo JSON
             saveProjectToFile(projectModel);
@@ -396,7 +406,7 @@ public class AddProjectFragment extends Fragment {
 
 
     private void createProject(String nombreUsuario, String apellidoUsuario, String dni, String fechaNacimiento,
-                               String datosMedicos, String grupoSanguineo, String base64Image, List<String> contactosList) {
+                               String datosMedicos, String grupoSanguineo, String base64Image, List<String> contactosList,String miNumero) {
         projectModel = new ProjectModel();
         projectModel.setUsuarioId(1);
         projectModel.setNombreUsuario(nombreUsuario);
@@ -407,6 +417,8 @@ public class AddProjectFragment extends Fragment {
         projectModel.setGrupoSanguineo(grupoSanguineo);
         projectModel.setFoto(base64Image); // Set the encoded image
         projectModel.setContactos(contactosList);
+
+        projectModel.setMiNumero(miNumero);
 
         // Save to JSON file
         saveProjectToFile(projectModel);

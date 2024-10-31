@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:background="#333333"
     tools:context=".view.fragments.SimulacionFragment">
-
+<!--
     <Button
         android:id="@+id/button2"
         android:layout_width="177dp"
@@ -18,7 +18,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.006" />
+        app:layout_constraintVertical_bias="0.006" /> -->
 
     <Button
         android:id="@+id/button_stop"
@@ -40,9 +40,9 @@
         android:textAlignment="center"
         android:textColor="#FFFFCC"
         android:textSize="40sp"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/button2" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <!-- Contenedor para ProgressBar y el botón redondo -->
     <FrameLayout

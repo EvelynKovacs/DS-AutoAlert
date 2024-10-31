@@ -19,6 +19,7 @@ public class BroadcastReceiver {
 
     private NetworkUtils networkUtils;
 
+    private boolean comprobar;
 
     public BroadcastReceiver(MenuInicioActivity mainActivity) {
         this.networkUtils = new NetworkUtils();
@@ -47,6 +48,7 @@ public class BroadcastReceiver {
                         message = messagePartido[2];
                         String timestamp = messagePartido[0];
                         String alias = messagePartido[3];
+                        String suNumero = messagePartido[4];
 
                         if (message.equals("DISCOVER_IP_REQUEST")) {
                             mainActivity.agregarIpYActualizarArchivo(senderIp);
@@ -56,6 +58,8 @@ public class BroadcastReceiver {
                             mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
                             // esto es lo del alias
                             mainActivity.addAndRefreshMap("map-ip-alias",senderIp,alias);
+
+                            comprobar = mainActivity.compararNumeros(suNumero);
                             sendResponse(senderIp, RESPONSE_PORT, myIpAddress);
                         }
 
@@ -64,6 +68,8 @@ public class BroadcastReceiver {
                             mainActivity.agregarIpYActualizarArchivo(senderIp);
                             mainActivity.actualizarIpTimeStamp(senderIp, timestamp);
                             mainActivity.updateIpList(senderIp);
+
+                            comprobar = mainActivity.compararNumeros(suNumero);
                             mainActivity.storeMessageFromIp(senderIp, message);
                         }
                     }
@@ -89,7 +95,10 @@ public class BroadcastReceiver {
                 String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
                 String alias = mainActivity.getAlias();
 
-                String messageToSend = primerTimestampString + "-" + timeString + "-" + BROADCAST_RESPONSE + "-" + alias;
+                String miNumero = this.mainActivity.getMiNumero();
+
+
+                String messageToSend = primerTimestampString + "-" + timeString + "-" + BROADCAST_RESPONSE + "-" + alias + "-" + miNumero;
                 byte[] message = messageToSend.getBytes();
 
                 DatagramPacket responsePacket = new DatagramPacket(message, message.length, receiverAddress, port);

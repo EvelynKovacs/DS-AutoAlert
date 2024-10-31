@@ -31,6 +31,8 @@ public class ProjectModel implements Parcelable {
     public String grupoSanguineo;
     private String foto;
 
+    private String miNumero;
+
     // Constructor vacío
     public ProjectModel() {}
 
@@ -52,6 +54,7 @@ public class ProjectModel implements Parcelable {
         fechaNacimiento = in.readString();
         datosMedicos = in.readString();
         grupoSanguineo = in.readString();
+        miNumero = in.readString();
         foto = in.readString();  // Para leer el array de bytes correctamente
     }
 
@@ -141,6 +144,15 @@ public class ProjectModel implements Parcelable {
         dest.writeString(datosMedicos);
         dest.writeString(grupoSanguineo);
         dest.writeString(foto);  // Para escribir el array de bytes correctamente
+        dest.writeString(miNumero);
+    }
+
+    public String getMiNumero() {
+        return miNumero;
+    }
+
+    public void setMiNumero(String miNumero) {
+        this.miNumero = miNumero;
     }
 
     @Override

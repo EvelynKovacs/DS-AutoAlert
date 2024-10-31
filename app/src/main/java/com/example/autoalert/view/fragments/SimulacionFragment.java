@@ -11,6 +11,9 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -90,7 +93,7 @@ public class SimulacionFragment extends Fragment {
         }
 
         // Inicializa los botones y la barra de progreso
-        play = root.findViewById(R.id.button2);
+        //play = root.findViewById(R.id.button2);
         stop = root.findViewById(R.id.button_stop);
         progressBar = root.findViewById(R.id.progress_circular);
         showMessage = root.findViewById(R.id.button_msg_accidente);
@@ -271,6 +274,49 @@ public class SimulacionFragment extends Fragment {
         }
     }
 
+//    private void manejarUbicacion(Location location) {
+//        if (location != null) {
+//            try {
+//                // Ensure the fragment is attached to an activity
+//                if (getActivity() == null) {
+//                    Log.e("SimulacionFragment", "Fragment is not attached to an activity.");
+//                    return;
+//                }
+//
+//
+//
+//                Geocoder geocoder = new Geocoder(requireActivity(), Locale.getDefault());
+//                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+//                String address = addresses.size() > 0 ? addresses.get(0).getAddressLine(0) : "Ubicación no disponible";
+//
+//                // Create emergency message with location or address
+//                String emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. " +
+//                        "La persona: " + getDatos() +
+//                        " tuvo un accidente en la dirección aproximada: " + address;
+//                Log.d("SimulacionFragment", "Mensaje: " + emergencyMessage);
+//
+//                // Enviar SMS de emergencia usando AppCompatActivity
+//                AppCompatActivity activity = (AppCompatActivity) getActivity();
+//                SmsUtils.checkAndSendSms(activity, contactos.toArray(new String[0]), emergencyMessage);
+//
+//                // Navegar al DetalleUsuarioFragment
+//                DetalleUsuarioFragment detalleUsuarioFragment = new DetalleUsuarioFragment();
+//                Bundle args = new Bundle();
+//                args.putInt("userId", 1); // Ensure the user ID is set
+//                detalleUsuarioFragment.setArguments(args);
+//
+//                requireActivity().getSupportFragmentManager()
+//                        .beginTransaction()
+//                        .replace(R.id.fcv_main_container, detalleUsuarioFragment)
+//                        .addToBackStack(null)
+//                        .commit();
+//
+//            } catch (IOException e) {
+//                Log.e("SimulacionFragment", "Error al obtener la dirección de la ubicación", e);
+//            }
+//        }
+//    }
+
     private void manejarUbicacion(Location location) {
         if (location != null) {
             try {
@@ -280,14 +326,25 @@ public class SimulacionFragment extends Fragment {
                     return;
                 }
 
-                Geocoder geocoder = new Geocoder(requireActivity(), Locale.getDefault());
-                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                String address = addresses.size() > 0 ? addresses.get(0).getAddressLine(0) : "Ubicación no disponible";
+                String emergencyMessage;
+                if (isInternetAvailable()) {
+                    // Si hay conexión a Internet, intenta obtener la dirección
+                    Geocoder geocoder = new Geocoder(requireActivity(), Locale.getDefault());
+                    List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                    String address = addresses.size() > 0 ? addresses.get(0).getAddressLine(0) : "Ubicación no disponible";
 
-                // Create emergency message with location or address
-                String emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. " +
-                        "La persona: " + getDatos() +
-                        " tuvo un accidente en la dirección aproximada: " + address;
+                    emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. " +
+                            "La persona: " + getDatos() +
+                            " tuvo un accidente en la dirección aproximada: " + address;
+                } else {
+                    // Si no hay conexión a Internet, usa las coordenadas
+                    emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. " +
+                            "La persona: " + getDatos() +
+                            " tuvo un accidente en las coordenadas: " +
+                            "Latitud: " + location.getLatitude() +
+                            ", Longitud: " + location.getLongitude();
+                }
+
                 Log.d("SimulacionFragment", "Mensaje: " + emergencyMessage);
 
                 // Enviar SMS de emergencia usando AppCompatActivity
@@ -312,7 +369,16 @@ public class SimulacionFragment extends Fragment {
         }
     }
 
-
+    // Método para verificar si hay conexión a Internet (compatible con API 14)
+    private boolean isInternetAvailable() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null) {
+            // Obtiene información sobre el estado de la conexión de red
+            NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+            return activeNetwork != null && activeNetwork.isConnected();
+        }
+        return false;
+    }
 
 
 

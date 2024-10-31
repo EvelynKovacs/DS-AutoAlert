@@ -31,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -108,7 +109,7 @@ public class LocationWorker extends Worker {
 //        WorkManager.getInstance(context).enqueue(locationWorkRequest);
 //        Log.d(TAG, "Tarea programada para ejecutarse nuevamente en 30 segundos.");
 //    }
-
+/*
     private void saveLocation(Location location) {
         File archivoUltimaUbicacion = new File(context.getFilesDir(), "ultima_ubicacion.json"); // Archivo con la última ubicación
         File archivoTodasUbicaciones = new File(context.getFilesDir(), "ubicaciones_periodicas.json"); // Archivo con todas las ubicaciones
@@ -170,7 +171,71 @@ public class LocationWorker extends Worker {
         } catch (Exception e) {
             Log.e(TAG, "Error al guardar ubicación en JSON.", e);
         }
+    }*/
+private void saveLocation(Location location) {
+    File archivoUltimaUbicacion = new File(context.getFilesDir(), "ultima_ubicacion.json"); // Last location file
+    File archivoTodasUbicaciones = new File(context.getFilesDir(), "ubicaciones_periodicas.json"); // All locations file
+
+    try {
+        String lugar = "Desconocido"; // Default value if no address is available
+
+        try {
+            // Attempt to retrieve the address
+            Geocoder geocoder = new Geocoder(context, Locale.getDefault());
+            List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+            if (addresses != null && !addresses.isEmpty()) {
+                Address address = addresses.get(0);
+                lugar = address.getAddressLine(0); // Get the full address
+            }
+        } catch (IOException geocoderException) {
+            Log.e(TAG, "Error al obtener la dirección. Guardando solo coordenadas.", geocoderException);
+            lugar = "Desconocido (sin conexión)";
+        }
+
+        // Get current time
+        String horaActual = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+
+        // Create the JSON object with the new location
+        JSONObject nuevaUbicacion = new JSONObject();
+        nuevaUbicacion.put("latitud", location.getLatitude());
+        nuevaUbicacion.put("longitud", location.getLongitude());
+        nuevaUbicacion.put("lugar", lugar);
+        nuevaUbicacion.put("hora", horaActual);
+
+        // 1. Save the last location in a separate file
+        try (FileWriter fileWriterUltimaUbicacion = new FileWriter(archivoUltimaUbicacion, false)) { // Overwrite file with the last location
+            fileWriterUltimaUbicacion.write(nuevaUbicacion.toString());
+            Log.d(TAG, "Última ubicación guardada en archivo JSON.");
+        }
+
+        // 2. Save all locations in another file
+        JSONArray jsonArray = new JSONArray();
+        if (archivoTodasUbicaciones.exists()) {
+            try (BufferedReader bufferedReader = new BufferedReader(new FileReader(archivoTodasUbicaciones))) {
+                StringBuilder jsonStringBuilder = new StringBuilder();
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    jsonStringBuilder.append(line);
+                }
+                if (!jsonStringBuilder.toString().isEmpty()) {
+                    jsonArray = new JSONArray(jsonStringBuilder.toString());
+                }
+            }
+        }
+
+        // Add the new location to the array
+        jsonArray.put(nuevaUbicacion);
+
+        // Save the updated array to the all-locations file
+        try (FileWriter fileWriterTodasUbicaciones = new FileWriter(archivoTodasUbicaciones, false)) { // Overwrite with the new array
+            fileWriterTodasUbicaciones.write(jsonArray.toString());
+            Log.d(TAG, "Ubicación guardada en archivo JSON de todas las ubicaciones.");
+        }
+
+    } catch (Exception e) {
+        Log.e(TAG, "Error al guardar ubicación en JSON.", e);
     }
+}
 
 
 

@@ -31,7 +31,10 @@ public class BroadcastSender {
                 int second = calendar.get(Calendar.SECOND);
                 String timeString = String.format("%02d:%02d:%02d", hour, minute, second);
                 String alias = this.mainActivity.getAlias();
-                String message = primerTimestampString + "-" +  timeString + "-" + BROADCAST_MESSAGE + "-"+ alias;
+
+                String miNumero = this.mainActivity.getMiNumero();
+
+                String message = primerTimestampString + "-" +  timeString + "-" + BROADCAST_MESSAGE + "-"+ alias + "-" + miNumero;
 
                 DatagramSocket socket = new DatagramSocket();
                 socket.setBroadcast(true);

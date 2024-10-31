@@ -44,6 +44,7 @@ import com.example.autoalert.view.fragments.SimulacionFragment;
 import com.example.autoalert.viewmodel.AccidentViewModel;
 import com.example.autoalert.viewmodel.SpeedViewModel;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.File;
@@ -55,6 +56,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import android.widget.TextView;
 
 
@@ -219,8 +223,8 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         // Observar los cambios en el estado del accidente
         accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
-            fileUtils.saveStateInFile("SI");
-            if(!accidenteDetectado) {
+            if (!accidenteDetectado) {
+                fileUtils.saveStateInFile("SI");
                 enviarMensaje();
             }
         });
@@ -251,10 +255,13 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                     ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_WIFI_STATE) != PackageManager.PERMISSION_GRANTED ||
                     ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED ||
                     ContextCompat.checkSelfPermission(this, Manifest.permission.CHANGE_NETWORK_STATE) != PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED ||
-                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_NUMBERS) != PackageManager.PERMISSION_GRANTED ||
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
 
                 ActivityCompat.requestPermissions(this,
                         new String[]{
@@ -265,13 +272,17 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                                 Manifest.permission.ACCESS_FINE_LOCATION,
                                 Manifest.permission.WRITE_EXTERNAL_STORAGE,
                                 Manifest.permission.READ_EXTERNAL_STORAGE,
-                                Manifest.permission.ACCESS_COARSE_LOCATION
+                                Manifest.permission.ACCESS_COARSE_LOCATION,
+                                Manifest.permission.SEND_SMS,
+                                Manifest.permission.READ_PHONE_STATE,
+                                Manifest.permission.READ_PHONE_NUMBERS,
+                                Manifest.permission.READ_SMS
                         }, 1);
             }
         }
     }
 
-//    private void startLocationWorker() {
+    //    private void startLocationWorker() {
 //        // Crear las restricciones necesarias (sin requerir red)
 //        Constraints constraints = new Constraints.Builder()
 //                .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // No requiere red para funcionar
@@ -348,8 +359,11 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                 transaction.replace(R.id.fcv_main_container, simulacionFragment);
                 transaction.addToBackStack(null);
                 transaction.commit();
+                accidenteDetectado=true;
 
             }
+        // Restablecer accidenteDetectado a false para permitir futuras detecciones
+        //accidenteDetectado = false;
 
     }
 
@@ -412,7 +426,13 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         hotspotManager.stopHotspot();
 //        CreacionRedActivity creacionRedActivity = new CreacionRedActivity();
 //        creacionRedActivity.stopWifiDirectHotspot();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        // Verifica que hotspotManager no sea null antes de intentar detener el hotspot
+        if (hotspotManager != null) {
+            hotspotManager.stopHotspot();
+        }
+
+        // Verifica la versión de API antes de desregistrar el callback de red
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && connectivityManager != null) {
             connectivityManager.unregisterNetworkCallback(networkCallback);
         }
     }
@@ -562,6 +582,10 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                     accidenteDetectado=true;
                     Log.i("Votacion", "HAY ACCIDENTE");
                     setResultadoText("HAY ACCIDENTE");
+                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+                    transaction.replace(R.id.fcv_main_container, simulacionFragment);
+                    transaction.addToBackStack(null);
+                    transaction.commit();
                 } else {
                     Log.i("Votacion", "NO HAY ACCIDENTE");
                     setResultadoText("NO HAY ACCIDENTE");
@@ -609,7 +633,127 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         }
         return alias.trim(); // Devuelve el alias generado
     }
+
+
+    // Método para obtener el alias del archivo JSON
+    public String getMiNumero() {
+        String miNumero = "";
+        try {
+            // Ruta del archivo JSON
+            File file = new File(getFilesDir(), "user_data.json"); // Cambia la ruta si es necesario
+
+            if (file.exists()) {
+                // Lee el archivo JSON
+                FileReader fileReader = new FileReader(file);
+
+                // Usa Gson para parsear el archivo JSON
+                Gson gson = new Gson();
+                JsonObject userData = gson.fromJson(fileReader, JsonObject.class);
+
+                // Extrae el nombre y apellido
+                String miNumero1 = userData.get("miNumero").getAsString();
+
+                String ultimos6Digitos="";
+                // Verifica que el número tiene al menos 6 dígitos
+                if (miNumero1.length() >= 6) {
+                    // Obtén los últimos 6 dígitos
+                    ultimos6Digitos = miNumero1.substring(miNumero1.length() - 6);
+                    System.out.println("Últimos 6 dígitos: " + ultimos6Digitos);
+                } else {
+                    System.out.println("El número es demasiado corto para extraer los últimos 6 dígitos.");
+                }
+
+                miNumero = ultimos6Digitos;
+
+                fileReader.close();
+            } else {
+                Log.e("MainActivity", "El archivo JSON no existe.");
+            }
+        } catch (Exception e) {
+            Log.e("MainActivity", "Error al leer el archivo JSON: " + e.getMessage());
+        }
+        if (miNumero.isEmpty()){
+            miNumero = "000000";
+        }
+        return miNumero.trim(); // Devuelve el alias generado
+    }
+
+    public boolean compararNumeros(String suNumero) {
+        try {
+            // Ruta del archivo JSON
+            File file = new File(getFilesDir(), "user_data.json");
+
+            if (file.exists()) {
+                // Lee el archivo JSON
+                FileReader fileReader = new FileReader(file);
+
+                // Usa Gson para parsear el archivo JSON
+                Gson gson = new Gson();
+                JsonObject userData = gson.fromJson(fileReader, JsonObject.class);
+                fileReader.close();
+
+                // Obtén el campo de contactos como un arreglo
+                JsonArray contactosArray = userData.getAsJsonArray("contactos");
+
+                // Verifica los últimos 6 dígitos de suNumero
+                String ultimos6SuNumero = suNumero.length() >= 6 ? suNumero.substring(suNumero.length() - 6) : suNumero;
+
+                Log.d("NumeroQueViene", "ultimos6SuNumero: " + ultimos6SuNumero);
+
+                // Recorre los contactos para verificar si alguno coincide con los últimos 6 dígitos
+                for (int i = 0; i < contactosArray.size(); i++) {
+                    String contacto = contactosArray.get(i).getAsString();
+                    contacto = contacto.replaceAll("[^\\d]", "");
+                    Log.d("Numero", "contactoArray: " + contacto);
+
+                    // Extrae el número de cada contacto usando una expresión regular
+                    Pattern pattern = Pattern.compile("\\d+"); // Encuentra secuencias de dígitos
+                    Matcher matcher = pattern.matcher(contacto);
+
+                    Log.d("Numero", "contactoPatter: " + contacto);
+
+                    String numeroContacto = "";
+                    while (matcher.find()) {
+                        numeroContacto = matcher.group(); // Último grupo de números
+                    }
+                    Log.d("Numero", "numeroContacto: " + numeroContacto);
+
+                    // Verifica los últimos 6 dígitos
+                    if (numeroContacto.length() >= 6) {
+                        String ultimos6Contacto = numeroContacto.substring(numeroContacto.length() - 6);
+                        if (ultimos6SuNumero.equals(ultimos6Contacto)) {
+                            Log.d("EncontroNumero", "Lo encontro al numero: " + ultimos6SuNumero);
+
+                            // Muestra el Toast en el hilo principal
+                            final String finalNumeroContacto = numeroContacto; // Hacerlo final
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MenuInicioActivity.this, "El número " + finalNumeroContacto + " está en sus contactos de emergencia", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+
+                            return true; // Coincidencia encontrada
+                        }
+                    }
+                }
+            } else {
+                Log.e("PrincipalFragment", "El archivo JSON no existe.");
+            }
+        } catch (Exception e) {
+            Log.e("PrincipalFragment", "Error al leer el archivo JSON: " + e.getMessage());
+        }
+
+        // Si no se encontró coincidencia
+        Log.d("NoEncontroNumero", "No lo encontro");
+        return false;
+    }
+
+
+
+
 // ACA TERMINA ALIAS
+
 
 
 }

@@ -210,6 +210,7 @@ public class PrincipalFragment extends Fragment {
         MaterialButton btnEnvioMensaje = view.findViewById(R.id.sendMessageButton);
         ImageButton btnUsuario = view.findViewById(R.id.editProfileButton);
         ImageButton btnRed = view.findViewById(R.id.createNetworkButton);
+        ImageButton btnConectados = view.findViewById(R.id.viewUsersButton);
 
         // Crear instancia del SimulacionFragment
         simulacionFragment = new SimulacionFragment();
@@ -235,6 +236,14 @@ public class PrincipalFragment extends Fragment {
             transaction.addToBackStack(null);
             transaction.commit();
         });
+
+        btnConectados.setOnClickListener(v -> {
+            FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+            transaction.replace(R.id.fcv_main_container, new UsuariosConectadosFragment());
+            transaction.addToBackStack(null);
+            transaction.commit();
+        });
+
 
         return view;
     }
