@@ -108,4 +108,21 @@
         app:layout_constraintTop_toBottomOf="@+id/passwordTextView"
         app:layout_constraintVertical_bias="0.038" />
 
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="0dp"
+        android:layout_height="111dp"
+        android:layout_marginStart="0dp"
+        android:layout_marginTop="168dp"
+        android:background="#FFEB3B"
+        android:gravity="center"
+        android:padding="8dp"
+        android:text="NOTA: Si eres quien va a crear la red para que los demás se conecten, se recomienda FUERTEMENTE que te desconectes primero de cualquier red WiFi, y luego crear la red. Es para que la comunicación entre los dispositivos conectados funcione correctamente."
+        android:textColor="#212121"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/redStatusTextView" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -206,7 +206,8 @@ public class FileUtils {
                     // Verificar si el archivo no es uno de los que se deben conservar
                     if (!file.getName().equals("ubicaciones_periodicas.json") &&
                             !file.getName().equals("ultima_ubicacion.json") &&
-                            !file.getName().equals("user_data.json")) {
+                            !file.getName().equals("user_data.json") &&
+                            !file.getName().equals("speed_data.txt")){
 
                         try (FileOutputStream fos = new FileOutputStream(file)) {
                             // Escribir un contenido vacío para vaciar el archivo
@@ -252,6 +253,65 @@ public class FileUtils {
     }
 
 
+    // Método para agregar un contacto de emergencia al archivo sin duplicados
+    public void agregarContactoEmergencia(String numeroContacto) {
+        Set<String> listaContactos = leerContactosEmergencia();
+
+        // Si el número no está en la lista, se agrega
+        if (!listaContactos.contains(numeroContacto)) {
+            listaContactos.add(numeroContacto);
+            guardarListaContactosEmergencia(listaContactos);
+        }
+    }
+
+    // Método para leer la lista de contactos de emergencia
+    public Set<String> leerContactosEmergencia() {
+        Set<String> listaContactos = new HashSet<>();
+        FileInputStream fis = null;
+        try {
+            fis = context.openFileInput("lista-contactos");
+            InputStreamReader isr = new InputStreamReader(fis);
+            BufferedReader br = new BufferedReader(isr);
+            String linea;
+            while ((linea = br.readLine()) != null) {
+                listaContactos.add(linea);
+            }
+        } catch (FileNotFoundException e) {
+            Log.e("Archivo", "El archivo 'lista-contactos' no existe: " + e.getMessage());
+        } catch (IOException e) {
+            Log.e("Archivo", "Error al leer el archivo 'lista-contactos': " + e.getMessage());
+        } finally {
+            if (fis != null) {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return listaContactos;
+    }
+
+    // Método para guardar la lista de contactos en el archivo
+    private void guardarListaContactosEmergencia(Set<String> listaContactos) {
+        FileOutputStream fos = null;
+        try {
+            fos = context.openFileOutput("lista-contactos", Context.MODE_PRIVATE);
+            for (String contacto : listaContactos) {
+                fos.write((contacto + "\n").getBytes());
+            }
+        } catch (IOException e) {
+            Log.e("Archivo", "Error al guardar la lista de contactos de emergencia: " + e.getMessage());
+        } finally {
+            if (fos != null) {
+                try {
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 
 
 

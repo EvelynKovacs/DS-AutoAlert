@@ -5,27 +5,7 @@
     android:layout_height="match_parent"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <TextView
-        android:id="@+id/myIpTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="16dp"
-        android:text="Mi ip:"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnSendBroadcast" />
-
-    <TextView
-        android:id="@+id/ipTextView"
-        android:layout_width="150dp"
-        android:layout_height="105dp"
-        android:layout_marginTop="28dp"
-        android:text="IP's recibidas:"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.1"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/myIpTextView" />
-
+    <!--
     <Button
         android:id="@+id/btnSendMessages"
         android:layout_width="wrap_content"
@@ -35,19 +15,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/responseTextView" />
+        app:layout_constraintTop_toBottomOf="@+id/responseTextView" /> -->
 
-    <TextView
-        android:id="@+id/ipMessageTextView"
-        android:layout_width="271dp"
-        android:layout_height="119dp"
-        android:layout_marginTop="24dp"
-        android:text="Mensajes recibidos:"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.114"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btnSendMessages" />
-
+    <!--
     <Button
         android:id="@+id/btnYes"
         android:layout_width="69dp"
@@ -88,6 +58,38 @@
         android:text="Contenido del mensaje: [Si/No]"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ipTextView" /> -->
+
+    <TextView
+        android:id="@+id/myIpTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="88dp"
+        android:text="Mi ip:"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/ipTextView" />
+
+    <TextView
+        android:id="@+id/ipTextView"
+        android:layout_width="150dp"
+        android:layout_height="105dp"
+        android:layout_marginTop="112dp"
+        android:text="IP's recibidas:"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.061"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/ipMessageTextView"
+        android:layout_width="271dp"
+        android:layout_height="119dp"
+        android:layout_marginTop="148dp"
+        android:text="Mensajes recibidos:"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.114"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/ipTextView" />
 
     <Button
@@ -100,7 +102,7 @@
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
+<!--
     <Button
         android:id="@+id/btnSendBroadcast"
         android:layout_width="wrap_content"
@@ -110,8 +112,8 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.496"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/creacionRedbutton" />
-
+        app:layout_constraintTop_toBottomOf="@+id/creacionRedbutton" />-->
+<!--
     <TextView
         android:id="@+id/resultadoTextView"
         android:layout_width="173dp"
@@ -120,10 +122,11 @@
         android:layout_marginEnd="20dp"
         android:text="Resultado Votación:"
         android:textSize="14sp"
-        app:layout_constraintBottom_toTopOf="@+id/statusBtnTextView"
+        app:layout_constraintBottom_toTopOf="@+id/creacionRedbutton"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toEndOf="@+id/ipTextView"
-        app:layout_constraintTop_toBottomOf="@+id/btnSendBroadcast"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/creacionRedbutton"
+        app:layout_constraintVertical_bias="0.0" />-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

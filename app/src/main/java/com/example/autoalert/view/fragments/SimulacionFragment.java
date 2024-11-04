@@ -25,6 +25,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import android.os.CountDownTimer;
 import android.os.Handler;
@@ -38,6 +39,8 @@ import android.widget.Toast;
 
 import com.example.autoalert.R;
 import com.example.autoalert.utils.SmsUtils;
+import com.example.autoalert.view.activities.MenuInicioActivity;
+import com.example.autoalert.viewmodel.SpeedViewModel;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
@@ -57,6 +60,11 @@ public class SimulacionFragment extends Fragment {
     Button play, stop, showMessage;
     ProgressBar progressBar;
     ArrayList<String> contactos;
+
+    private MenuInicioActivity menuInicioActivity;
+
+    private SpeedViewModel speedViewModel;
+    private Location currentLocation;
 
     private static final int PERMISSION_REQUEST_CODE = 100; // Código de solicitud de permisos
 
@@ -107,6 +115,8 @@ public class SimulacionFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 stopSoundAndTimer();
+                //menuInicioActivity.resetAccidenteDetectado(); // FUNCIONA
+                requireActivity().onBackPressed(); // Regresar a la pantalla anterior
             }
         });
 
@@ -133,6 +143,19 @@ public class SimulacionFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // Inicializa SpeedViewModel
+        speedViewModel = new ViewModelProvider(requireActivity()).get(SpeedViewModel.class);
+
+        // Observa los cambios en la ubicación
+        speedViewModel.getLocation().observe(getViewLifecycleOwner(), location -> {
+            if (location != null) {
+                currentLocation = location;  // Almacena la ubicación actual para su uso
+                Log.d("SimulacionFragment", "Ubicación actual recibida: " + location.toString());
+            }
+        });
+
+
 
         // Llama a AudioMediaPlayer al entrar a la pantalla
         AudioMediaPlayer();
@@ -208,71 +231,114 @@ public class SimulacionFragment extends Fragment {
         progressBar.setProgress(0);
     }
 
+    // ENVIAR MENSAJES CON LA UBICACION DE EVE.
     public void enviarMensaje(View view) {
-        Log.i("DentroEnviar", "Estoy en enviarMensaje");
 
-        // Detenemos el temporizador y el sonido si están corriendo
         stopSoundAndTimer();
+        if (currentLocation != null) {
+            Log.d("SimulacionFragment", "Envia ubicacion Actual");
+            manejarUbicacion(currentLocation);
+        } else {
+            Log.d("SimulacionFragment", "Ubicación actual no disponible, obteniendo última ubicación conocida...");
 
-        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+            LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
 
-        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-
-            // Bandera para evitar manejar más de una ubicación
-            final boolean[] ubicacionYaEnviada = {false};
-
-            // Crea un LocationListener para recibir la ubicación actual
-            LocationListener locationListener = new LocationListener() {
-                @Override
-                public void onLocationChanged(Location location) {
-                    // Si ya hemos manejado una ubicación, no hacemos nada
-                    if (ubicacionYaEnviada[0]) return;
-                    // Una vez que se obtiene la ubicación, detenemos las actualizaciones
-                    locationManager.removeUpdates(this);
-
-                    // Manejar la ubicación obtenida
-                    manejarUbicacion(location);
-                    ubicacionYaEnviada[0] = true;  // Marcamos que ya se ha manejado la ubicación
-                    Log.d("UbicacionActual", "Ubicación actual obtenida: " + location);
-                }
-
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {}
-
-                @Override
-                public void onProviderEnabled(String provider) {}
-
-                @Override
-                public void onProviderDisabled(String provider) {}
-            };
-
-            // Solicita actualizaciones de ubicación (solo GPS)
-            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, locationListener);
-
-            // Establece un temporizador para obtener la última ubicación conocida si no se obtiene la actual en 10 segundos
-            new Handler().postDelayed(() -> {
-                // Si ya hemos manejado una ubicación, no hacemos nada
-                Log.d("Handlerr", "el boolean tiene: "+ubicacionYaEnviada[0]);
-                if (ubicacionYaEnviada[0]) return;
-                Log.d("UbicacionActual", "Intentando obtener la última ubicación conocida...");
+            // Verificar permisos de ubicación antes de solicitar la última ubicación conocida
+            if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                // Intentar obtener la última ubicación conocida
                 Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-                // Intenta obtener la ubicación desde el archivo JSON
-                Location ultimaUbicacionJson = obtenerUltimaUbicacion();
-                if (ultimaUbicacionJson != null) {
-                    manejarUbicacion(ultimaUbicacionJson);
-                    ubicacionYaEnviada[0] = true;  // Marcamos que ya se ha manejado la ubicación
-                    Log.d("UbicacionJSON", "Ubicación obtenida del archivo JSON: " + ultimaUbicacionJson);
+                if (lastKnownLocation != null) {
+                    manejarUbicacion(lastKnownLocation);
+                    Log.d("SimulacionFragment", "Última ubicación conocida obtenida: " + lastKnownLocation);
                 } else {
-                    // Manejar el caso cuando no hay ubicación disponible en absoluto
-                    Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la del archivo JSON", Toast.LENGTH_SHORT).show();
+                    Log.d("SimulacionFragment", "Última ubicación conocida no disponible, buscando en archivo JSON...");
+                    // Intentar obtener la ubicación desde un archivo JSON como último recurso
+                    Location ultimaUbicacionJson = obtenerUltimaUbicacion();
+
+                    if (ultimaUbicacionJson != null) {
+                        manejarUbicacion(ultimaUbicacionJson);
+                        Log.d("SimulacionFragment", "Ubicación obtenida del archivo JSON: " + ultimaUbicacionJson);
+                    } else {
+                        // Manejar el caso cuando no hay ubicación disponible en absoluto
+                        Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la última registrada", Toast.LENGTH_SHORT).show();
+                    }
                 }
-            }, 6000);
-        } else {
-            // Solicitar permisos si no han sido otorgados
-            requestPermissions();
+            } else {
+                // Solicitar permisos si no han sido otorgados
+                requestPermissions();
+            }
         }
     }
+
+
+
+    // ESTO ES EL ULTIMO ANTES DE INTENTAR USAR CON LO DE EVE
+//    public void enviarMensaje(View view) {
+//        Log.i("DentroEnviar", "Estoy en enviarMensaje");
+//
+//        // Detenemos el temporizador y el sonido si están corriendo
+//        stopSoundAndTimer();
+//
+//        LocationManager locationManager = (LocationManager) getActivity().getSystemService(Context.LOCATION_SERVICE);
+//
+//        if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+//
+//            // Bandera para evitar manejar más de una ubicación
+//            final boolean[] ubicacionYaEnviada = {false};
+//
+//            // Crea un LocationListener para recibir la ubicación actual
+//            LocationListener locationListener = new LocationListener() {
+//                @Override
+//                public void onLocationChanged(Location location) {
+//                    // Si ya hemos manejado una ubicación, no hacemos nada
+//                    if (ubicacionYaEnviada[0]) return;
+//                    // Una vez que se obtiene la ubicación, detenemos las actualizaciones
+//                    locationManager.removeUpdates(this);
+//
+//                    // Manejar la ubicación obtenida
+//                    manejarUbicacion(location);
+//                    ubicacionYaEnviada[0] = true;  // Marcamos que ya se ha manejado la ubicación
+//                    Log.d("UbicacionActual", "Ubicación actual obtenida: " + location);
+//                }
+//
+//                @Override
+//                public void onStatusChanged(String provider, int status, Bundle extras) {}
+//
+//                @Override
+//                public void onProviderEnabled(String provider) {}
+//
+//                @Override
+//                public void onProviderDisabled(String provider) {}
+//            };
+//
+//            // Solicita actualizaciones de ubicación (solo GPS)
+//            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10, locationListener);
+//
+//            // Establece un temporizador para obtener la última ubicación conocida si no se obtiene la actual en 10 segundos
+//            new Handler().postDelayed(() -> {
+//                // Si ya hemos manejado una ubicación, no hacemos nada
+//                Log.d("Handlerr", "el boolean tiene: "+ubicacionYaEnviada[0]);
+//                if (ubicacionYaEnviada[0]) return;
+//                Log.d("UbicacionActual", "Intentando obtener la última ubicación conocida...");
+//                Location lastKnownLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+//
+//                // Intenta obtener la ubicación desde el archivo JSON
+//                Location ultimaUbicacionJson = obtenerUltimaUbicacion();
+//                if (ultimaUbicacionJson != null) {
+//                    manejarUbicacion(ultimaUbicacionJson);
+//                    ubicacionYaEnviada[0] = true;  // Marcamos que ya se ha manejado la ubicación
+//                    Log.d("UbicacionJSON", "Ubicación obtenida del archivo JSON: " + ultimaUbicacionJson);
+//                } else {
+//                    // Manejar el caso cuando no hay ubicación disponible en absoluto
+//                    Toast.makeText(getContext(), "No se pudo obtener la ubicación actual ni la del archivo JSON", Toast.LENGTH_SHORT).show();
+//                }
+//            }, 6000);
+//        } else {
+//            // Solicitar permisos si no han sido otorgados
+//            requestPermissions();
+//        }
+//    }
 
 //    private void manejarUbicacion(Location location) {
 //        if (location != null) {
@@ -499,4 +565,14 @@ public class SimulacionFragment extends Fragment {
             timer.cancel();
         }
     }
+
+//    @Override
+//    public void onAttach(@NonNull Context context) {
+//        super.onAttach(context);
+//        if (context instanceof MenuInicioActivity) {
+//            menuInicioActivity = (MenuInicioActivity) context;
+//        } else {
+//            throw new RuntimeException(context.toString() + " debe ser una instancia de MenuInicioActivity");
+//        }
+//    }
 }

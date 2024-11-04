@@ -51,20 +51,20 @@ public class ConexionFragment extends Fragment {
 
        // Button btnSendMessages = rootView.findViewById(R.id.btnSendMessages);
         ipTextView = rootView.findViewById(R.id.ipTextView);
-        Button btnSendBroadcast = rootView.findViewById(R.id.btnSendBroadcast);
+//        Button btnSendBroadcast = rootView.findViewById(R.id.btnSendBroadcast);
         ipMessageTextView = rootView.findViewById(R.id.ipMessageTextView);
         myIpTextView = rootView.findViewById(R.id.myIpTextView);
         //btnYes = rootView.findViewById(R.id.btnYes);
         //btnNo = rootView.findViewById(R.id.btnNo);
-        responseTextView = rootView.findViewById(R.id.responseTextView);
+//        responseTextView = rootView.findViewById(R.id.responseTextView);
         btnCreacionRed = rootView.findViewById(R.id.creacionRedbutton);
-        resultadoTextView = rootView.findViewById(R.id.resultadoTextView);
+//        resultadoTextView = rootView.findViewById(R.id.resultadoTextView);
 
         networkUtils = new NetworkUtils();
 
-        btnSendBroadcast.setOnClickListener(view -> {
-            this.mainActivity.sendBroadcast();
-        });
+//        btnSendBroadcast.setOnClickListener(view -> {
+//            this.mainActivity.sendBroadcast();
+//        });
 
 //        btnYes.setOnClickListener(view -> {
 //            setStatusTextViewOnYes();

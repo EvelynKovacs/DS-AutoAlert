@@ -3,6 +3,8 @@ package com.example.autoalert.view.activities;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -21,6 +23,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
@@ -100,6 +104,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
 
 
+    private static final int NOTIFICATION_ID = 1; // Puedes usar cualquier número único
 
 
 
@@ -120,7 +125,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         checkPermissions();
 
         // Inicia el WorkManager para ejecutar LocationWorker cada 30 segundos
-        startPeriodicLocationWorker();
+//        startPeriodicLocationWorker();
         simulacionFragment = new SimulacionFragment();
 
 
@@ -183,7 +188,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         fileUtils.crearOReiniciarArchivo("map-ip-alias");
         fileUtils.addAndRefreshMap("conf-red", "creada", "false");
 
-
+        fileUtils.crearOReiniciarArchivo("lista-contactos");
 
         // HASTA ACA
 
@@ -301,27 +306,27 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 //        Log.d("GuardaLocation","Se guardo en 30 vuelvo");
 //    }
 
-    private void startPeriodicLocationWorker() {
-        // Crear las restricciones necesarias (sin requerir red)
-        Constraints constraints = new Constraints.Builder()
-                .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // No requiere red para funcionar
-                .build();
-
-        // Crear una solicitud de trabajo periódico (cada 30 segundos)
-        PeriodicWorkRequest locationWorkRequest = new PeriodicWorkRequest.Builder(LocationWorker.class, 30, TimeUnit.SECONDS)
-                .setConstraints(constraints)
-                .build();
-
-        // Encolar el trabajo periódico con una política de reemplazo en caso de que ya exista uno
-        WorkManager workManager = WorkManager.getInstance(this);
-        workManager.enqueueUniquePeriodicWork("LocationWorker",
-                ExistingPeriodicWorkPolicy.REPLACE,
-                locationWorkRequest);
-
-        // Mostrar un Toast para confirmar la ejecución
-        Toast.makeText(this, "Trabajo periódico programado para cada 30 segundos.", Toast.LENGTH_SHORT).show();
-        Log.d("PeriodicLocationWorker", "Trabajo periódico programado para ejecutarse cada 30 segundos.");
-    }
+//    private void startPeriodicLocationWorker() {
+//        // Crear las restricciones necesarias (sin requerir red)
+//        Constraints constraints = new Constraints.Builder()
+//                .setRequiredNetworkType(NetworkType.NOT_REQUIRED) // No requiere red para funcionar
+//                .build();
+//
+//        // Crear una solicitud de trabajo periódico (cada 30 segundos)
+//        PeriodicWorkRequest locationWorkRequest = new PeriodicWorkRequest.Builder(LocationWorker.class, 30, TimeUnit.SECONDS)
+//                .setConstraints(constraints)
+//                .build();
+//
+//        // Encolar el trabajo periódico con una política de reemplazo en caso de que ya exista uno
+//        WorkManager workManager = WorkManager.getInstance(this);
+//        workManager.enqueueUniquePeriodicWork("LocationWorker",
+//                ExistingPeriodicWorkPolicy.REPLACE,
+//                locationWorkRequest);
+//
+//        // Mostrar un Toast para confirmar la ejecución
+////        Toast.makeText(this, "Trabajo periódico programado para cada 30 segundos.", Toast.LENGTH_SHORT).show();
+////        Log.d("PeriodicLocationWorker", "Trabajo periódico programado para ejecutarse cada 30 segundos.");
+//    }
 
 
 
@@ -350,18 +355,25 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                     Log.i("Envio de mensaje", "Mensaje enviado a: " + targetIp + " con " + message);
                 }
                 if (message.equals("SI")) {
+                    accidenteDetectado=true;
                     enviarEstado();
+
                 }
             } else {
                 Log.e("Envio de mensaje", "HUBO ACCIDENTE pero No hay IPs disponibles para enviar el mensaje.");
                 Toast.makeText(this, "HUBO ACCIDENTE pero No hay IPs disponibles para enviar el mensaje", Toast.LENGTH_SHORT).show();
+                accidenteDetectado=true;
+
                 FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                 transaction.replace(R.id.fcv_main_container, simulacionFragment);
                 transaction.addToBackStack(null);
                 transaction.commit();
-                accidenteDetectado=true;
+
+
 
             }
+
+
         // Restablecer accidenteDetectado a false para permitir futuras detecciones
         //accidenteDetectado = false;
 
@@ -391,9 +403,9 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     public void storeMessageFromIp(String ip, String message) {
         ipMessageMap.put(ip, message);
         updateIpMessageView();
-        runOnUiThread(() -> {
-            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + message, Toast.LENGTH_SHORT).show();
-        });
+//        runOnUiThread(() -> {
+//            Toast.makeText(this, "Mensaje recibido de " + ip + ": " + message, Toast.LENGTH_SHORT).show();
+//        });
     }
 
     private void updateIpMessageView() {
@@ -423,7 +435,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        hotspotManager.stopHotspot();
+//        hotspotManager.stopHotspot();
 //        CreacionRedActivity creacionRedActivity = new CreacionRedActivity();
 //        creacionRedActivity.stopWifiDirectHotspot();
         // Verifica que hotspotManager no sea null antes de intentar detener el hotspot
@@ -635,7 +647,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     }
 
 
-    // Método para obtener el alias del archivo JSON
+    // Método para obtener el numero del archivo JSON
     public String getMiNumero() {
         String miNumero = "";
         try {
@@ -724,16 +736,34 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                         if (ultimos6SuNumero.equals(ultimos6Contacto)) {
                             Log.d("EncontroNumero", "Lo encontro al numero: " + ultimos6SuNumero);
 
-                            // Muestra el Toast en el hilo principal
-                            final String finalNumeroContacto = numeroContacto; // Hacerlo final
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(MenuInicioActivity.this, "El número " + finalNumeroContacto + " está en sus contactos de emergencia", Toast.LENGTH_SHORT).show();
-                                }
-                            });
+                            FileUtils fileUtils = new FileUtils(this);
 
-                            return true; // Coincidencia encontrada
+                            // Verifica si el número ya está guardado en "lista-contactos"
+                            Set<String> listaContactos = fileUtils.leerContactosEmergencia();
+                            if (!listaContactos.contains(numeroContacto)) {
+                                fileUtils.agregarContactoEmergencia(numeroContacto);
+                                final String finalNumeroContacto = numeroContacto; // Hacerlo final
+                                // Mostrar el Toast en el hilo principal
+                                runOnUiThread(() -> {
+                                    // Create a notification channel (if needed)
+                                    createNotificationChannel();
+
+                                    // Create the notification
+                                    NotificationCompat.Builder builder = new NotificationCompat.Builder(MenuInicioActivity.this, "channel_id")
+                                            .setSmallIcon(R.drawable.ic_notification) // Replace with your icon
+                                            .setContentTitle("Contacto de Emergencia")
+                                            .setContentText("El número " + finalNumeroContacto + " está en sus contactos de emergencia")
+                                            .setPriority(NotificationCompat.PRIORITY_HIGH)
+                                            .setAutoCancel(true); // Make the notification dismissable
+
+
+                                    // Mostrar la notificación
+                                    NotificationManagerCompat notificationManager = NotificationManagerCompat.from(MenuInicioActivity.this);
+                                    notificationManager.notify(NOTIFICATION_ID, builder.build());
+
+                                });
+                            }
+                            return true;
                         }
                     }
                 }
@@ -750,10 +780,23 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     }
 
 
-
+    // Method to create the notification channel (for Android 8.0 and above)
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = "Channel Name"; // Replace with your channel name
+            String description = "Channel Description"; // Replace with your channel description
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel("channel_id", name, importance);
+            channel.setDescription(description);
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);notificationManager.createNotificationChannel(channel);
+        }
+    }
 
 // ACA TERMINA ALIAS
 
-
+    public void resetAccidenteDetectado() {
+        accidenteDetectado = false;
+        Log.d("MenuInicioActivity", "accidenteDetectado vuelve a: "+accidenteDetectado);
+    }
 
 }
