@@ -6,13 +6,14 @@ import com.example.autoalert.model.entities.DatosMovimiento;
 
     public class DetectorAccidente {
 
-        private DetectorAccidenteLateral detectorLateral;
+        private DetectorAccidenteLateralMovimiento detectorLateralParado;
+        private DetectorAccidenteLateralMovimiento detectorLateralMovimiento;
         private DetectorAccidenteFrontal detectorFrontal;
         private DetectorAccidenteTrasero detectorTrasero;
         //private DetectorAccidenteVuelco detectorVuelco;
 
         public DetectorAccidente(Context context) {
-            detectorLateral = new DetectorAccidenteLateral(context);
+            detectorLateralMovimiento = new DetectorAccidenteLateralMovimiento(context);
             detectorFrontal = new DetectorAccidenteFrontal(context);
             detectorTrasero = new DetectorAccidenteTrasero(context);
             //detectorVuelco = new DetectorAccidenteVuelco(context);
@@ -21,7 +22,7 @@ import com.example.autoalert.model.entities.DatosMovimiento;
 
         public void registrarNuevoDato(DatosMovimiento nuevoDato) {
             // Verificar todos los tipos de accidentes y notificar si ocurre uno
-            if (detectorLateral.registrarNuevoDato(nuevoDato) ) {
+            if (detectorLateralMovimiento.registrarNuevoDato(nuevoDato) ) {
                 NotificadorAccidente.getInstancia().notificarAccidente("Lateral");
             }
             if (detectorFrontal.registrarNuevoDato(nuevoDato)) {

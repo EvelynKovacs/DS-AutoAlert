@@ -26,6 +26,18 @@
           </targets>
         </DialogSelection>
       </SelectionState>
+      <SelectionState runConfigName="DetectorAccidenteFrontalTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="DetectorAccidenteTraseroTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="DetectorAccidenteLateralMovimientoTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="testAccidente1()">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
     </selectionStates>
   </component>
 </project>

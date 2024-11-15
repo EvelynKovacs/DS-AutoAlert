@@ -26,7 +26,7 @@ public class CsvAccLateral {
                 FileWriter writer = new FileWriter(csvFile);
 
                 // Escribir encabezados
-                writer.append("Time,Velocidad (km/h), Latitud,Longitud,Angulo,Camb_Brusco,Des_Brusca,Aut_Parado,Accidente\n");
+                writer.append("Time,Velocidad (km/h), Latitud,Longitud,Angulo,Camb_Brusco,Des_Brusca,Acel_Brusca,Accidente\n");
                 writer.flush();
                 writer.close();
             }
@@ -41,14 +41,14 @@ public class CsvAccLateral {
         return Environment.MEDIA_MOUNTED.equals(state);
     }
 
-    public void saveDataToCsv(double speedKmh, double latitude, double longitude,double angle, boolean cb,boolean db,boolean ap,boolean accidentFlag ) {
+    public void saveDataToCsv(double speedKmh, double latitude, double longitude,double angle, boolean cb,boolean db,boolean ab,boolean accidentFlag ) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
             String currentTime = sdf.format(new Date()); // Obtiene la fecha y hora actual
             FileWriter writer = new FileWriter(csvFile, true);
 
             writer.append(String.format("\"%s\",\"%.2f\",\"%f\",\"%f\",\"%.2f\",\"%b\",\"%b\",\"%b\",\"%b\"\n",
-                    currentTime, speedKmh, latitude, longitude, angle, cb, db,ap, accidentFlag));
+                    currentTime, speedKmh, latitude, longitude, angle, cb, db,ab, accidentFlag));
             // writer.append(String.format("\"%.2f\",\"%f\",\"%f\",\"%s\"\n", speedKmh, latitude, longitude, address));
             writer.flush();
             writer.close();
