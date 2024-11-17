@@ -174,8 +174,7 @@
                     android:layout_marginTop="30dp"
                     android:maxLines="1"
                     android:padding="13dp"
-                    android:text="Agregar"
-                    />
+                    android:text="Agregar" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDeleteProject"
@@ -186,7 +185,7 @@
                     android:layout_marginTop="20dp"
                     android:maxLines="1"
                     android:padding="13dp"
-                    android:text="Eliminar"
+                    android:text="Cancelar"
                     />
             </RelativeLayout>
 

@@ -10,10 +10,10 @@
 
     <TextView
         android:id="@+id/ssidLabel"
-        android:layout_width="51dp"
-        android:layout_height="25dp"
+        android:layout_width="83dp"
+        android:layout_height="23dp"
         android:layout_marginTop="32dp"
-        android:text="SSID:"
+        android:text="Nombre:"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.038"
@@ -81,7 +81,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="20dp"
         android:layout_marginTop="4dp"
-        android:text="SSID:"
+        android:text="Nombre:"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/toggleHotspotButton" />
 

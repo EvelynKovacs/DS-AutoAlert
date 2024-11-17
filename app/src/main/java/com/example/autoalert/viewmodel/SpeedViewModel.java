@@ -10,9 +10,12 @@
     import java.io.FileWriter;
     import java.io.IOException;
     import java.text.SimpleDateFormat;
+    import java.util.ArrayList;
     import java.util.Date;
     import java.util.List;
     import java.util.Locale;
+    import java.util.concurrent.ExecutorService;
+    import java.util.concurrent.Executors;
 
     import com.example.autoalert.utils.AddressFetcher;
     import com.example.autoalert.utils.DetectorAccidente;
@@ -86,6 +89,13 @@
 
         private static final long UPDATE_INTERVAL_MS = 1000;
 
+        private Location locationDeArchivo;
+        private MutableLiveData<Location> locationLiveData = new MutableLiveData<>();
+        private List<Location> locationList = new ArrayList<>();
+        private int currentIndex = 0;
+
+        private ExecutorService executorService;
+
         public SpeedViewModel(@NonNull Application application) {
             super(application);
             locationManager = (LocationManager) application.getSystemService(Context.LOCATION_SERVICE);
@@ -100,7 +110,25 @@
             locationListener = new LocationListener() {
                 @Override
                 public void onLocationChanged(@NonNull Location location) {
-                    updateLocation(location);
+                    Log.d(TAG, "Datos del currentIndex: "+currentIndex+" Y el tamaño de la lista es: "+locationList.size());
+                    // Verificar si el índice es válido para la lista locationList
+                    if (currentIndex < locationList.size()) {
+                        // Obtener la ubicación correspondiente en la lista locationList
+                        Location newLocation = locationList.get(currentIndex);
+
+                        // Llamar al método para actualizar la ubicación
+                        updateLocation(newLocation);
+
+                        Log.d(TAG, "Leyendo dato nro: "+currentIndex + "con " + newLocation.getLatitude() + " " + newLocation.getLongitude()  + " " + newLocation.getSpeed());
+                        // Incrementar el índice para la siguiente ubicación
+                        currentIndex++;
+
+                        // Si el índice supera el tamaño de la lista, detener la actualización (opcional)
+                        if (currentIndex >= locationList.size()) {
+                            Log.d(TAG, "Se han procesado todas las ubicaciones.");
+                            currentIndex = 0;
+                        }
+                    }
                 }
 
                 @Override
@@ -117,6 +145,10 @@
 
                 }
             };
+
+            //executorService = Executors.newSingleThreadExecutor();
+            loadLocationsFromCsv(); // Carga las ubicaciones desde el archivo CSV
+        //    startLocationUpdates(); // Inicia la simulación de actualizaciones
 
             //checkLocationPermissions();
         }
@@ -172,9 +204,10 @@
 
             }
         }
+
         private void processSpeedData(Location location) {
             float currentSpeed = location.getSpeed();  // Velocidad en m/s
-            double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
+            double speedKmhValue = currentSpeed; /* 3.6;*/  // Convertir a km/h
             speedKmh.setValue(speedKmhValue);
             sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
             if (!deteccionIniciada && speedKmhValue > UMBRAL_MIN_VEL) {
@@ -463,5 +496,76 @@
             } catch (Exception e) {
                 Log.e(TAG, "Error al guardar ubicación en JSON.", e);
             }
+        }
+
+        private void loadLocationsFromCsv() {
+            try {
+                // Ruta del archivo
+                File csvFile = new File(getApplication().getFilesDir(), "datos");
+                BufferedReader reader = new BufferedReader(new FileReader(csvFile));
+
+                String line;
+                boolean isFirstLine = true; // Ignorar la cabecera
+                while ((line = reader.readLine()) != null) {
+                    if (isFirstLine) {
+                        isFirstLine = false;
+                        continue; // Ignorar la primera línea que es la cabecera
+                    }
+
+                    // Divide la línea en columnas usando tabuladores
+                    String[] columns = line.split("\t");
+                    if (columns.length >= 3) {
+                        // La primera columna es la hora (la puedes ignorar si no la necesitas)
+                        String velocidad = columns[0];  // Hora
+                        double latitude = Double.parseDouble(columns[1]);  // Latitud
+                        double longitude = Double.parseDouble(columns[2]);  // Longitud
+
+                        // Crear un objeto Location
+                        Location location = new Location("csv");
+                        location.setLatitude(latitude);
+                        location.setLongitude(longitude);
+                        location.setSpeed((Float.parseFloat(velocidad)));
+                        Log.d(TAG, "Location guardado con estos datos: " +location.getSpeed()+ " " +location.getLatitude() + "  "+location.getLongitude()+" ");
+                        // Agregar la ubicación a la lista
+                        locationList.add(location);
+                    }
+                }
+
+                reader.close();
+                Log.d(TAG, "CSV cargado exitosamente con " + locationList.size() + " ubicaciones.");
+
+            } catch (Exception e) {
+                Log.e(TAG, "Error al cargar el archivo CSV", e);
+            }
+        }
+
+
+        private void startLocationUpdates() {
+            executorService.execute(() -> {
+                while (true) {
+                    try {
+                        if (!locationList.isEmpty() && currentIndex < locationList.size()) {
+                            // Obtener la ubicación actual de la lista
+                            Location currentLocation = locationList.get(currentIndex);
+
+                            // Actualizar LiveData
+                            locationLiveData.postValue(currentLocation);
+
+
+
+                            // Incrementar el índice para la siguiente ubicación
+                            currentIndex++;
+
+                            // Esperar un segundo antes de la próxima actualización
+                            Thread.sleep(UPDATE_INTERVAL_MS);
+                        } else {
+                            currentIndex = 0; // Reinicia el índice para repetir
+                        }
+                    } catch (InterruptedException e) {
+                        Log.e(TAG, "Error en el hilo de actualización", e);
+                        break;
+                    }
+                }
+            });
         }
     }

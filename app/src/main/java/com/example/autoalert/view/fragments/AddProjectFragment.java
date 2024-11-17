@@ -240,7 +240,10 @@ public class AddProjectFragment extends Fragment {
             }
 
         });
-        binding.btnDeleteProject.setOnClickListener(view1 -> showDeleteConfirmationDialog());
+        binding.btnDeleteProject.setOnClickListener(view1 -> {
+            // Volver atrás
+            requireActivity().onBackPressed();
+        });
         binding.btnAddContact.setOnClickListener(view1 -> showContacts());
         // Configura la visibilidad del botón de eliminar
         binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
@@ -371,6 +374,13 @@ public class AddProjectFragment extends Fragment {
         if (grupoSanguineo.equals("Seleccionar Grupo")) {
             spinnerGrupoSanguineo.setBackgroundResource(R.drawable.error_border);
             Toast.makeText(requireContext(), "Por favor, seleccione un grupo sanguíneo", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        // Validación del numero
+        if (miNumero.length() < 10) {
+            binding.edtMiNumero.setBackgroundResource(R.drawable.error_border);
+            Toast.makeText(requireContext(), "Tiene que poner un NUMERO valido", Toast.LENGTH_SHORT).show();
             return false;
         }
 
