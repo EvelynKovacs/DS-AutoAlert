@@ -170,7 +170,7 @@
         }
 
         // Actualiza la ubicación en la interfaz
-        private void updateLocation(Location location) {
+        public void updateLocation(Location location) {
             if (location != null) {
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastSpeedUpdate >= UPDATE_INTERVAL_MS) {
@@ -532,10 +532,10 @@
                 }
 
                 reader.close();
-                Log.d(TAG, "CSV cargado exitosamente con " + locationList.size() + " ubicaciones.");
+                Log.d(TAG, "Archivo cargado exitosamente con " + locationList.size() + " ubicaciones.");
 
             } catch (Exception e) {
-                Log.e(TAG, "Error al cargar el archivo CSV", e);
+                Log.e(TAG, "Error al cargar el archivo Archivo", e);
             }
         }
 

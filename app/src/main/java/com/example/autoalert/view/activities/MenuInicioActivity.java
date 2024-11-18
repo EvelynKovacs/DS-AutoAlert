@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pManager;
@@ -51,12 +52,15 @@ import com.google.gson.Gson;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -94,6 +98,8 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private HashMap<String, String> ipTimestamp = new HashMap<>();
 
 
+    private List<Location> locationList = new ArrayList<>();
+
     private AccidentViewModel accidentViewModel;
     private SpeedViewModel speedViewModel;
     private TextView tvAddress;  // Nuevo TextView para la dirección
@@ -102,6 +108,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private ActivityResultLauncher<Intent> checkSettingsLauncher;
     private SimulacionFragment simulacionFragment;
 
+    private ArchivoAccidenteThread archivoAccidenteThread;
 
 
     private static final int NOTIFICATION_ID = 1; // Puedes usar cualquier número único
@@ -197,6 +204,9 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         // Inicializar el ViewModel
         speedViewModel = new ViewModelProvider(this).get(SpeedViewModel.class);
+
+
+        archivoAccidenteThread = new ArchivoAccidenteThread(this,loadLocationsFromCsv(),speedViewModel);
 
         // Observar los cambios de dirección
 //        speedViewModel.getAddress().observe(this, address -> {
@@ -799,4 +809,51 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         Log.d("MenuInicioActivity", "accidenteDetectado vuelve a: "+accidenteDetectado);
     }
 
+    public void iniciarLecturaUbicaciones(){
+        archivoAccidenteThread.startAccidente();
+    }
+
+
+    private List<Location> loadLocationsFromCsv() {
+        try {
+            // Ruta del archivo
+            File csvFile = new File(getApplication().getFilesDir(), "datos");
+            BufferedReader reader = new BufferedReader(new FileReader(csvFile));
+
+            String line;
+            boolean isFirstLine = true; // Ignorar la cabecera
+            while ((line = reader.readLine()) != null) {
+                if (isFirstLine) {
+                    isFirstLine = false;
+                    continue; // Ignorar la primera línea que es la cabecera
+                }
+
+                // Divide la línea en columnas usando tabuladores
+                String[] columns = line.split("\t");
+                if (columns.length >= 3) {
+                    // La primera columna es la hora (la puedes ignorar si no la necesitas)
+                    String velocidad = columns[0];  // Hora
+                    double latitude = Double.parseDouble(columns[1]);  // Latitud
+                    double longitude = Double.parseDouble(columns[2]);  // Longitud
+
+                    // Crear un objeto Location
+                    Location location = new Location("csv");
+                    location.setLatitude(latitude);
+                    location.setLongitude(longitude);
+                    location.setSpeed((Float.parseFloat(velocidad)));
+                    Log.d("MenuActivity", "Location guardado con estos datos: " +location.getSpeed()+ " " +location.getLatitude() + "  "+location.getLongitude()+" ");
+                    // Agregar la ubicación a la lista
+                    locationList.add(location);
+                }
+            }
+
+            reader.close();
+            Log.d("MenuActivity", "Archivo cargado exitosamente con " + locationList.size() + " ubicaciones.");
+
+        } catch (Exception e) {
+            Log.e("MenuActivity", "Error al cargar el archivo Archivo", e);
+        }
+
+        return locationList;
+    }
 }

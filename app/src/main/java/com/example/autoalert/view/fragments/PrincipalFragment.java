@@ -236,6 +236,8 @@ public class PrincipalFragment extends Fragment {
         ImageButton btnRed = view.findViewById(R.id.createNetworkButton);
         ImageButton btnConectados = view.findViewById(R.id.viewUsersButton);
 
+       MaterialButton btnFrontal = view.findViewById(R.id.botonFrontal);
+
         // Obtener referencia a bannerImage
         ImageView bannerImage = view.findViewById(R.id.bannerImage);
 
@@ -291,6 +293,18 @@ public class PrincipalFragment extends Fragment {
                 MenuInicioActivity activity = (MenuInicioActivity) getActivity();
                 if (activity != null) {
                     activity.resetAccidenteDetectado();
+                } else {
+                    Log.e("PrincipalFragment", "MenuInicioActivity is null");
+                }
+            }
+        });
+
+        btnFrontal.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                MenuInicioActivity activity = (MenuInicioActivity) getActivity();
+                if (activity != null) {
+                    activity.iniciarLecturaUbicaciones();
                 } else {
                     Log.e("PrincipalFragment", "MenuInicioActivity is null");
                 }
