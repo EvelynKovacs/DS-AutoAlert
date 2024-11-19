@@ -1,6 +1,7 @@
     package com.example.autoalert.viewmodel;
 
 
+    import android.content.res.AssetManager;
     import android.location.Geocoder;
     import android.location.Address;
 
@@ -9,6 +10,8 @@
     import java.io.FileReader;
     import java.io.FileWriter;
     import java.io.IOException;
+    import java.io.InputStream;
+    import java.io.InputStreamReader;
     import java.text.SimpleDateFormat;
     import java.util.ArrayList;
     import java.util.Date;
@@ -29,6 +32,8 @@
     import android.location.LocationListener;
     import android.location.LocationManager;
     import android.os.Bundle;
+    import android.os.Handler;
+    import android.os.Looper;
     import android.util.Log;
     import android.widget.Toast;
 
@@ -53,16 +58,18 @@
     import org.json.JSONArray;
     import org.json.JSONObject;
 
+
     public class SpeedViewModel extends AndroidViewModel {
 
         private static final String TAG = "UbicacionGuardar";
+        private ExecutorService executorService;
 
         private static final int REQUEST_LOCATION_PERMISSION = 1001;
         public static final int REQUEST_CHECK_SETTINGS = 1002;
         private static int MAX_SIZE_COORD = 3;
         private static int UMBRAL_MIN_VEL=-1;
 
-        private MutableLiveData<Double> speedKmh = new MutableLiveData<>();
+        private MutableLiveData<Double> speedKmh = new MutableLiveData<>(0.0);
         private MutableLiveData<Location> location = new MutableLiveData<>();
         private MutableLiveData<Boolean> locationPermissionState = new MutableLiveData<>();
         private MutableLiveData<String> address = new MutableLiveData<>();
@@ -94,7 +101,6 @@
         private List<Location> locationList = new ArrayList<>();
         private int currentIndex = 0;
 
-        private ExecutorService executorService;
 
         public SpeedViewModel(@NonNull Application application) {
             super(application);
@@ -106,29 +112,32 @@
 
             addressFetcher = new AddressFetcher(getApplication().getApplicationContext());
 
+            executorService = Executors.newSingleThreadExecutor();
 
             locationListener = new LocationListener() {
                 @Override
                 public void onLocationChanged(@NonNull Location location) {
-                    Log.d(TAG, "Datos del currentIndex: "+currentIndex+" Y el tamaño de la lista es: "+locationList.size());
-                    // Verificar si el índice es válido para la lista locationList
-                    if (currentIndex < locationList.size()) {
-                        // Obtener la ubicación correspondiente en la lista locationList
-                        Location newLocation = locationList.get(currentIndex);
 
-                        // Llamar al método para actualizar la ubicación
-                        updateLocation(newLocation);
-
-                        Log.d(TAG, "Leyendo dato nro: "+currentIndex + "con " + newLocation.getLatitude() + " " + newLocation.getLongitude()  + " " + newLocation.getSpeed());
-                        // Incrementar el índice para la siguiente ubicación
-                        currentIndex++;
-
-                        // Si el índice supera el tamaño de la lista, detener la actualización (opcional)
-                        if (currentIndex >= locationList.size()) {
-                            Log.d(TAG, "Se han procesado todas las ubicaciones.");
-                            currentIndex = 0;
-                        }
-                    }
+                    //updateLocation(location);
+//                    Log.d(TAG, "Datos del currentIndex: "+currentIndex+" Y el tamaño de la lista es: "+locationList.size());
+//                    // Verificar si el índice es válido para la lista locationList
+//                    if (currentIndex < locationList.size()) {
+//                        // Obtener la ubicación correspondiente en la lista locationList
+//                        Location newLocation = locationList.get(currentIndex);
+//
+//                        // Llamar al método para actualizar la ubicación
+//                        updateLocation(newLocation);
+//
+//                        Log.d(TAG, "Leyendo dato nro: "+currentIndex + "con " + newLocation.getLatitude() + " " + newLocation.getLongitude()  + " " + newLocation.getSpeed());
+//                        // Incrementar el índice para la siguiente ubicación
+//                        currentIndex++;
+//
+//                        // Si el índice supera el tamaño de la lista, detener la actualización (opcional)
+//                        if (currentIndex >= locationList.size()) {
+//                            Log.d(TAG, "Se han procesado todas las ubicaciones.");
+//                            currentIndex = 0;
+//                        }
+//                    }
                 }
 
                 @Override
@@ -147,7 +156,7 @@
             };
 
             //executorService = Executors.newSingleThreadExecutor();
-            loadLocationsFromCsv(); // Carga las ubicaciones desde el archivo CSV
+            //loadLocationsFromCsv(); // Carga las ubicaciones desde el archivo CSV
         //    startLocationUpdates(); // Inicia la simulación de actualizaciones
 
             //checkLocationPermissions();
@@ -178,26 +187,12 @@
                     processSpeedData(location);
 
 
-                    //float currentSpeed = location.getSpeed();  // Velocidad en m/s
-                    //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en M/S:" + currentSpeed);
-
-                    //speedAndAccelerationHandler.handleSpeedAndAcceleration(currentSpeed, currentTime, accelerationQueueRepository);
-
-                    //double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
-                    //speedKmh.setValue(speedKmhValue);
-
-                    // Registrar datos de velocidad y aplicar filtro de Kalman
-                    //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en KM/H:" + speedKmhValue);
-                    //sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
-
-                    // Registrar datos de movimiento
-                    //accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), currentSpeed, currentTime));
 
                     // Obtener dirección desde las coordenadas
                     addressFetcher.fetchAddressFromLocation(location, address);
 
                     // Actualizar la ubicación
-                    this.location.setValue(location);
+                    this.location.postValue(location);
                     saveLocation(location);  // Guarda la ubicación en el archivo JSON
                 }
 
@@ -208,11 +203,13 @@
         private void processSpeedData(Location location) {
             float currentSpeed = location.getSpeed();  // Velocidad en m/s
             double speedKmhValue = currentSpeed; /* 3.6;*/  // Convertir a km/h
-            speedKmh.setValue(speedKmhValue);
-            sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
+            speedKmh.postValue(speedKmhValue);
+            Log.i("SpeedObserver", "Velocidad actual ACA: " + speedKmh.getValue());
+
+            // sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
             if (!deteccionIniciada && speedKmhValue > UMBRAL_MIN_VEL) {
                 Log.i("MainActivity", "Velocidad mayor a 5km/h. Iniciando detección de accidentes.");
-                Toast.makeText(getApplication().getApplicationContext(), "Velocidad mayor a 5 km/h. Iniciando detección de accidentes.", Toast.LENGTH_LONG).show();
+                //Toast.makeText(getApplication().getApplicationContext(), "Velocidad mayor a 5 km/h. Iniciando detección de accidentes.", Toast.LENGTH_LONG).show();
 
                 deteccionIniciada = true;  // Marcamos que ya hemos iniciado la detección
                 accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), speedKmhValue, System.currentTimeMillis()));
@@ -498,45 +495,126 @@
             }
         }
 
-        private void loadLocationsFromCsv() {
-            try {
-                // Ruta del archivo
-                File csvFile = new File(getApplication().getFilesDir(), "datos");
-                BufferedReader reader = new BufferedReader(new FileReader(csvFile));
+            public void loadLocationsFromCsv(String fileName) {
+               // String archivo = tipo.equals("accidente") ? "datos_accidente.csv" : "datos_sin_accidente.csv";
+                AssetManager assetManager = getApplication().getAssets(); // Obtener el AssetManager
 
-                String line;
-                boolean isFirstLine = true; // Ignorar la cabecera
-                while ((line = reader.readLine()) != null) {
-                    if (isFirstLine) {
-                        isFirstLine = false;
-                        continue; // Ignorar la primera línea que es la cabecera
+                try {
+                    // Ruta del archivo
+//                    File csvFile = new File(getApplication().getFilesDir(), fileName);
+//                    BufferedReader reader = new BufferedReader(new FileReader(csvFile));
+                    String archivo = fileName.equals("accidente") ? "accidente" : "normal";
+
+                    // Abrir el archivo desde assets
+                    InputStream inputStream = assetManager.open(archivo);
+                    BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+
+                    String line;
+                    boolean isFirstLine = true; // Ignorar la cabecera
+                    while ((line = reader.readLine()) != null) {
+                        if (isFirstLine) {
+                            isFirstLine = false;
+                            continue; // Ignorar la primera línea que es la cabecera
+                        }
+
+                        // Divide la línea en columnas usando tabuladores
+                        String[] columns = line.split("\t");
+                        if (columns.length >= 3) {
+                            // La primera columna es la hora (la puedes ignorar si no la necesitas)
+                            String velocidad = columns[0];  // Hora
+                            double latitude = Double.parseDouble(columns[1]);  // Latitud
+                            double longitude = Double.parseDouble(columns[2]);  // Longitud
+
+                            // Crear un objeto Location
+                            Location location = new Location("csv");
+                            location.setLatitude(latitude);
+                            location.setLongitude(longitude);
+                            location.setSpeed((Float.parseFloat(velocidad)));
+                            //speedKmh.setValue((Double.parseDouble(velocidad)));
+
+                            Log.d(TAG, "Location guardado con estos datos: " +location.getSpeed()+ " " +location.getLatitude() + "  "+location.getLongitude()+" ");
+                            // Agregar la ubicación a la lista
+                            locationList.add(location);
+
+                        }
                     }
 
-                    // Divide la línea en columnas usando tabuladores
-                    String[] columns = line.split("\t");
-                    if (columns.length >= 3) {
-                        // La primera columna es la hora (la puedes ignorar si no la necesitas)
-                        String velocidad = columns[0];  // Hora
-                        double latitude = Double.parseDouble(columns[1]);  // Latitud
-                        double longitude = Double.parseDouble(columns[2]);  // Longitud
+                    reader.close();
+                    Log.d(TAG, "Archivo cargado exitosamente con " + locationList.size() + " ubicaciones.");
+                    startProcessingLocations();
 
-                        // Crear un objeto Location
-                        Location location = new Location("csv");
-                        location.setLatitude(latitude);
-                        location.setLongitude(longitude);
-                        location.setSpeed((Float.parseFloat(velocidad)));
-                        Log.d(TAG, "Location guardado con estos datos: " +location.getSpeed()+ " " +location.getLatitude() + "  "+location.getLongitude()+" ");
-                        // Agregar la ubicación a la lista
-                        locationList.add(location);
-                    }
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error al cargar el archivo Archivo", e);
                 }
-
-                reader.close();
-                Log.d(TAG, "Archivo cargado exitosamente con " + locationList.size() + " ubicaciones.");
-
-            } catch (Exception e) {
-                Log.e(TAG, "Error al cargar el archivo Archivo", e);
             }
+//        private void startProcessingLocations() {
+//            executorService.execute(() -> {
+//                try {
+//                    while (true) {
+//                        // Verificar que la lista no esté vacía y el índice sea válido
+//                        if (!locationList.isEmpty() && currentIndex < locationList.size()) {
+//                            Log.d(TAG, "Datos del currentIndex: " + currentIndex + " Y el tamaño de la lista es: " + locationList.size());
+//
+//                            // Obtener la ubicación actual de la lista
+//                            Location newLocation = locationList.get(currentIndex);
+//
+//                            // Llamar al método para actualizar la ubicación
+//                            updateLocation(newLocation);
+//
+//                            Log.d(TAG, "Leyendo dato nro: " + currentIndex + " con " + newLocation.getLatitude() + " " + newLocation.getLongitude() + " " + newLocation.getSpeed());
+//
+//                            // Incrementar el índice para la siguiente ubicación
+//                            currentIndex++;
+//
+//                            // Si el índice supera el tamaño de la lista, reiniciamos el índice
+//                            if (currentIndex >= locationList.size()) {
+//                                Log.d(TAG, "Se han procesado todas las ubicaciones.");
+//                                currentIndex = 0; // Reiniciamos el índice para comenzar de nuevo
+//                            }
+//
+//                            // Esperar un intervalo antes de la próxima actualización
+//                            Thread.sleep(UPDATE_INTERVAL_MS); // Pausa antes de la siguiente actualización
+//                        } else {
+//                            // Si la lista está vacía o el índice es mayor que el tamaño, reiniciar el índice
+//                            currentIndex = 0;
+//                        }
+//                    }
+//                } catch (InterruptedException e) {
+//                    Log.e(TAG, "Error en el hilo de actualización", e);
+//                }
+//            });
+//        }
+
+
+        private void startProcessingLocations() {
+            executorService.execute(() -> {
+                try {
+                    while (currentIndex < locationList.size()) {
+                        // Obtener la ubicación del archivo
+                        Location currentLocation = locationList.get(currentIndex);
+                        Log.d(TAG, "Leyendo ubicación desde el archivo: " + currentIndex + " con "
+                                + currentLocation.getLatitude() + ", " + currentLocation.getLongitude());
+
+                        updateLocation(currentLocation);
+                        //locationLiveData.postValue(currentLocation);  // Usa postValue() aquí en lugar de setValue()
+
+                        //speedKmh.postValue(Double.parseDouble(String.valueOf(currentLocation.getSpeed())));  // Convierte el valor a String
+
+                        // Actualizar la UI o LiveData
+                       // locationLiveData.postValue(currentLocation);
+
+                        // Incrementar el índice para la siguiente ubicación
+                        currentIndex++;
+
+                        // Esperar un intervalo antes de procesar la siguiente ubicación
+                        Thread.sleep(UPDATE_INTERVAL_MS);
+                    }
+                } catch (InterruptedException e) {
+                    Log.e(TAG, "Error en el hilo de lectura de archivo", e);
+                }
+            });
         }
 
 

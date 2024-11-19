@@ -13,7 +13,7 @@ public class AccidentViewModel extends ViewModel {
 
     // Método para notificar que hubo un accidente
     public void notificarAccidente() {
-        accidenteDetectado.setValue(true); // Notifica que hubo un accidente
+        accidenteDetectado.postValue(true); // Notifica que hubo un accidente
     }
 
     // Método para resetear el estado del accidente

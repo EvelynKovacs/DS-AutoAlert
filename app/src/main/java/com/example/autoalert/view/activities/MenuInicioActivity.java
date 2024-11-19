@@ -1,8 +1,11 @@
 package com.example.autoalert.view.activities;
 
+import static android.content.Context.MODE_PRIVATE;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -205,8 +208,17 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         // Inicializar el ViewModel
         speedViewModel = new ViewModelProvider(this).get(SpeedViewModel.class);
 
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Seleccione el archivo a procesar")
+                .setItems(new String[]{"Accidente", "Normal"}, (dialog, which) -> {
+                    String fileName = which == 0 ? "accidente" : "normal";
+                    speedViewModel.loadLocationsFromCsv(fileName); // Pasar archivo al ViewModel
+                })
+                .setCancelable(false) // Obligar al usuario a elegir
+                .show();
 
-        archivoAccidenteThread = new ArchivoAccidenteThread(this,loadLocationsFromCsv(),speedViewModel);
+
+        //archivoAccidenteThread = new ArchivoAccidenteThread(this,loadLocationsFromCsv(),speedViewModel);
 
         // Observar los cambios de dirección
 //        speedViewModel.getAddress().observe(this, address -> {

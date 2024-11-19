@@ -144,6 +144,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -198,21 +200,45 @@ public class PrincipalFragment extends Fragment {
         speedViewModel = new ViewModelProvider(this).get(SpeedViewModel.class);
         speedViewModel.checkLocationPermissions();
 
+// Crear un Handler para ejecutar código en el hilo principal después de un retraso
+        new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                // Configura el Observer para la velocidad después de 3 segundos
+                speedViewModel.getSpeed().observe(getViewLifecycleOwner(), speedKmh -> {
+                    Log.i("Speedd", "Velocidad actual ACA: " + speedKmh);
 
-        // Configura el Observer para la velocidad
-        speedViewModel.getSpeed().observe(getViewLifecycleOwner(), speedKmh -> {
-            if (speedKmh != null) {
-                String location = String.valueOf(speedViewModel.getLocation().getValue()); // Obtén el valor de MutableLiveData
+                    if (speedKmh != null) {
+                        String location = String.valueOf(speedViewModel.getLocation().getValue()); // Obtén el valor de MutableLiveData
 //                Log.d("SpeedObserver", "La ubicacion actual: " + location);
 
-//                // Agregar el Toast para mostrar la velocidad
+                        // Agregar el Toast para mostrar la velocidad
 //                Toast.makeText(getContext(), "Velocidad actual: " + speedKmh + " km/h", Toast.LENGTH_SHORT).show();
-//                Log.d("SpeedObserver", "Velocidad actual ACA: " + speedKmh);
-                speedView.speedTo(speedKmh.floatValue());
-            } else {
-                Log.d("SpeedObserver", "Velocidad nula recibida.");
+                        Log.d("SpeedObserver", "Velocidad actual ACA: " + speedKmh);
+                        speedView.speedTo(speedKmh.floatValue());
+                    } else {
+                        Log.d("SpeedObserver", "Velocidad nula recibida.");
+                    }
+                });
             }
-        });
+        }, 5000); // 3000 milisegundos = 3 segundos
+
+//        // Configura el Observer para la velocidad
+//        speedViewModel.getSpeed().observe(getViewLifecycleOwner(), speedKmh -> {
+//            Log.i("Speedd", "Velocidad actual ACA: " + speedKmh);
+//
+//            if (speedKmh != null) {
+//                String location = String.valueOf(speedViewModel.getLocation().getValue()); // Obtén el valor de MutableLiveData
+////                Log.d("SpeedObserver", "La ubicacion actual: " + location);
+//
+////                // Agregar el Toast para mostrar la velocidad
+////                Toast.makeText(getContext(), "Velocidad actual: " + speedKmh + " km/h", Toast.LENGTH_SHORT).show();
+//              Log.d("SpeedObserver", "Velocidad actual ACA: " + speedKmh);
+//                speedView.speedTo(speedKmh.floatValue());
+//            } else {
+//                Log.d("SpeedObserver", "Velocidad nula recibida.");
+//            }
+//        });
 
         // Inicializar el lanzador de permisos
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
