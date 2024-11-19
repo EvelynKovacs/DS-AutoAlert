@@ -57,7 +57,7 @@
         private static final int REQUEST_LOCATION_PERMISSION = 1001;
         public static final int REQUEST_CHECK_SETTINGS = 1002;
         private static int MAX_SIZE_COORD = 3;
-        private static int UMBRAL_MIN_VEL=-1;
+        private static int UMBRAL_MIN_VEL= 5;
 
         private MutableLiveData<Double> speedKmh = new MutableLiveData<>();
         private MutableLiveData<Location> location = new MutableLiveData<>();

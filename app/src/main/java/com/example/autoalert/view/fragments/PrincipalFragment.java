@@ -206,9 +206,9 @@ public class PrincipalFragment extends Fragment {
 //                Log.d("SpeedObserver", "La ubicacion actual: " + location);
 
 //                // Agregar el Toast para mostrar la velocidad
-//                Toast.makeText(getContext(), "Velocidad actual: " + speedKmh + " km/h", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(getContext(), "Velocidad actual: " + speedKmh + " km/h", .Toast.LENGTH_SHORT).show();
 //                Log.d("SpeedObserver", "Velocidad actual ACA: " + speedKmh);
-//                speedView.speedTo(speedKmh.floatValue());
+                speedView.speedTo(speedKmh.floatValue());
             } else {
                 Log.d("SpeedObserver", "Velocidad nula recibida.");
             }

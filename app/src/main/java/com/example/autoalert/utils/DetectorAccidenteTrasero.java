@@ -82,13 +82,15 @@
 
 package com.example.autoalert.utils;
 
+import static android.content.ContentValues.TAG;
 import static com.example.autoalert.utils.AceleracionBrusca.esAceleracionBrusca;
 
 import android.content.Context;
 import android.util.Log;
 
 import com.example.autoalert.model.entities.DatosMovimiento;
-
+import com.example.autoalert.repository.CsvAccTrasero;
+import com.example.autoalert.repository.DetectorAccidenteDataWriter;
 
 import java.util.LinkedList;
 
@@ -99,10 +101,17 @@ public class DetectorAccidenteTrasero {
     private boolean aceleracionBruscaDetectada = false;
     private Context context;
 
-     private boolean aceleracionBruscaConfirmada;
+    private CsvAccTrasero csvAccTrasero;
+    private boolean aceleracionBruscaConfirmada;
+    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 23;
+
+
+
+    private int contadorCero=0;
 
     public DetectorAccidenteTrasero(Context context) {
         this.context = context.getApplicationContext();
+        csvAccTrasero= new CsvAccTrasero(context);
     }
 
     public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
@@ -116,42 +125,43 @@ public class DetectorAccidenteTrasero {
             if (analizarCondicionesPrevias()) {
                 aceleracionBruscaDetectada = true;
                 historialDatos.clear();
+                csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), aceleracionBruscaConfirmada, false);
 
                 Log.i("ACCIDENTE_TRASERO", "Aceleración brusca detectada, evaluando comportamiento posterior.");
                 return false;  // Aceleración detectada, pero aún no se confirma el accidente
             }
-            historialDatos.removeFirst();
+            else {
+                historialDatos.removeFirst();
+                csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), aceleracionBruscaConfirmada, false);
 
-            return false;  // No se cumplen las condiciones// previas
+                return false;  // No se cumplen las condiciones// previas
+            }
         }
 
-        // Evaluar si, tras la aceleración brusca, las últimas 3 velocidades son 0
-        if (aceleracionBruscaDetectada && historialDatos.size() == 10) {
-            if (evaluarAutoDetenidoUltimos3Segundos()) {
+        if (aceleracionBruscaDetectada) {
 
-                Log.i("ACCIDENTE_TRASERO", "Accidente trasero detectado: las últimas 3 velocidades fueron 0.");
-                aceleracionBruscaDetectada = false;
-                historialDatos.clear();  // Limpiar historial después de detectar el accidente
-                return true;  // Se detectó un accidente
-            } else {
+            if(evaluarMovimientoPosterior()){
+                aceleracionBruscaConfirmada = false;
+                contadorCero=0;
+                historialDatos.clear();  // Limpiar el historial tras detectar el accidente
 
-                Log.i("ACCIDENTE_TRASERO", "No se detecta accidente trasero.");
-                aceleracionBruscaDetectada = false;
+                return true;  // Accidente detectado
 
-                historialDatos.clear();
-                historialDatos.add(nuevoDato);  // Guardar el último dato y continuar la evaluación
-                return false;  // No se detectó un accidente
             }
 
+        }
 
+
+        if (historialDatos.size() != 2 && historialDatos.size() != 10) {
+            csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, false);
         }
-        if(historialDatos.size()!=2 && historialDatos.size()!=10) {
-        }
-        if(aceleracionBruscaDetectada && historialDatos.size()==2){
+        if (aceleracionBruscaDetectada && historialDatos.size() == 2) {
+            csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, false);
 
         }
         return false;  // Por defecto, si no se cumplen las condiciones de accidente
     }
+
 
     private boolean analizarCondicionesPrevias() {
         DatosMovimiento punto1 = historialDatos.get(historialDatos.size() - 2);
@@ -163,17 +173,87 @@ public class DetectorAccidenteTrasero {
         return aceleracionBruscaConfirmada;
     }
 
+
+    private  boolean evaluarMovimientoPosterior(){
+        if(historialDatos.size()<2){
+            return false;
+        }
+
+        // Revisión para detectar otra aceleración brusca en estos 10 valores
+        for (int i = 0; i < historialDatos.size() - 1; i++) {
+            DatosMovimiento punto1 = historialDatos.get(i);
+            DatosMovimiento punto2 = historialDatos.get(i + 1);
+            if (esAceleracionBrusca(punto1, punto2, UMBRAL_ACELERACION)) {
+                // Nueva aceleración brusca detectada, reiniciar la evaluación
+                aceleracionBruscaDetectada = true;
+                historialDatos.clear();
+                //historialDatos.add(nuevoDato);  // Comenzar a evaluar nuevamente con el dato actual
+                Log.i("ACCIDENTE_TRASERO", "Nueva aceleración brusca detectada en la ventana de 10 valores. Reiniciando evaluación.");
+                return false;
+            }
+        }
+        if(historialDatos.size()==10& contadorCero==0){
+            historialDatos.clear();
+
+            aceleracionBruscaConfirmada=false;
+            // historialDatos.subList(0, historialDatos.size() - 1).clear();
+            return false;
+        }
+
+        if(historialDatos.getLast().getVelocidad()==0 ){
+            contadorCero++;
+            Log.i(TAG,"CERO: "+ contadorCero);
+            if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {
+                Log.i(TAG, "Accidente confirmado tras 23 datos consecutivos en velocidad cero.");
+                contadorCero = 0; // Reiniciar el contador para próximas detecciones
+                return true;
+            }
+
+        }
+        else{
+            contadorCero=0;
+        }
+
+        // Si el vehículo llega a velocidad 0 y se mantiene por al menos 3 datos consecutivos, se confirma el accidente
+
+        return false;  // No se ha detectado accidente todavía
+//            if (historialDatos.size() == 10) {
+//                if (evaluarAutoDetenidoUltimos3Segundos()) {
+//                    csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, true);
+//
+//                    Log.i("ACCIDENTE_TRASERO", "Accidente trasero detectado: las últimas 3 velocidades fueron 0.");
+//                    DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTE TRASERO DETECTADO.");
+//                    aceleracionBruscaDetectada = false;
+//                    historialDatos.clear();  // Limpiar historial después de detectar el accidente
+//                    return true;  // Se detectó un accidente
+//                } else {
+//
+//                    Log.i("ACCIDENTE_TRASERO", "No se detecta accidente trasero.");
+//                    aceleracionBruscaDetectada = false;
+//                    csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, false);
+//
+//                    historialDatos.clear();
+//                    historialDatos.add(nuevoDato);  // Guardar el último dato y continuar la evaluación
+//                    return false;  // No se detectó un accidente
+//                }
+//
+//            }
+
+
+    }
+
     private boolean evaluarAutoDetenidoUltimos3Segundos() {
         // Verificar si las últimas 3 velocidades fueron 0
         int size = historialDatos.size();
         return historialDatos.get(size - 1).getVelocidad() == 0 &&
                 historialDatos.get(size - 2).getVelocidad() == 0 &&
+
+
                 historialDatos.get(size - 3).getVelocidad() == 0;
     }
 
-//    private boolean esAumentoBrusco(DatosMovimiento punto1, DatosMovimiento punto2, double umbral) {
-//        double diferenciaVelocidad = punto2.getVelocidad() - punto1.getVelocidad();  // Diferencia en km/h
-//        return diferenciaVelocidad >= umbral;  // Verifica si la aceleración fue brusca
-//    }
+    //    private boolean esAumentoBrusco(DatosMovimiento punto1, DatosMovimiento punto2, double umbral) {
+    //        double diferenciaVelocidad = punto2.getVelocidad() - punto1.getVelocidad();  // Diferencia en km/h
+    //        return diferenciaVelocidad >= umbral;  // Verifica si la aceleración fue brusca
+    //    }
 }
-
