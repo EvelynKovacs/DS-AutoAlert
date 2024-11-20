@@ -67,9 +67,22 @@
                 android:gravity="center"
                 android:lineSpacingExtra="4dp"
                 android:padding="16dp"
-                android:text="A continuación, deberás completar tu información personal, como nombre, apellido, DNI y otros detalles médicos importantes."
+                android:text="A continuación, deberás completar con tu información personal."
                 android:textColor="@color/white"
                 android:textSize="16sp" />
+
+            <!-- Lista de datos requeridos en forma de texto -->
+            <TextView
+                android:id="@+id/txtRequiredDataList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:fontFamily="@font/montserrat_medium"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:text="• Nombre\n• Apellido\n• DNI\n• Fecha de Nacimiento\n• Datos Médicos\n• Grupo Sanguíneo\n• Foto\n• Tu Número Celular"
+                android:gravity="start" />
 
             <TextView
                 android:id="@+id/txtExplanation2"

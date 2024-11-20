@@ -399,12 +399,12 @@ public class SimulacionFragment extends Fragment {
                     List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
                     String address = addresses.size() > 0 ? addresses.get(0).getAddressLine(0) : "Ubicación no disponible";
 
-                    emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. " +
+                    emergencyMessage = "Mensaje de emergencia emitida por la aplicación movil AutoAlert.  " +
                             "La persona: " + getDatos() +
                             " tuvo un accidente en la dirección aproximada: " + address;
                 } else {
                     // Si no hay conexión a Internet, usa las coordenadas
-                    emergencyMessage = "Mensaje de emergencia DE PRUEBA NO ES VERDAD. " +
+                    emergencyMessage = "Mensaje de emergencia emitida por la aplicación movil AutoAlert.  " +
                             "La persona: " + getDatos() +
                             " tuvo un accidente en las coordenadas: " +
                             "Latitud: " + location.getLatitude() +
@@ -426,7 +426,6 @@ public class SimulacionFragment extends Fragment {
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fcv_main_container, detalleUsuarioFragment)
-                        .addToBackStack(null)
                         .commit();
 
             } catch (IOException e) {
