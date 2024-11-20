@@ -94,7 +94,7 @@
         private final MutableLiveData<Boolean> locationEnabled = new MutableLiveData<>();
 
 
-        private static final long UPDATE_INTERVAL_MS = 1000;
+        private static final long UPDATE_INTERVAL_MS = 2000;
 
         private Location locationDeArchivo;
         private MutableLiveData<Location> locationLiveData = new MutableLiveData<>();
@@ -611,6 +611,11 @@
                         // Esperar un intervalo antes de procesar la siguiente ubicación
                         Thread.sleep(UPDATE_INTERVAL_MS);
                     }
+                    // Mostrar el Toast cuando termine la lectura
+                    new Handler(Looper.getMainLooper()).post(() ->
+                            Toast.makeText(getApplication().getApplicationContext(), "Lectura del archivo completada", Toast.LENGTH_SHORT).show()
+                    );
+
                 } catch (InterruptedException e) {
                     Log.e(TAG, "Error en el hilo de lectura de archivo", e);
                 }
