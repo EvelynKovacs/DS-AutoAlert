@@ -11,8 +11,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.autoalert.model.entities.DatosMovimiento;
-import com.example.autoalert.repository.CsvAccLateral;
-import com.example.autoalert.repository.DetectorAccidenteDataWriter;
+
 
 import java.util.LinkedList;
 
@@ -22,14 +21,13 @@ public class DetectorAccidenteLateralMovimiento {
     private static final double UMBRAL_CAMBIO_ANGULO = 70;
     private static final double UMBRAL_ACELERACION = 10.0;  // Diferencia en km/h para considerar un aumento brusco// Grados
     private boolean cambioBruscoDetectado=false;
-    private CsvAccLateral csvAccLateral;
     private double angulo;
     private boolean cambioBrusco=false;
     private boolean desaceleracionBruscaDetectada=false;
     private boolean aceleracionBruscaDetectada=false;
 
     private int contadorCero = 0;
-    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 23;
+    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
     private double diferenciaVelocidad;
     private double umbralVariable;
 
@@ -37,7 +35,6 @@ public class DetectorAccidenteLateralMovimiento {
 
     public DetectorAccidenteLateralMovimiento(Context context) {
         this.context = context.getApplicationContext(); // Usar el contexto de aplicación para evitar fugas
-        csvAccLateral=new CsvAccLateral(context);
 
 
     }
@@ -52,11 +49,9 @@ public class DetectorAccidenteLateralMovimiento {
                 cambioBruscoDetectado = true;
                 historialDatos.clear();
                 Log.i(TAG, "Condiciones previas cumplidas. Recolectando 3 nuevos datos...");
-                csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),angulo,cambioBrusco,desaceleracionBruscaDetectada,aceleracionBruscaDetectada,false );
 
                 return false; // Aún no es accidente, pero se cumple la primera condición
             }
-            csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),angulo,cambioBrusco,desaceleracionBruscaDetectada,aceleracionBruscaDetectada,false );
 
             historialDatos.removeFirst();
             return false;
@@ -70,9 +65,7 @@ public class DetectorAccidenteLateralMovimiento {
 
             if (analizarMovimientoPosterior()) {
                 Log.i(TAG, "Posible accidente lateral detectado.");
-                csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,false,false,false,true);
 
-                DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTEEEEEEEEEEEEEEEEEEEEE LATERALLLLLLLLLLLLLLLLLLLL detectado.");
                 cambioBruscoDetectado = false;
                 contadorCero=0;
                 historialDatos.clear();
@@ -80,7 +73,6 @@ public class DetectorAccidenteLateralMovimiento {
 
                 return true;  // Accidente detectado
             } else {
-                csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,false,false,false,false);
 
                 Log.i(TAG, "No se detecta accidente.");
             }
@@ -89,7 +81,6 @@ public class DetectorAccidenteLateralMovimiento {
 
         }
         if(historialDatos.size() < 3&& !cambioBruscoDetectado) {
-            csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,false, false, false,false);
         }
 
         return false;  // Por defecto, no se detecta accidente
@@ -102,24 +93,18 @@ public class DetectorAccidenteLateralMovimiento {
         DatosMovimiento punto2 = historialDatos.get(1);
         DatosMovimiento punto3 = historialDatos.get(2);
 
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"Punto 1: ("+punto1.getLatitud()+","+punto1.getLongitud()+")");
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"Punto 2: ("+punto2.getLatitud()+","+punto2.getLongitud()+")");
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"Punto 3: ("+punto3.getLatitud()+","+punto3.getLongitud()+")");
 
 
         angulo = calcularAngulo(punto1, punto2, punto3);
         Log.i(TAG,"ANGULAAAA : "+ angulo+ " punto1="+ punto1.getLatitud()+","+punto1.getLongitud()+" punto2="+ punto2.getLatitud()+","+punto2.getLongitud()+" punto3="+ punto3.getLatitud()+","+punto3.getLongitud());
 
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"ANGULO: "+ angulo);
         cambioBrusco = esCambioBrusco(angulo, UMBRAL_CAMBIO_ANGULO);
         Log.i(TAG,"CAMBIO BRUSCO : "+ cambioBrusco);
 
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"CAMBIO BRUSCO: "+ cambioBrusco);
 
         desaceleracionBruscaDetectada = esDesaceleracionVariable();
         Log.i(TAG,"DESACELERACION BRUSCA : "+ desaceleracionBruscaDetectada);
 
-        DetectorAccidenteDataWriter.writeAccidentDataToFile(context,"DESACELERACION BRUSCA: "+ desaceleracionBruscaDetectada);
         aceleracionBruscaDetectada= esAceleracionBrusca(historialDatos.get(1),historialDatos.get(2),UMBRAL_ACELERACION);
 
 
@@ -130,7 +115,6 @@ public class DetectorAccidenteLateralMovimiento {
             System.out.println("Cambio brusco y desaceleración brusca o auto parado detectados.");
             Log.i(TAG,"Cambio brusco y desaceleración brusca o auto parado detectados ");
 
-            DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "Se cumplen todas las condiciones previas.");
             return true;
         }
 
@@ -157,9 +141,9 @@ public class DetectorAccidenteLateralMovimiento {
 
         if(historialDatos.getLast().getVelocidad()==0 ){
             contadorCero++;
-            Log.i(TAG,"CERO: "+ contadorCero);
+            Log.i(TAG,"CERO EN LAT: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {
-                Log.i(TAG, "Accidente confirmado tras 23 datos consecutivos en velocidad cero.");
+                Log.i(TAG, "Accidente LATERAL confirmado tras 23 datos consecutivos en velocidad cero.");
                 contadorCero = 0; // Reiniciar el contador para próximas detecciones
                 return true;
             }

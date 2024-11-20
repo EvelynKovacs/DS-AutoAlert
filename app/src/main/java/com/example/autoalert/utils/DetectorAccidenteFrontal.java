@@ -88,9 +88,6 @@ import static com.example.autoalert.utils.AutoParado.elAutoEstaParado;
 import android.content.Context;
 import android.util.Log;
 import com.example.autoalert.model.entities.DatosMovimiento;
-import com.example.autoalert.repository.CsvAccFrontal;
-import com.example.autoalert.repository.CsvAccLateral;
-import com.example.autoalert.repository.DetectorAccidenteDataWriter;
 import java.util.LinkedList;
 
 public class DetectorAccidenteFrontal {
@@ -100,8 +97,7 @@ public class DetectorAccidenteFrontal {
     private Context context;
     private boolean desaceleracionBruscaConfirmada = false;
     private long tiempoInicioEvaluacion = 0;
-    private CsvAccFrontal csvAccFrontal;
-    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 23;
+    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
 
 
 
@@ -112,7 +108,6 @@ public class DetectorAccidenteFrontal {
 
     public DetectorAccidenteFrontal(Context context) {
         this.context = context.getApplicationContext();
-        csvAccFrontal= new CsvAccFrontal(context);
     }
 
     public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
@@ -127,11 +122,9 @@ public class DetectorAccidenteFrontal {
                 desaceleracionBruscaConfirmada = true;
                 //tiempoInicioEvaluacion = nuevoDato.getTiempo();
                 Log.i("ACCIDENTE_FRONTAL", "Desaceleración brusca confirmada. Iniciando evaluación de patrón.");
-                csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),umbralVariable,diferenciaVelocidad,desaceleracionBruscaConfirmada,false );
 
             } else {
                 historialDatos.removeFirst();  // No hay desaceleración, eliminar el primer dato y continuar
-                csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),umbralVariable,diferenciaVelocidad,desaceleracionBruscaConfirmada,false );
 
                 return false;
             }
@@ -141,29 +134,23 @@ public class DetectorAccidenteFrontal {
         // Si ya se confirmó la desaceleración brusca, evaluar el patrón de los datos posteriores
         if (desaceleracionBruscaConfirmada) {
             if (evaluarMovimientoPosterior()) {
-                csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,0,false,true);
 
                 Log.i("ACCIDENTE_FRONTAL", "Accidente frontal detectado.");
-                DetectorAccidenteDataWriter.writeAccidentDataToFile(context, "ACCIDENTE FRONTAL DETECTADO.");
                 desaceleracionBruscaConfirmada = false;
                 contadorCero=0;
                 historialDatos.clear();  // Limpiar el historial tras detectar el accidente
 
                 return true;  // Accidente detectado
             } else if (romperPatron()) {
-                csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,0,false,false);
 
                 // Si se rompe el patrón (por ejemplo, el vehículo acelera), reiniciar la evaluación
                 desaceleracionBruscaConfirmada = false;
                 historialDatos.clear();
                 historialDatos.add(nuevoDato);  // Guardar el último dato y continuar la evaluación
             }
-            csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,0, false, false);
 
         }
-        if(historialDatos.size() < 2) {
-            csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,0, false, false);
-        }
+
         return false;
 
     }
@@ -205,7 +192,7 @@ public class DetectorAccidenteFrontal {
             contadorCero++;
             Log.i(TAG,"CERO: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {
-                Log.i(TAG, "Accidente confirmado tras 23 datos consecutivos en velocidad cero.");
+                Log.i(TAG, "Accidente FRONTAL confirmado tras 23 datos consecutivos en velocidad cero.");
                 contadorCero = 0; // Reiniciar el contador para próximas detecciones
                 return true;
             }

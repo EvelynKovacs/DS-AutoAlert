@@ -89,8 +89,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.autoalert.model.entities.DatosMovimiento;
-import com.example.autoalert.repository.CsvAccTrasero;
-import com.example.autoalert.repository.DetectorAccidenteDataWriter;
+
 
 import java.util.LinkedList;
 
@@ -101,9 +100,8 @@ public class DetectorAccidenteTrasero {
     private boolean aceleracionBruscaDetectada = false;
     private Context context;
 
-    private CsvAccTrasero csvAccTrasero;
     private boolean aceleracionBruscaConfirmada;
-    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 23;
+    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
 
 
 
@@ -111,7 +109,6 @@ public class DetectorAccidenteTrasero {
 
     public DetectorAccidenteTrasero(Context context) {
         this.context = context.getApplicationContext();
-        csvAccTrasero= new CsvAccTrasero(context);
     }
 
     public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
@@ -125,23 +122,23 @@ public class DetectorAccidenteTrasero {
             if (analizarCondicionesPrevias()) {
                 aceleracionBruscaDetectada = true;
                 historialDatos.clear();
-                csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), aceleracionBruscaConfirmada, false);
 
                 Log.i("ACCIDENTE_TRASERO", "Aceleración brusca detectada, evaluando comportamiento posterior.");
                 return false;  // Aceleración detectada, pero aún no se confirma el accidente
             }
             else {
                 historialDatos.removeFirst();
-                csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), aceleracionBruscaConfirmada, false);
 
                 return false;  // No se cumplen las condiciones// previas
             }
         }
 
         if (aceleracionBruscaDetectada) {
+            Log.i("ACCIDENTE_TRASERO", "DETECTO TRASERO? " +aceleracionBruscaDetectada);
+
 
             if(evaluarMovimientoPosterior()){
-                aceleracionBruscaConfirmada = false;
+                aceleracionBruscaDetectada = false;
                 contadorCero=0;
                 historialDatos.clear();  // Limpiar el historial tras detectar el accidente
 
@@ -152,13 +149,7 @@ public class DetectorAccidenteTrasero {
         }
 
 
-        if (historialDatos.size() != 2 && historialDatos.size() != 10) {
-            csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, false);
-        }
-        if (aceleracionBruscaDetectada && historialDatos.size() == 2) {
-            csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, false);
 
-        }
         return false;  // Por defecto, si no se cumplen las condiciones de accidente
     }
 
@@ -168,6 +159,7 @@ public class DetectorAccidenteTrasero {
         DatosMovimiento punto2 = historialDatos.get(historialDatos.size() - 1);
 
         aceleracionBruscaConfirmada =esAceleracionBrusca(punto1, punto2, UMBRAL_ACELERACION);
+        Log.i("ACCIDENTE_TRASERO", "aceleracion brusca: " +aceleracionBruscaConfirmada);
 
         // Detectar aumento brusco de velocidad
         return aceleracionBruscaConfirmada;
@@ -195,16 +187,16 @@ public class DetectorAccidenteTrasero {
         if(historialDatos.size()==10& contadorCero==0){
             historialDatos.clear();
 
-            aceleracionBruscaConfirmada=false;
+            aceleracionBruscaDetectada=false;
             // historialDatos.subList(0, historialDatos.size() - 1).clear();
             return false;
         }
 
         if(historialDatos.getLast().getVelocidad()==0 ){
             contadorCero++;
-            Log.i(TAG,"CERO: "+ contadorCero);
+            Log.i(TAG,"CERO en TRASE: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {
-                Log.i(TAG, "Accidente confirmado tras 23 datos consecutivos en velocidad cero.");
+                Log.i(TAG, "Accidente TRASERO confirmado tras 23 datos consecutivos en velocidad cero.");
                 contadorCero = 0; // Reiniciar el contador para próximas detecciones
                 return true;
             }
