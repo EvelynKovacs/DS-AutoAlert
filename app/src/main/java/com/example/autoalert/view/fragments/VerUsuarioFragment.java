@@ -152,7 +152,7 @@ public class VerUsuarioFragment extends Fragment implements OnClickItemInterface
             transaction.addToBackStack(null);
             transaction.commit();
         } else {
-            projectViewModel.deleteProject(projectModel);
+            projectViewModel.deleteProject();
         }
     }
 

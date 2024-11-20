@@ -1,201 +1,201 @@
-    package com.example.autoalert.viewmodel;
+package com.example.autoalert.viewmodel;
 
 
-    import android.location.Geocoder;
-    import android.location.Address;
+import android.location.Geocoder;
+import android.location.Address;
 
-    import java.io.BufferedReader;
-    import java.io.File;
-    import java.io.FileReader;
-    import java.io.FileWriter;
-    import java.io.IOException;
-    import java.text.SimpleDateFormat;
-    import java.util.Date;
-    import java.util.List;
-    import java.util.Locale;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
-    import com.example.autoalert.utils.AddressFetcher;
-    import com.example.autoalert.utils.DetectorAccidente;
-
-
-    import android.Manifest;
-    import android.app.Application;
-    import android.content.Context;
-    import android.content.pm.PackageManager;
-    import android.location.Location;
-    import android.location.LocationListener;
-    import android.location.LocationManager;
-    import android.os.Bundle;
-    import android.util.Log;
-    import android.widget.Toast;
-
-    import androidx.annotation.NonNull;
-    import androidx.core.app.ActivityCompat;
-    import androidx.lifecycle.AndroidViewModel;
-    import androidx.lifecycle.LiveData;
-    import androidx.lifecycle.MutableLiveData;
-
-    //import com.example.autoalert.repository.SensorQueueRepository;
-    import com.example.autoalert.model.entities.DatosMovimiento;
-    import com.example.autoalert.repository.SpeedQueueRepository;
-    import com.example.autoalert.view.activities.MainActivity;
-    import com.google.android.gms.common.api.ResolvableApiException;
-    import com.google.android.gms.location.LocationRequest;
-    import com.google.android.gms.location.LocationServices;
-    import com.google.android.gms.location.LocationSettingsRequest;
-    import com.google.android.gms.location.LocationSettingsResponse;
-    import com.google.android.gms.location.Priority;
-    import com.google.android.gms.tasks.Task;
-
-    import org.json.JSONArray;
-    import org.json.JSONObject;
-
-    public class SpeedViewModel extends AndroidViewModel {
-
-        private static final String TAG = "UbicacionGuardar";
-
-        private static final int REQUEST_LOCATION_PERMISSION = 1001;
-        public static final int REQUEST_CHECK_SETTINGS = 1002;
-        private static int MAX_SIZE_COORD = 3;
-        private static int UMBRAL_MIN_VEL=-1;
-
-        private MutableLiveData<Double> speedKmh = new MutableLiveData<>();
-        private MutableLiveData<Location> location = new MutableLiveData<>();
-        private MutableLiveData<Boolean> locationPermissionState = new MutableLiveData<>();
-        private MutableLiveData<String> address = new MutableLiveData<>();
-
-        private LocationManager locationManager;
-        private LocationListener locationListener;
-        private SpeedQueueRepository sensorData;
-        private long lastSpeedUpdate = 0;
-        private boolean isFirstMeasurement = true;
-        private float previousSpeed;
-        private long previousTime;
-        private double previousLatitude;
-        private double previousLongitude;
-        private boolean isFirstCoordinate = true;
-
-        private boolean deteccionIniciada = false;
+import com.example.autoalert.utils.AddressFetcher;
+import com.example.autoalert.utils.DetectorAccidente;
 
 
-        private DetectorAccidente accidente;
-        private AddressFetcher addressFetcher;
+import android.Manifest;
+import android.app.Application;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
+import android.util.Log;
+import android.widget.Toast;
 
-        private final MutableLiveData<Boolean> locationEnabled = new MutableLiveData<>();
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
+//import com.example.autoalert.repository.SensorQueueRepository;
+import com.example.autoalert.model.entities.DatosMovimiento;
+import com.example.autoalert.repository.SpeedQueueRepository;
+import com.example.autoalert.view.activities.MainActivity;
+import com.google.android.gms.common.api.ResolvableApiException;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.Priority;
+import com.google.android.gms.tasks.Task;
 
-        private static final long UPDATE_INTERVAL_MS = 1000;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-        public SpeedViewModel(@NonNull Application application) {
-            super(application);
-            locationManager = (LocationManager) application.getSystemService(Context.LOCATION_SERVICE);
+public class SpeedViewModel extends AndroidViewModel {
 
-            sensorData = new SpeedQueueRepository(application.getApplicationContext());
+    private static final String TAG = "UbicacionGuardar";
 
-            accidente = new DetectorAccidente(getApplication().getApplicationContext());
+    private static final int REQUEST_LOCATION_PERMISSION = 1001;
+    public static final int REQUEST_CHECK_SETTINGS = 1002;
+    private static int MAX_SIZE_COORD = 3;
+    private static int UMBRAL_MIN_VEL=-1;
 
-            addressFetcher = new AddressFetcher(getApplication().getApplicationContext());
+    private MutableLiveData<Double> speedKmh = new MutableLiveData<>();
+    private MutableLiveData<Location> location = new MutableLiveData<>();
+    private MutableLiveData<Boolean> locationPermissionState = new MutableLiveData<>();
+    private MutableLiveData<String> address = new MutableLiveData<>();
 
+    private LocationManager locationManager;
+    private LocationListener locationListener;
+    private SpeedQueueRepository sensorData;
+    private long lastSpeedUpdate = 0;
+    private boolean isFirstMeasurement = true;
+    private float previousSpeed;
+    private long previousTime;
+    private double previousLatitude;
+    private double previousLongitude;
+    private boolean isFirstCoordinate = true;
 
-            locationListener = new LocationListener() {
-                @Override
-                public void onLocationChanged(@NonNull Location location) {
-                    updateLocation(location);
-                }
-
-                @Override
-                public void onStatusChanged(String provider, int status, Bundle extras) {
-                }
-
-                @Override
-                public void onProviderEnabled(@NonNull String provider) {
-                }
-
-                @Override
-                public void onProviderDisabled(@NonNull String provider) {
-                    promptEnableLocationSettings();
-
-                }
-            };
-
-            //checkLocationPermissions();
-        }
-
-        public LiveData<Double> getSpeed() {
-            return speedKmh;
-        }
-
-        public LiveData<Location> getLocation() {
-            return location;
-        }
-
-        public LiveData<Boolean> getLocationPermissionState() {
-            return locationPermissionState;
-        }
-
-        public LiveData<String> getAddress() {
-            return address;
-        }
-
-        // Actualiza la ubicación en la interfaz
-        private void updateLocation(Location location) {
-            if (location != null) {
-                long currentTime = System.currentTimeMillis();
-                if (currentTime - lastSpeedUpdate >= UPDATE_INTERVAL_MS) {
-                    lastSpeedUpdate = currentTime;
-                    processSpeedData(location);
+    private boolean deteccionIniciada = false;
 
 
-                    //float currentSpeed = location.getSpeed();  // Velocidad en m/s
-                    //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en M/S:" + currentSpeed);
+    private DetectorAccidente accidente;
+    private AddressFetcher addressFetcher;
 
-                    //speedAndAccelerationHandler.handleSpeedAndAcceleration(currentSpeed, currentTime, accelerationQueueRepository);
+    private final MutableLiveData<Boolean> locationEnabled = new MutableLiveData<>();
 
-                    //double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
-                    //speedKmh.setValue(speedKmhValue);
 
-                    // Registrar datos de velocidad y aplicar filtro de Kalman
-                    //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en KM/H:" + speedKmhValue);
-                    //sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
+    private static final long UPDATE_INTERVAL_MS = 1000;
 
-                    // Registrar datos de movimiento
-                    //accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), currentSpeed, currentTime));
+    public SpeedViewModel(@NonNull Application application) {
+        super(application);
+        locationManager = (LocationManager) application.getSystemService(Context.LOCATION_SERVICE);
 
-                    // Obtener dirección desde las coordenadas
-                    addressFetcher.fetchAddressFromLocation(location, address);
+        sensorData = new SpeedQueueRepository(application.getApplicationContext());
 
-                    // Actualizar la ubicación
-                    this.location.setValue(location);
-                    saveLocation(location);  // Guarda la ubicación en el archivo JSON
-                }
+        accidente = new DetectorAccidente(getApplication().getApplicationContext());
 
+        addressFetcher = new AddressFetcher(getApplication().getApplicationContext());
+
+
+        locationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                updateLocation(location);
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(@NonNull String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(@NonNull String provider) {
+                promptEnableLocationSettings();
 
             }
-        }
-        private void processSpeedData(Location location) {
-            float currentSpeed = location.getSpeed();  // Velocidad en m/s
-            double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
-            speedKmh.setValue(speedKmhValue);
-            sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
-            if (!deteccionIniciada && speedKmhValue > UMBRAL_MIN_VEL) {
-                Log.i("MainActivity", "Velocidad mayor a 5km/h. Iniciando detección de accidentes.");
-                Toast.makeText(getApplication().getApplicationContext(), "Velocidad mayor a 5 km/h. Iniciando detección de accidentes.", Toast.LENGTH_LONG).show();
+        };
 
-                deteccionIniciada = true;  // Marcamos que ya hemos iniciado la detección
-                accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), speedKmhValue, System.currentTimeMillis()));
-            }else if (deteccionIniciada){
-                accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), speedKmhValue, System.currentTimeMillis()));
+        //checkLocationPermissions();
+    }
 
-            }else{
-                Log.i("MainActivity", "Velocidad menor a 5km/h. Esperando para iniciar la detección.");
-                Toast.makeText(getApplication().getApplicationContext(), "Velocidad menor a 5 km/h. Esperando para iniciar la detección.", Toast.LENGTH_LONG).show();
+    public LiveData<Double> getSpeed() {
+        return speedKmh;
+    }
+
+    public LiveData<Location> getLocation() {
+        return location;
+    }
+
+    public LiveData<Boolean> getLocationPermissionState() {
+        return locationPermissionState;
+    }
+
+    public LiveData<String> getAddress() {
+        return address;
+    }
+
+    // Actualiza la ubicación en la interfaz
+    private void updateLocation(Location location) {
+        if (location != null) {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastSpeedUpdate >= UPDATE_INTERVAL_MS) {
+                lastSpeedUpdate = currentTime;
+                processSpeedData(location);
 
 
+                //float currentSpeed = location.getSpeed();  // Velocidad en m/s
+                //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en M/S:" + currentSpeed);
+
+                //speedAndAccelerationHandler.handleSpeedAndAcceleration(currentSpeed, currentTime, accelerationQueueRepository);
+
+                //double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
+                //speedKmh.setValue(speedKmhValue);
+
+                // Registrar datos de velocidad y aplicar filtro de Kalman
+                //DetectorAccidenteDataWriter.writeAccidentDataToFile(getApplication().getApplicationContext(), "Velocidad en KM/H:" + speedKmhValue);
+                //sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
+
+                // Registrar datos de movimiento
+                //accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), currentSpeed, currentTime));
+
+                // Obtener dirección desde las coordenadas
+                addressFetcher.fetchAddressFromLocation(location, address);
+
+                // Actualizar la ubicación
+                this.location.setValue(location);
+                saveLocation(location);  // Guarda la ubicación en el archivo JSON
             }
-    //csvHelper.saveDataToCsv(speedKmhValue,location.getLatitude(),location.getLongitude(),0,false,false,false);
-            // csvHelper.saveDataToCsv(speedKmhValue,location.getLatitude(),location.getLongitude(),address.getValue());
+
 
         }
+    }
+    private void processSpeedData(Location location) {
+        float currentSpeed = location.getSpeed();  // Velocidad en m/s
+        double speedKmhValue = currentSpeed * 3.6;  // Convertir a km/h
+        speedKmh.setValue(speedKmhValue);
+        sensorData.addSpeedData(speedKmhValue, UPDATE_INTERVAL_MS);  // Almacenar datos
+        if (!deteccionIniciada && speedKmhValue > UMBRAL_MIN_VEL) {
+            Log.i("MainActivity", "Velocidad mayor a 5km/h. Iniciando detección de accidentes.");
+            Toast.makeText(getApplication().getApplicationContext(), "Velocidad mayor a 5 km/h. Iniciando detección de accidentes.", Toast.LENGTH_LONG).show();
+
+            deteccionIniciada = true;  // Marcamos que ya hemos iniciado la detección
+            accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), speedKmhValue, System.currentTimeMillis()));
+        }else if (deteccionIniciada){
+            accidente.registrarNuevoDato(new DatosMovimiento(location.getLatitude(), location.getLongitude(), speedKmhValue, System.currentTimeMillis()));
+
+        }else{
+            Log.i("MainActivity", "Velocidad menor a 5km/h. Esperando para iniciar la detección.");
+            Toast.makeText(getApplication().getApplicationContext(), "Velocidad menor a 5 km/h. Esperando para iniciar la detección.", Toast.LENGTH_LONG).show();
+
+
+        }
+        //csvHelper.saveDataToCsv(speedKmhValue,location.getLatitude(),location.getLongitude(),0,false,false,false);
+        // csvHelper.saveDataToCsv(speedKmhValue,location.getLatitude(),location.getLongitude(),address.getValue());
+
+    }
 
     //    private void updateLocation(Location location) {
     //        long currentTime = System.currentTimeMillis();
@@ -267,18 +267,18 @@
     //        }
     //    }
 
-        // Verifica permisos de ubicación
-        public void checkLocationPermissions() {
-            Log.i("SpeedViewModel", "Checking location permissions");
-            if (ActivityCompat.checkSelfPermission(getApplication(), Manifest.permission.ACCESS_FINE_LOCATION)
-                    != PackageManager.PERMISSION_GRANTED) {
-                locationPermissionState.setValue(false);
-                resumeLocationUpdates();
-            } else {
-                locationPermissionState.setValue(true);
-                checkLocationSettings(getApplication().getApplicationContext());
-            }
+    // Verifica permisos de ubicación
+    public void checkLocationPermissions() {
+        Log.i("SpeedViewModel", "Checking location permissions");
+        if (ActivityCompat.checkSelfPermission(getApplication(), Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            locationPermissionState.setValue(false);
+            resumeLocationUpdates();
+        } else {
+            locationPermissionState.setValue(true);
+            checkLocationSettings(getApplication().getApplicationContext());
         }
+    }
 
     //    // Solicita permisos de ubicación
     //    public void requestLocationPermissions(Context context) {
@@ -288,45 +288,45 @@
     //
     //    }
 
-        public void checkLocationSettings(Context context) {
-            Log.i("SpeedViewModel", "Permissions granted, checking location settings");
+    public void checkLocationSettings(Context context) {
+        Log.i("SpeedViewModel", "Permissions granted, checking location settings");
 
-            LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL_MS)
-                    .setIntervalMillis(UPDATE_INTERVAL_MS)
-                    .setMinUpdateIntervalMillis(UPDATE_INTERVAL_MS / 2)
-                    .build();
-
-
-
-            LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
+        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, UPDATE_INTERVAL_MS)
+                .setIntervalMillis(UPDATE_INTERVAL_MS)
+                .setMinUpdateIntervalMillis(UPDATE_INTERVAL_MS / 2)
+                .build();
 
 
-            Task<LocationSettingsResponse> task = LocationServices.getSettingsClient(context)
-                    .checkLocationSettings(builder.build());
 
-            //resumeLocationUpdates();
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder().addLocationRequest(locationRequest);
 
 
-            task.addOnSuccessListener(locationSettingsResponse -> {
-                Log.i("SpeedViewModel", "Location settings are satisfied.");
-                resumeLocationUpdates(); // Llama a resumeLocationUpdates solo si la ubicación está activada
-            });
-            //task.addOnSuccessListener(locationSettingsResponse -> resumeLocationUpdates());
+        Task<LocationSettingsResponse> task = LocationServices.getSettingsClient(context)
+                .checkLocationSettings(builder.build());
+
+        //resumeLocationUpdates();
 
 
-            task.addOnFailureListener(e -> {
-                if (e instanceof ResolvableApiException) {
-                    ResolvableApiException resolvable = (ResolvableApiException) e;
-                    try {
-                        resolvable.startResolutionForResult((MainActivity) context, REQUEST_CHECK_SETTINGS);
-                        Log.i("SpeedViewModel", "?????");
+        task.addOnSuccessListener(locationSettingsResponse -> {
+            Log.i("SpeedViewModel", "Location settings are satisfied.");
+            resumeLocationUpdates(); // Llama a resumeLocationUpdates solo si la ubicación está activada
+        });
+        //task.addOnSuccessListener(locationSettingsResponse -> resumeLocationUpdates());
 
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
+
+        task.addOnFailureListener(e -> {
+            if (e instanceof ResolvableApiException) {
+                ResolvableApiException resolvable = (ResolvableApiException) e;
+                try {
+                    resolvable.startResolutionForResult((MainActivity) context, REQUEST_CHECK_SETTINGS);
+                    Log.i("SpeedViewModel", "?????");
+
+                } catch (Exception ex) {
+                    ex.printStackTrace();
                 }
-            });
-        }
+            }
+        });
+    }
     //    public void checkLocationSettings(Context context) {
     //        if (ActivityCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
     //            ActivityCompat.requestPermissions((Activity) context, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_LOCATION_PERMISSION);
@@ -361,25 +361,25 @@
     //    }
 
 
-        // Inicia las actualizaciones de ubicación
-        public void resumeLocationUpdates() {
-            Log.i("SpeedViewModel", "Location settings are OK, resuming location updates");
+    // Inicia las actualizaciones de ubicación
+    public void resumeLocationUpdates() {
+        Log.i("SpeedViewModel", "Location settings are OK, resuming location updates");
 
-            if (ActivityCompat.checkSelfPermission(getApplication(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL_MS, 0, locationListener);
-            }
+        if (ActivityCompat.checkSelfPermission(getApplication(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, UPDATE_INTERVAL_MS, 0, locationListener);
         }
+    }
 
-        //    // Pausa las actualizaciones de ubicación
+    //    // Pausa las actualizaciones de ubicación
     //    public void pauseLocationUpdates() {
     //        if (ActivityCompat.checkSelfPermission(getApplication(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
     //            locationManager.removeUpdates(locationListener);
     //        }
     //    }
-        // Muestra diálogo para habilitar los ajustes de ubicación si están deshabilitados
-        private void promptEnableLocationSettings() {
-            checkLocationSettings(getApplication().getApplicationContext());
-        }
+    // Muestra diálogo para habilitar los ajustes de ubicación si están deshabilitados
+    private void promptEnableLocationSettings() {
+        checkLocationSettings(getApplication().getApplicationContext());
+    }
     //    // Maneja el resultado de la solicitud de permisos
     //    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
     //        if (requestCode == REQUEST_LOCATION_PERMISSION && grantResults.length > 0
@@ -388,7 +388,7 @@
     //        }
     //    }
 
-        // Maneja el resultado de la solicitud de activación de ubicación
+    // Maneja el resultado de la solicitud de activación de ubicación
     //    public void onActivityResult(int requestCode, int resultCode) {
     //        if (requestCode == REQUEST_CHECK_SETTINGS) {
     //            if (resultCode == MainActivity.RESULT_OK) {
@@ -408,60 +408,60 @@
     //
     //    }
 
-        // PARA TENER LA ULTIMA UBICACION
-        private void saveLocation(Location location) {
-            File archivoUltimaUbicacion = new File(getApplication().getApplicationContext().getFilesDir(), "ultima_ubicacion.json");
-            File archivoTodasUbicaciones = new File(getApplication().getApplicationContext().getFilesDir(), "ubicaciones_periodicas.json");
+    // PARA TENER LA ULTIMA UBICACION
+    private void saveLocation(Location location) {
+        File archivoUltimaUbicacion = new File(getApplication().getApplicationContext().getFilesDir(), "ultima_ubicacion.json");
+        File archivoTodasUbicaciones = new File(getApplication().getApplicationContext().getFilesDir(), "ubicaciones_periodicas.json");
 
+        try {
+            String lugar = "Desconocido";
             try {
-                String lugar = "Desconocido";
-                try {
-                    Geocoder geocoder = new Geocoder(getApplication().getApplicationContext(), Locale.getDefault());
-                    List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                    if (addresses != null && !addresses.isEmpty()) {
-                        Address address = addresses.get(0);
-                        lugar = address.getAddressLine(0);
-                    }
-                } catch (IOException geocoderException) {
-                    Log.e(TAG, "Error al obtener la dirección. Guardando solo coordenadas.", geocoderException);
-                    lugar = "Desconocido (sin conexión)";
+                Geocoder geocoder = new Geocoder(getApplication().getApplicationContext(), Locale.getDefault());
+                List<Address> addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                if (addresses != null && !addresses.isEmpty()) {
+                    Address address = addresses.get(0);
+                    lugar = address.getAddressLine(0);
                 }
-
-                String horaActual = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
-
-                JSONObject nuevaUbicacion = new JSONObject();
-                nuevaUbicacion.put("latitud", location.getLatitude());
-                nuevaUbicacion.put("longitud", location.getLongitude());
-                nuevaUbicacion.put("lugar", lugar);
-                nuevaUbicacion.put("hora", horaActual);
-
-                try (FileWriter fileWriterUltimaUbicacion = new FileWriter(archivoUltimaUbicacion, false)) {
-                    fileWriterUltimaUbicacion.write(nuevaUbicacion.toString());
-                    Log.d(TAG, "Última ubicación guardada en archivo JSON.");
-                }
-
-                JSONArray jsonArray = new JSONArray();
-                if (archivoTodasUbicaciones.exists()) {
-                    try (BufferedReader bufferedReader = new BufferedReader(new FileReader(archivoTodasUbicaciones))) {
-                        StringBuilder jsonStringBuilder = new StringBuilder();
-                        String line;
-                        while ((line = bufferedReader.readLine()) != null) {
-                            jsonStringBuilder.append(line);
-                        }
-                        if (!jsonStringBuilder.toString().isEmpty()) {
-                            jsonArray = new JSONArray(jsonStringBuilder.toString());
-                        }
-                    }
-                }
-
-                jsonArray.put(nuevaUbicacion);
-
-                try (FileWriter fileWriterTodasUbicaciones = new FileWriter(archivoTodasUbicaciones, false)) {
-                    fileWriterTodasUbicaciones.write(jsonArray.toString());
-                    Log.d(TAG, "Ubicación guardada en archivo JSON de todas las ubicaciones.");
-                }
-            } catch (Exception e) {
-                Log.e(TAG, "Error al guardar ubicación en JSON.", e);
+            } catch (IOException geocoderException) {
+                Log.e(TAG, "Error al obtener la dirección. Guardando solo coordenadas.", geocoderException);
+                lugar = "Desconocido (sin conexión)";
             }
+
+            String horaActual = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
+
+            JSONObject nuevaUbicacion = new JSONObject();
+            nuevaUbicacion.put("latitud", location.getLatitude());
+            nuevaUbicacion.put("longitud", location.getLongitude());
+            nuevaUbicacion.put("lugar", lugar);
+            nuevaUbicacion.put("hora", horaActual);
+
+            try (FileWriter fileWriterUltimaUbicacion = new FileWriter(archivoUltimaUbicacion, false)) {
+                fileWriterUltimaUbicacion.write(nuevaUbicacion.toString());
+                Log.d(TAG, "Última ubicación guardada en archivo JSON.");
+            }
+
+            JSONArray jsonArray = new JSONArray();
+            if (archivoTodasUbicaciones.exists()) {
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(archivoTodasUbicaciones))) {
+                    StringBuilder jsonStringBuilder = new StringBuilder();
+                    String line;
+                    while ((line = bufferedReader.readLine()) != null) {
+                        jsonStringBuilder.append(line);
+                    }
+                    if (!jsonStringBuilder.toString().isEmpty()) {
+                        jsonArray = new JSONArray(jsonStringBuilder.toString());
+                    }
+                }
+            }
+
+            jsonArray.put(nuevaUbicacion);
+
+            try (FileWriter fileWriterTodasUbicaciones = new FileWriter(archivoTodasUbicaciones, false)) {
+                fileWriterTodasUbicaciones.write(jsonArray.toString());
+                Log.d(TAG, "Ubicación guardada en archivo JSON de todas las ubicaciones.");
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error al guardar ubicación en JSON.", e);
         }
     }
+}

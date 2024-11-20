@@ -176,7 +176,7 @@ public class FileUtils {
                 }
             }
         }
-        return state;
+        return (state == "")?"NO":state;
     }
 
     public void saveStateInFile(String state) {

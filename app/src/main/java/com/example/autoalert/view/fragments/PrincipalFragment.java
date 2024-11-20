@@ -134,11 +134,16 @@ package com.example.autoalert.view.fragments;
 //}
 
 import android.Manifest;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
@@ -164,6 +169,7 @@ import com.github.anastr.speedviewlib.SpeedView;
 import com.google.android.material.button.MaterialButton;
 import com.google.gson.Gson;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -206,9 +212,9 @@ public class PrincipalFragment extends Fragment {
 //                Log.d("SpeedObserver", "La ubicacion actual: " + location);
 
 //                // Agregar el Toast para mostrar la velocidad
-//                Toast.makeText(getContext(), "Velocidad actual: " + speedKmh + " km/h", Toast.LENGTH_SHORT).show();
-//                Log.d("SpeedObserver", "Velocidad actual ACA: " + speedKmh);
-//                speedView.speedTo(speedKmh.floatValue());
+                //Toast.makeText(getContext(), "Velocidad actual: " + speedKmh + " km/h", Toast.LENGTH_SHORT).show();
+                //Log.d("SpeedObserver", "Velocidad actual ACA: " + speedKmh);
+                speedView.speedTo(speedKmh.floatValue());
             } else {
                 Log.d("SpeedObserver", "Velocidad nula recibida.");
             }
@@ -224,7 +230,7 @@ public class PrincipalFragment extends Fragment {
             if (fineLocationGranted != null && !fineLocationGranted ||
                     writeStorageGranted != null && !writeStorageGranted ||
                     readStorageGranted != null && !readStorageGranted) {
-                // Manejo de la negación de permisos
+                // Manejo de la neggación de permisos
             } else {
                 startSimulation();
             }
@@ -265,6 +271,12 @@ public class PrincipalFragment extends Fragment {
                 // Realizar la transición al fragmento de edición
                 FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
                 transaction.replace(R.id.fcv_main_container, addProjectFragment);
+                transaction.addToBackStack(null);
+                transaction.commit();
+            }else{
+                // Realizar la transición al fragmento de edición
+                FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+                transaction.replace(R.id.fcv_main_container, new AddProjectFragment());
                 transaction.addToBackStack(null);
                 transaction.commit();
             }
@@ -326,16 +338,22 @@ public class PrincipalFragment extends Fragment {
     // PARA EL USUARIO
     private ProjectModel readJsonData() {
         ProjectModel user = null;
+        File file = new File(requireActivity().getFilesDir(), "user_data.json");
+
+        // Verificar si el archivo existe
+        if (!file.exists()) {
+            return null;  // Retorna null si el archivo no existe
+        }
+
         try {
-            // Abre el archivo desde el almacenamiento interno
-            FileInputStream fis = requireActivity().openFileInput("user_data.json");
+            FileInputStream fis = new FileInputStream(file);
             InputStreamReader isr = new InputStreamReader(fis);
             Gson gson = new Gson();
 
-            // Deserializa el JSON a un objeto ProjectModel
+            // Deserializar el JSON a un objeto ProjectModel
             user = gson.fromJson(isr, ProjectModel.class);
 
-            // Cierra el InputStreamReader
+            // Cerrar el InputStreamReader
             isr.close();
             fis.close();
         } catch (IOException e) {
@@ -343,5 +361,6 @@ public class PrincipalFragment extends Fragment {
         }
         return user;
     }
+
 }
 

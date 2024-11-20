@@ -28,6 +28,11 @@
     <uses-permission android:name="android.permission.READ_PHONE_NUMBERS" />
     <uses-permission android:name="android.permission.READ_SMS" />
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
@@ -52,6 +57,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".view.activities.BackgroundAccidentActivity"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleTop">
+        </activity>
+
+        <service android:name=".data.DelayedService" />
+
+
+        <service
+            android:name=".data.AccidentDetectionService"
+            android:foregroundServiceType="location" />
 
         <activity android:name=".view.activities.CreacionRedActivity"
             android:configChanges="orientation"

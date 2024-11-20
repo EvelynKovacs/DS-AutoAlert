@@ -3,11 +3,14 @@ package com.example.autoalert.view.activities;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
@@ -15,7 +18,10 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.provider.Settings;
 import android.util.Log;
+import android.view.WindowManager;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -37,6 +43,7 @@ import androidx.work.WorkManager;
 
 
 import com.example.autoalert.R;
+import com.example.autoalert.data.AccidentDetectionService;
 import com.example.autoalert.utils.FileUtils;
 import com.example.autoalert.utils.LocationWorker;
 import com.example.autoalert.utils.NetworkUtils;
@@ -69,6 +76,14 @@ import android.widget.TextView;
 
 public class MenuInicioActivity extends AppCompatActivity implements PantallaBienvenidaFragment.OnCompleteListener {
 
+    private boolean isNetworkReceiverRegistered = false;
+    private boolean isAppInForeground = false;
+    private AccidentDetectionService accidentDetectionService;
+    private boolean isBound = false;
+    private SimulacionFragment simulacionFragment = new SimulacionFragment();
+    // Variable para controlar si la notificación ya se mostró en esta sesión
+    private boolean isUserNotificationShown = false;
+
     private static final String PREFS_NAME = "AppPreferences";
     private static final String FIRST_TIME_KEY = "isFirstTime";
 
@@ -100,7 +115,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private boolean isMessageSent = false;  // Bandera para controlar el envío del mensaje
     private boolean accidenteDetectado=false;
     private ActivityResultLauncher<Intent> checkSettingsLauncher;
-    private SimulacionFragment simulacionFragment;
+
 
 
 
@@ -111,6 +126,38 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private WifiHotspot hotspotManager;
 
     private FileUtils fileUtils;
+
+
+  /*
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            AccidentDetectionService.LocalBinder binder = (AccidentDetectionService.LocalBinder) service;
+            accidentDetectionService = binder.getService();
+            isBound = true;
+
+            // Observar cambios en el estado del accidente
+            if (accidentDetectionService != null) {
+                accidentDetectionService.getAccidenteDetectadoLiveData().observe(MenuInicioActivity.this, accidentDetected -> {
+                    Log.d("MenuInicioActivity", "Cambio en LiveData detectado: " + accidentDetected);
+                    if (accidentDetected) {
+                        cambiarFragmentoPorAccidente();
+                    }
+                });
+            } else {
+                Log.e("MenuInicioActivity", "AccidentDetectionService es null después de la vinculación");
+            }
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+            isBound = false;
+        }
+    };
+*/
+
+
+
 // HASTA ACA
 
     @SuppressLint("MissingInflatedId")
@@ -120,9 +167,22 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         setContentView(R.layout.activity_inicio);
         //tvAddress = findViewById(R.id.tvAddress);  // TextView para la dirección
 
+        // Inicia el servicio de detección de accidentes
+        startAccidentDetectionService();
+
+        // Iniciar y vincular el servicio
+        Intent serviceIntent = new Intent(this, AccidentDetectionService.class);
+        //bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         // Solicitar los permisos al iniciar la actividad
         checkPermissions();
+
+        // Solicitar permiso SYSTEM_ALERT_WINDOW
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
+            startActivity(intent);
+        }
+
 
         // Inicia el WorkManager para ejecutar LocationWorker cada 30 segundos
 //        startPeriodicLocationWorker();
@@ -153,6 +213,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(networkChangeReceiver, filter);
+        isNetworkReceiverRegistered = true;
 
         fileUtils = new FileUtils(this);
 
@@ -191,7 +252,6 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         fileUtils.crearOReiniciarArchivo("lista-contactos");
 
         // HASTA ACA
-
         //PARTE EVE
 
 
@@ -220,19 +280,20 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 //        });
 
         // Obtén el AccidentViewModel con un contexto de actividad para que sea compartido
-        accidentViewModel = new ViewModelProvider(this).get(AccidentViewModel.class);
+        //accidentViewModel = new ViewModelProvider(this).get(AccidentViewModel.class);
+
 
         // Pasar el ViewModel al NotificadorAccidente
-        NotificadorAccidente notificador = NotificadorAccidente.getInstancia();
-        notificador.setAccidentViewModel(accidentViewModel);
+        //NotificadorAccidente notificador = NotificadorAccidente.getInstancia();
+        //notificador.setAccidentViewModel(accidentViewModel);
 
         // Observar los cambios en el estado del accidente
-        accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
+        /*accidentViewModel.getAccidenteDetectado().observe(this, accidentDetected -> {
             if (!accidenteDetectado) {
                 fileUtils.saveStateInFile("SI");
                 enviarMensaje();
             }
-        });
+        });*/
 
         //TERMINA EVE
 
@@ -251,6 +312,14 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
             transaction.commit();
         }
+    }
+
+    private void cambiarFragmentoPorAccidente() {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fcv_main_container, simulacionFragment);
+        transaction.addToBackStack(null);
+        transaction.commit();
+        Log.i("MenuInicioActivity", "Cambiando al fragmento de simulación por accidente");
     }
 
     // Método para verificar permisos en tiempo de ejecución
@@ -345,7 +414,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
 
     // DESDE ACA EN ADELANTE TODO ES CONEXIONES, TODOOO HE DICHO!!
-
+/*
     public void enviarMensaje(){
             String message = fileUtils.readState();
             Set<String> ipListArchivo = fileUtils.leerListaIpsEnArchivo();
@@ -378,7 +447,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         //accidenteDetectado = false;
 
     }
-
+*/
 
     public void updateIpList(String ip) {
         Set<String> ipListArchivo = fileUtils.leerListaIpsEnArchivo();
@@ -390,7 +459,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
             }
         });
     }
-
+/*
     public void setStatusTextViewOnYes() {
         fileUtils.saveStateInFile("SI");
     }
@@ -398,7 +467,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
     public void setStatusTextViewOnNo() {
         fileUtils.saveStateInFile("NO");
-    }
+    }*/
 
     public void storeMessageFromIp(String ip, String message) {
         ipMessageMap.put(ip, message);
@@ -435,15 +504,21 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     @Override
     protected void onDestroy() {
         super.onDestroy();
-//        hotspotManager.stopHotspot();
-//        CreacionRedActivity creacionRedActivity = new CreacionRedActivity();
-//        creacionRedActivity.stopWifiDirectHotspot();
-        // Verifica que hotspotManager no sea null antes de intentar detener el hotspot
+        if (isNetworkReceiverRegistered) {
+            unregisterReceiver(networkChangeReceiver);
+            isNetworkReceiverRegistered = false;
+        }
+
+        if (isBound) {
+            //unbindService(serviceConnection);
+            isBound = false;
+        }
+
         if (hotspotManager != null) {
             hotspotManager.stopHotspot();
         }
 
-        // Verifica la versión de API antes de desregistrar el callback de red
+        // Unregister the network callback (if applicable)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && connectivityManager != null) {
             connectivityManager.unregisterNetworkCallback(networkCallback);
         }
@@ -452,17 +527,27 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(networkChangeReceiver);
+        if (isNetworkReceiverRegistered) {
+            unregisterReceiver(networkChangeReceiver);
+            isNetworkReceiverRegistered = false;
+        }
+        isAppInForeground = false;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        speedViewModel.checkLocationSettings(this); // Verifica la configuración de ubicación cada vez que se reanuda la actividad
-        IntentFilter filter = new IntentFilter();
-        filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
-        registerReceiver(networkChangeReceiver, filter);
+        if (!isNetworkReceiverRegistered) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+            registerReceiver(networkChangeReceiver, filter);
+            isNetworkReceiverRegistered = true;
+        }
+        isAppInForeground = true;
+    }
 
+    public boolean isAppInForeground() {
+        return isAppInForeground;
     }
 
     public void reiniciarContador(){
@@ -547,6 +632,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         startVotacionTimer();
     }
+
 
     public void saveVote(String ip, String vote) {
         String[] votoArray = vote.split(":");
@@ -635,9 +721,11 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
                 fileReader.close();
             } else {
+                showUserEmptyNotification();
                 Log.e("MainActivity", "El archivo JSON no existe.");
             }
         } catch (Exception e) {
+            showUserEmptyNotification();
             Log.e("MainActivity", "Error al leer el archivo JSON: " + e.getMessage());
         }
         if (alias.isEmpty()){
@@ -679,9 +767,11 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
                 fileReader.close();
             } else {
+                showUserEmptyNotification();
                 Log.e("MainActivity", "El archivo JSON no existe.");
             }
         } catch (Exception e) {
+            showUserEmptyNotification();
             Log.e("MainActivity", "Error al leer el archivo JSON: " + e.getMessage());
         }
         if (miNumero.isEmpty()){
@@ -746,21 +836,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                                 // Mostrar el Toast en el hilo principal
                                 runOnUiThread(() -> {
                                     // Create a notification channel (if needed)
-                                    createNotificationChannel();
-
-                                    // Create the notification
-                                    NotificationCompat.Builder builder = new NotificationCompat.Builder(MenuInicioActivity.this, "channel_id")
-                                            .setSmallIcon(R.drawable.ic_notification) // Replace with your icon
-                                            .setContentTitle("Contacto de Emergencia")
-                                            .setContentText("El número " + finalNumeroContacto + " está en sus contactos de emergencia")
-                                            .setPriority(NotificationCompat.PRIORITY_HIGH)
-                                            .setAutoCancel(true); // Make the notification dismissable
-
-
-                                    // Mostrar la notificación
-                                    NotificationManagerCompat notificationManager = NotificationManagerCompat.from(MenuInicioActivity.this);
-                                    notificationManager.notify(NOTIFICATION_ID, builder.build());
-
+                                    showNotification("Contacto de Emergencia", "El número " + finalNumeroContacto + " está en sus contactos de emergencia", 2);
                                 });
                             }
                             return true;
@@ -779,18 +855,46 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         return false;
     }
 
-
-    // Method to create the notification channel (for Android 8.0 and above)
-    private void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            CharSequence name = "Channel Name"; // Replace with your channel name
-            String description = "Channel Description"; // Replace with your channel description
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel channel = new NotificationChannel("channel_id", name, importance);
-            channel.setDescription(description);
-            NotificationManager notificationManager = getSystemService(NotificationManager.class);notificationManager.createNotificationChannel(channel);
+    private void showUserEmptyNotification() {
+        // Solo mostrar la notificación si aún no se ha mostrado en esta sesión
+        if (!isUserNotificationShown) {
+            showNotification("Datos de usuario incompletos", "Por favor, complete su información personal.", 1);
+            isUserNotificationShown = true; // Marcar la notificación como mostrada
         }
     }
+
+    private void showNotification(String title, String content, int notificationId) {
+        // Asegura que el canal esté creado
+        createNotificationChannelIfNeeded();
+
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, "USER_NOTIFICATION")
+                .setSmallIcon(R.drawable.ic_notification) // Icono de la notificación
+                .setContentTitle(title)
+                .setContentText(content)
+                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setAutoCancel(true);
+
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
+        notificationManager.notify(notificationId, builder.build());
+    }
+
+    // Centraliza la creación de canales de notificación
+    private void createNotificationChannelIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String channelId = "USER_NOTIFICATION";
+            CharSequence name = "User Notifications";
+            String description = "Notificaciones relacionadas con información del usuario";
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(channelId, name, importance);
+            channel.setDescription(description);
+
+            NotificationManager notificationManager = getSystemService(NotificationManager.class);
+            if (notificationManager != null && notificationManager.getNotificationChannel(channelId) == null) {
+                notificationManager.createNotificationChannel(channel);
+            }
+        }
+    }
+
 
 // ACA TERMINA ALIAS
 
@@ -798,5 +902,27 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         accidenteDetectado = false;
         Log.d("MenuInicioActivity", "accidenteDetectado vuelve a: "+accidenteDetectado);
     }
+
+    private void startAccidentDetectionService() {
+        if (!isServiceRunning(AccidentDetectionService.class)) {
+            Intent serviceIntent = new Intent(this, AccidentDetectionService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent);
+            } else {
+                startService(serviceIntent);
+            }
+        }
+    }
+
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
 }

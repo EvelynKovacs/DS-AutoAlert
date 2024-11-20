@@ -3,6 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
+    android:background="@color/black"
     tools:context=".view.fragments.UsuariosConectadosFragment">
 
     <!-- Encabezado de la lista -->
@@ -20,6 +21,7 @@
         android:id="@+id/listView_aliases"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:layout_gravity="center"
         android:divider="@android:color/darker_gray"
-        android:dividerHeight="1dp"/>
+        android:dividerHeight="1dp" />
 </LinearLayout>
