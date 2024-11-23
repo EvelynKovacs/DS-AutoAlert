@@ -6,11 +6,9 @@ import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
@@ -18,11 +16,8 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.provider.Settings;
 import android.util.Log;
-import android.view.WindowManager;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -32,24 +27,16 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.work.Constraints;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
 
 
 import com.example.autoalert.R;
 import com.example.autoalert.data.AccidentDetectionService;
 import com.example.autoalert.utils.FileUtils;
-import com.example.autoalert.utils.LocationWorker;
 import com.example.autoalert.utils.NetworkUtils;
-import com.example.autoalert.utils.NotificadorAccidente;
 import com.example.autoalert.view.fragments.PantallaBienvenidaFragment;
-import com.example.autoalert.view.fragments.PasosASeguirFragment;
 import com.example.autoalert.view.fragments.PrincipalFragment;
 import com.example.autoalert.view.fragments.SimulacionFragment;
 import com.example.autoalert.viewmodel.AccidentViewModel;
@@ -66,7 +53,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -116,11 +102,11 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private boolean accidenteDetectado=false;
     private ActivityResultLauncher<Intent> checkSettingsLauncher;
 
+    private boolean isCalledFromService = false;  // Esta bandera se activará si el servicio llama a la actividad
 
 
 
     private static final int NOTIFICATION_ID = 1; // Puedes usar cualquier número único
-
 
 
     private WifiHotspot hotspotManager;
@@ -257,6 +243,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         // Inicializar el ViewModel
         speedViewModel = new ViewModelProvider(this).get(SpeedViewModel.class);
+
 
         // Observar los cambios de dirección
 //        speedViewModel.getAddress().observe(this, address -> {
@@ -527,23 +514,45 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     @Override
     protected void onPause() {
         super.onPause();
+        Log.d("onPause","Entro al onPause");
         if (isNetworkReceiverRegistered) {
             unregisterReceiver(networkChangeReceiver);
             isNetworkReceiverRegistered = false;
         }
-        isAppInForeground = false;
+        if (isCalledFromService==true && isAppInForeground==false) {
+            //isCalledFromService = false; // Resetea la bandera
+            // Realiza la acción necesaria al regresar desde el servicio
+        }
+
+        isAppInForeground = true; // La app esta en segundo plano
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        Log.d("EnResume","Entro al onResume");
         if (!isNetworkReceiverRegistered) {
             IntentFilter filter = new IntentFilter();
             filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
             registerReceiver(networkChangeReceiver, filter);
             isNetworkReceiverRegistered = true;
         }
-        isAppInForeground = true;
+        Log.d("MenuInicioActivity", "En onResume el valor de isAppInForeground es: "+isAppInForeground);
+        if (isCalledFromService==true && isAppInForeground==true) {
+            Log.d("MenuInicioActivity", "Llamada desde el servicio mientras la app está en 2° plano");
+            //isCalledFromService = false; // Resetea la bandera
+            // Realiza la acción necesaria al regresar desde el servicio
+        }
+        if (isCalledFromService==true && isAppInForeground==false) {
+            Log.d("MenuInicioActivity", "Llamada desde el servicio mientras la app está en 1° plano");
+            //isCalledFromService = false; // Resetea la bandera
+            // Realiza la acción necesaria al regresar desde el servicio
+        }
+        if (isCalledFromService==false && isAppInForeground==false) {
+            Log.d("MenuInicioActivity", "Llamada no fue desde el servicio y la app está en 1° plano");
+            //isCalledFromService = false; // Resetea la bandera
+            // Realiza la acción necesaria al regresar desde el servicio
+        }
     }
 
     public boolean isAppInForeground() {
@@ -924,5 +933,40 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         return false;
     }
 
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);  // Actualiza el Intent de la actividad
+
+        // Verifica si la llamada es desde el servicio
+        boolean fromService = intent.getBooleanExtra("from_service", false);
+        if (fromService) {
+            isCalledFromService = true;  // Marca que la llamada es desde el servicio
+            Log.d("MenuInicioActivity", "Llamada desde el servicio detectada");
+        }
+
+        // Procesa el Intent
+        handleIntent(intent);
+    }
+
+
+    private void handleIntent(Intent intent) {
+        boolean fromService = intent.getBooleanExtra("from_service", false);
+        Log.d("MenuInicioActivity", "fromService: " + fromService);
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        SimulacionFragment simulacionFragment = SimulacionFragment.newInstance(fromService);
+
+        FragmentTransaction transaction = fragmentManager.beginTransaction();
+        transaction.replace(R.id.fcv_main_container, simulacionFragment);
+
+        if (fromService ) {
+            transaction.addToBackStack(null); // Agrega a la pila para permitir retroceso
+        }
+
+        transaction.commitAllowingStateLoss();
+    }
+
 
 }
+

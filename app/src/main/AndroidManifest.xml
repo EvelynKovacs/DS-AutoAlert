@@ -49,6 +49,8 @@
             android:name=".view.activities.MenuInicioActivity"
             android:exported="true"
             android:configChanges="orientation"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
             android:screenOrientation="portrait"
             tools:ignore="MissingClass">
             <intent-filter>

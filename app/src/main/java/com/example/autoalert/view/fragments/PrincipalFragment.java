@@ -315,10 +315,13 @@ public class PrincipalFragment extends Fragment {
 
     private void startSimulation() {
         // Iniciar transacción para cambiar al SimulacionFragment
+        // Cuando el fragmento se lanza desde el botón
+        SimulacionFragment simulacionFragment = SimulacionFragment.newInstance(false);
         FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
         transaction.replace(R.id.fcv_main_container, simulacionFragment);
-        transaction.addToBackStack(null);
+        transaction.addToBackStack(null); // Añadir al backstack para poder volver atrás
         transaction.commit();
+
     }
 
     private boolean hasPermissions() {

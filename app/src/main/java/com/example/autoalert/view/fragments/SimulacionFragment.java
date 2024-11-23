@@ -25,6 +25,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.os.CountDownTimer;
@@ -70,12 +72,26 @@ public class SimulacionFragment extends Fragment {
 
     boolean isConfirmationPressed = false; // Variable de estado para rastrear si se presionó el botón de confirmación
 
+    private boolean fromService; // Flag para saber si llegó desde el servicio
+
     // Declare the launcher for permission requests
     private ActivityResultLauncher<String[]> requestPermissionLauncher;
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // Verifica si el fragmento fue lanzado desde el servicio
+        if (getArguments() != null) {
+            fromService = getArguments().getBoolean("from_service", false);
+        }
+    }
+
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_simulacion, container, false);
+
+        menuInicioActivity = (MenuInicioActivity) requireActivity(); // Safely cast to your activity
+
 
         // Initialize the launcher for permissions
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -111,22 +127,38 @@ public class SimulacionFragment extends Fragment {
             Log.e("SimulacionFragment", "ProgressBar is null");
         }
 
-        stop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                stopSoundAndTimer();
-                //menuInicioActivity.resetAccidenteDetectado(); // FUNCIONA
-                requireActivity().onBackPressed(); // Regresar a la pantalla anterior
+        stop.setOnClickListener(v -> {
+            stopSoundAndTimer(); // Detén sonido y temporizador
+
+            Log.e("SimulacionFragmentBool", "El from service tiene: "+fromService+" Y el isApp tiene: "+menuInicioActivity.isAppInForeground());
+
+            if (fromService &&  menuInicioActivity.isAppInForeground() == false) {
+                if (requireActivity().isTaskRoot()) {
+                    // Si la app está en segundo plano, salir completamente
+                    ActivityCompat.finishAffinity(requireActivity());
+                }
+            } else {
+                // Caso normal: Regresa al fragmento anterior o cierra la actividad si no hay más fragmentos
+                if (getParentFragmentManager().getBackStackEntryCount() > 0) {
+                    getParentFragmentManager().popBackStack();
+                } else {
+                    requireActivity().finish();
+                }
             }
         });
 
+
+
+
+
+/*
         showMessage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 isConfirmationPressed = true; // Marca que el botón de confirmación fue presionado
                 enviarMensaje(v);
             }
-        });
+        });*/
 
         showMessage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -423,10 +455,11 @@ public class SimulacionFragment extends Fragment {
                 args.putInt("userId", 1); // Ensure the user ID is set
                 detalleUsuarioFragment.setArguments(args);
 
+
+
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
                         .replace(R.id.fcv_main_container, detalleUsuarioFragment)
-                        .addToBackStack(null)
                         .commit();
 
             } catch (IOException e) {
@@ -564,6 +597,15 @@ public class SimulacionFragment extends Fragment {
         if (timer != null) {
             timer.cancel();
         }
+    }
+
+    // Método para obtener argumentos y saber si fue lanzado desde el servicio
+    public static SimulacionFragment newInstance(boolean fromService) {
+        SimulacionFragment fragment = new SimulacionFragment();
+        Bundle args = new Bundle();
+        args.putBoolean("from_service", fromService);
+        fragment.setArguments(args);
+        return fragment;
     }
 
 //    @Override

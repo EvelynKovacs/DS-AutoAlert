@@ -1,9 +1,12 @@
 package com.example.autoalert.data;
 
+import android.app.ActivityManager;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Binder;
@@ -34,6 +37,7 @@ import com.example.autoalert.viewmodel.SpeedViewModel;
 import com.example.autoalert.utils.NotificadorAccidente;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 
 public class AccidentDetectionService extends LifecycleService {
@@ -267,19 +271,29 @@ public class AccidentDetectionService extends LifecycleService {
         stopSelf(); // Detener el servicio
     }
 
+
     private void showLockScreenActivity() {
         if (!isLockScreenActivityShown) {
             isLockScreenActivityShown = true;
-            Intent intent = new Intent(this, BackgroundAccidentActivity.class);
+            Intent intent = new Intent(this, MenuInicioActivity.class);
+            intent.putExtra("from_service", true); // Indicador de que viene del servicio
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK |
-                    Intent.FLAG_ACTIVITY_CLEAR_TOP |
                     Intent.FLAG_ACTIVITY_REORDER_TO_FRONT |
-                    Intent.FLAG_ACTIVITY_SINGLE_TOP |
-                    Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS);
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
         }
     }
 
-
+    private boolean isActivityInForeground(Context context, Class<?> activityClass) {
+        ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningTaskInfo> tasks = activityManager.getRunningTasks(1);
+        if (tasks != null && !tasks.isEmpty()) {
+            ComponentName topActivity = tasks.get(0).topActivity;
+            if (topActivity != null && topActivity.getClassName().equals(activityClass.getName())) {
+                return true;
+            }
+        }
+        return false;
+    }
 
 }

@@ -30,7 +30,7 @@ public class BackgroundAccidentActivity extends AppCompatActivity {
         if (savedInstanceState == null) {
             SimulacionFragment simulacionFragment = new SimulacionFragment();
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-            transaction.replace(R.id.fragment_container, simulacionFragment);
+            transaction.replace(R.id.fcv_main_container, simulacionFragment);
             transaction.commit();
         }
     }
