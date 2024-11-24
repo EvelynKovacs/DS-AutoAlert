@@ -88,6 +88,8 @@ import static com.example.autoalert.utils.AutoParado.elAutoEstaParado;
 import android.content.Context;
 import android.util.Log;
 import com.example.autoalert.model.entities.DatosMovimiento;
+import com.example.autoalert.repository.CsvAccFrontal;
+
 import java.util.LinkedList;
 
 public class DetectorAccidenteFrontal {
@@ -99,6 +101,9 @@ public class DetectorAccidenteFrontal {
     private long tiempoInicioEvaluacion = 0;
     private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
 
+    private CsvAccFrontal csvAccFrontal;
+
+
 
 
     private int contadorCero=0;
@@ -108,6 +113,7 @@ public class DetectorAccidenteFrontal {
 
     public DetectorAccidenteFrontal(Context context) {
         this.context = context.getApplicationContext();
+        csvAccFrontal= new CsvAccFrontal(context);
     }
 
     public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
@@ -122,9 +128,10 @@ public class DetectorAccidenteFrontal {
                 desaceleracionBruscaConfirmada = true;
                 //tiempoInicioEvaluacion = nuevoDato.getTiempo();
                 Log.i("ACCIDENTE_FRONTAL", "Desaceleración brusca confirmada. Iniciando evaluación de patrón.");
-
+                csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),umbralVariable,diferenciaVelocidad,desaceleracionBruscaConfirmada,false );
             } else {
                 historialDatos.removeFirst();  // No hay desaceleración, eliminar el primer dato y continuar
+                csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),umbralVariable,diferenciaVelocidad,desaceleracionBruscaConfirmada,false );
 
                 return false;
             }
@@ -134,6 +141,7 @@ public class DetectorAccidenteFrontal {
         // Si ya se confirmó la desaceleración brusca, evaluar el patrón de los datos posteriores
         if (desaceleracionBruscaConfirmada) {
             if (evaluarMovimientoPosterior()) {
+                csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,0,false,true);
 
                 Log.i("ACCIDENTE_FRONTAL", "Accidente frontal detectado.");
                 desaceleracionBruscaConfirmada = false;
@@ -141,15 +149,21 @@ public class DetectorAccidenteFrontal {
                 historialDatos.clear();  // Limpiar el historial tras detectar el accidente
 
                 return true;  // Accidente detectado
-            } else if (romperPatron()) {
+            } /*else if (romperPatron()) {
 
                 // Si se rompe el patrón (por ejemplo, el vehículo acelera), reiniciar la evaluación
                 desaceleracionBruscaConfirmada = false;
                 historialDatos.clear();
                 historialDatos.add(nuevoDato);  // Guardar el último dato y continuar la evaluación
-            }
+            }*/
+
+            csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,0, false, false);
 
         }
+        if(historialDatos.size() < 2) {
+            csvAccFrontal.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,0, false, false);
+        }
+
 
         return false;
 
@@ -188,7 +202,7 @@ public class DetectorAccidenteFrontal {
             return false;
         }
 
-        if(historialDatos.getLast().getVelocidad()==0 ){
+        if(historialDatos.getLast().getVelocidad()<=3 ){
             contadorCero++;
             Log.i(TAG,"CERO: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {
@@ -226,6 +240,7 @@ public class DetectorAccidenteFrontal {
 //    }
 
     // Romper el patrón de desaceleración si hay un aumento de velocidad
+    /*
     private boolean romperPatron() {
         for (int i = 1; i < historialDatos.size(); i++) {
             DatosMovimiento anterior = historialDatos.get(i - 1);
@@ -237,5 +252,5 @@ public class DetectorAccidenteFrontal {
             }
         }
         return false;
-    }
+    }*/
 }

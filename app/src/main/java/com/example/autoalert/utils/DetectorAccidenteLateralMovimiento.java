@@ -11,6 +11,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.autoalert.model.entities.DatosMovimiento;
+import com.example.autoalert.repository.CsvAccLateral;
 
 
 import java.util.LinkedList;
@@ -25,6 +26,7 @@ public class DetectorAccidenteLateralMovimiento {
     private boolean cambioBrusco=false;
     private boolean desaceleracionBruscaDetectada=false;
     private boolean aceleracionBruscaDetectada=false;
+    private static final double VELOCIDAD_MINIMA = 20.0;
 
     private int contadorCero = 0;
     private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
@@ -32,9 +34,13 @@ public class DetectorAccidenteLateralMovimiento {
     private double umbralVariable;
 
     private Context context; // Agregar contexto para el archivo
+    private CsvAccLateral csvAccLateral;
+
+
 
     public DetectorAccidenteLateralMovimiento(Context context) {
         this.context = context.getApplicationContext(); // Usar el contexto de aplicación para evitar fugas
+        csvAccLateral=new CsvAccLateral(context);
 
 
     }
@@ -49,9 +55,13 @@ public class DetectorAccidenteLateralMovimiento {
                 cambioBruscoDetectado = true;
                 historialDatos.clear();
                 Log.i(TAG, "Condiciones previas cumplidas. Recolectando 3 nuevos datos...");
+                csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),angulo,cambioBrusco,desaceleracionBruscaDetectada,aceleracionBruscaDetectada,false );
+
 
                 return false; // Aún no es accidente, pero se cumple la primera condición
             }
+            csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),angulo,cambioBrusco,desaceleracionBruscaDetectada,aceleracionBruscaDetectada,false );
+
 
             historialDatos.removeFirst();
             return false;
@@ -65,6 +75,7 @@ public class DetectorAccidenteLateralMovimiento {
 
             if (analizarMovimientoPosterior()) {
                 Log.i(TAG, "Posible accidente lateral detectado.");
+                csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,false,false,false,true);
 
                 cambioBruscoDetectado = false;
                 contadorCero=0;
@@ -73,6 +84,7 @@ public class DetectorAccidenteLateralMovimiento {
 
                 return true;  // Accidente detectado
             } else {
+                csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(),nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,false,false,false,false);
 
                 Log.i(TAG, "No se detecta accidente.");
             }
@@ -81,6 +93,7 @@ public class DetectorAccidenteLateralMovimiento {
 
         }
         if(historialDatos.size() < 3&& !cambioBruscoDetectado) {
+            csvAccLateral.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(),0,false, false, false,false);
         }
 
         return false;  // Por defecto, no se detecta accidente
@@ -125,6 +138,13 @@ public class DetectorAccidenteLateralMovimiento {
         DatosMovimiento punto1 = historialDatos.get(1);
         DatosMovimiento punto2 = historialDatos.get(2);
 
+        if (punto1.getVelocidad() < VELOCIDAD_MINIMA) {
+            Log.i("ACCIDENTE_LATERAL" , "Velocidad inicial menor a 20 km/h: no se evalúa la desaceleración.");
+            umbralVariable = 0;
+            diferenciaVelocidad =0;
+            return false;  // No evaluar, simplemente seguir acumulando datos
+        }
+
         umbralVariable = punto1.getVelocidad() * 0.8;  // 80% de la velocidad del primer dato
         diferenciaVelocidad = punto1.getVelocidad() - punto2.getVelocidad();
 
@@ -139,7 +159,7 @@ public class DetectorAccidenteLateralMovimiento {
             return false;
         }
 
-        if(historialDatos.getLast().getVelocidad()==0 ){
+        if(historialDatos.getLast().getVelocidad()<=3 ){
             contadorCero++;
             Log.i(TAG,"CERO EN LAT: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {

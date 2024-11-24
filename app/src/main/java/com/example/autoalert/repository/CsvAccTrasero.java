@@ -21,17 +21,18 @@ public class CsvAccTrasero {
     private void createCsvFile(Context context) {
         try {
             // Verificar si el almacenamiento externo está disponible
-            if (isExternalStorageWritable()) {
+            //if (isExternalStorageWritable()) {
                 // Crear el archivo .csv
-                File storageDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS);
+                File storageDir = context.getFilesDir();
                 csvFile = new File(storageDir, "datos_acc_trasero.csv");
-                FileWriter writer = new FileWriter(csvFile);
+                if(!csvFile.exists()) {
+                    FileWriter writer = new FileWriter(csvFile);
 
-                // Escribir encabezados
-                writer.append("Time,Velocidad (km/h), Latitud,Longitud,Acel_Brusca,Accidente\n");
-                writer.flush();
-                writer.close();
-            }
+                    // Escribir encabezados
+                    writer.append("Time,Velocidad (km/h), Latitud,Longitud,Acel_Brusca,Accidente\n");
+                    writer.flush();
+                    writer.close();
+                }
         } catch (IOException e) {
             e.printStackTrace();
         }

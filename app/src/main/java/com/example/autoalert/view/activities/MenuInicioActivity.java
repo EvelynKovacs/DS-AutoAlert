@@ -15,6 +15,7 @@ import android.net.wifi.WifiManager;
 import android.net.wifi.p2p.WifiP2pManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -37,6 +38,10 @@ import androidx.work.WorkManager;
 
 
 import com.example.autoalert.R;
+import com.example.autoalert.repository.CsvAccFrontal;
+import com.example.autoalert.repository.CsvAccLateral;
+import com.example.autoalert.repository.CsvAccTrasero;
+import com.example.autoalert.utils.CreateZipFile;
 import com.example.autoalert.utils.FileUtils;
 import com.example.autoalert.utils.LocationWorker;
 import com.example.autoalert.utils.NetworkUtils;
@@ -52,7 +57,9 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -64,6 +71,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.widget.TextView;
+import java.util.ArrayList;
 
 
 
@@ -94,6 +102,12 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     private HashMap<String, String> ipTimestamp = new HashMap<>();
 
 
+    private CsvAccLateral csvHelper; // Declarar CsvHelper
+    private String zipFilePath; // Variable global para almacenar la ruta del archivo ZIP
+    private CsvAccFrontal csvAccFrontal;
+    private CsvAccTrasero csvAccTrasero;
+
+
     private AccidentViewModel accidentViewModel;
     private SpeedViewModel speedViewModel;
     private TextView tvAddress;  // Nuevo TextView para la dirección
@@ -119,6 +133,9 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_inicio);
         //tvAddress = findViewById(R.id.tvAddress);  // TextView para la dirección
+        csvHelper = new CsvAccLateral(this);
+        csvAccFrontal= new CsvAccFrontal(this);
+        csvAccTrasero= new CsvAccTrasero(this);
 
 
         // Solicitar los permisos al iniciar la actividad
@@ -146,7 +163,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                     }
                 }
         );
-
+           // guardarArchivosCSV();
         // COSAS DE CONEXIONES
 
         wifiManager = (WifiManager) getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -792,8 +809,34 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         }
     }
 
-// ACA TERMINA ALIAS
 
+// ACA TERMINA ALIAS
+public void guardarArchivosCSV() {
+    // Lista de archivos CSV creados
+    String zipFilePath = getFilesDir() + "/datos.zip"; // Ruta en el almacenamiento interno
+
+    try {
+        // Crear un archivo de salida (FileOutputStream) en la ruta interna
+       // File file = new File(zipFilePath);
+        //FileOutputStream fos = new FileOutputStream(file);
+
+        // Crear una lista de los archivos CSV que quieres incluir en el ZIP
+        ArrayList<String> csvFilePaths = new ArrayList<>();
+        csvFilePaths.add(csvHelper.getCsvFilePath());
+        csvFilePaths.add(csvAccFrontal.getCsvFilePath());
+        csvFilePaths.add(csvAccTrasero.getCsvFilePath());
+
+        // Crear el archivo ZIP usando el FileOutputStream
+        CreateZipFile zipCreator = new CreateZipFile();
+        zipCreator.createZipFile(csvFilePaths, zipFilePath);  // Pasa el FileOutputStream
+
+        // Mostrar mensaje de éxito
+        Toast.makeText(this, "Archivo ZIP guardado en: " + zipFilePath, Toast.LENGTH_SHORT).show();
+    } catch (IOException e) {
+        e.printStackTrace();
+        Toast.makeText(this, "Error al crear el archivo ZIP", Toast.LENGTH_SHORT).show();
+    }
+}
     public void resetAccidenteDetectado() {
         accidenteDetectado = false;
         Log.d("MenuInicioActivity", "accidenteDetectado vuelve a: "+accidenteDetectado);

@@ -207,7 +207,11 @@ public class FileUtils {
                     if (!file.getName().equals("ubicaciones_periodicas.json") &&
                             !file.getName().equals("ultima_ubicacion.json") &&
                             !file.getName().equals("user_data.json") &&
-                            !file.getName().equals("speed_data.txt")){
+                            !file.getName().equals("speed_data.txt") &&
+                            !file.getName().equals("datos_acc_frontal.csv") &&
+                            !file.getName().equals("datos_acc_lateral.csv") &&
+                            !file.getName().equals("datos_acc_trasero.csv"))
+                    {
 
                         try (FileOutputStream fos = new FileOutputStream(file)) {
                             // Escribir un contenido vacío para vaciar el archivo

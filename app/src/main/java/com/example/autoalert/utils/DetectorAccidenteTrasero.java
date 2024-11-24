@@ -89,6 +89,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.example.autoalert.model.entities.DatosMovimiento;
+import com.example.autoalert.repository.CsvAccTrasero;
 
 
 import java.util.LinkedList;
@@ -102,6 +103,8 @@ public class DetectorAccidenteTrasero {
 
     private boolean aceleracionBruscaConfirmada;
     private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
+    private CsvAccTrasero csvAccTrasero;
+
 
 
 
@@ -109,6 +112,7 @@ public class DetectorAccidenteTrasero {
 
     public DetectorAccidenteTrasero(Context context) {
         this.context = context.getApplicationContext();
+        csvAccTrasero= new CsvAccTrasero(context);
     }
 
     public boolean registrarNuevoDato(DatosMovimiento nuevoDato) {
@@ -122,12 +126,16 @@ public class DetectorAccidenteTrasero {
             if (analizarCondicionesPrevias()) {
                 aceleracionBruscaDetectada = true;
                 historialDatos.clear();
+                csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), aceleracionBruscaConfirmada, false);
+
 
                 Log.i("ACCIDENTE_TRASERO", "Aceleración brusca detectada, evaluando comportamiento posterior.");
                 return false;  // Aceleración detectada, pero aún no se confirma el accidente
             }
             else {
                 historialDatos.removeFirst();
+                csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), aceleracionBruscaConfirmada, false);
+
 
                 return false;  // No se cumplen las condiciones// previas
             }
@@ -147,7 +155,13 @@ public class DetectorAccidenteTrasero {
             }
 
         }
+        if (historialDatos.size() != 2 && historialDatos.size() != 10) {
+            csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, false);
+        }
+        if (aceleracionBruscaDetectada && historialDatos.size() == 2) {
+            csvAccTrasero.saveDataToCsv(nuevoDato.getVelocidad(), nuevoDato.getLatitud(), nuevoDato.getLongitud(), false, false);
 
+        }
 
 
         return false;  // Por defecto, si no se cumplen las condiciones de accidente
@@ -192,7 +206,7 @@ public class DetectorAccidenteTrasero {
             return false;
         }
 
-        if(historialDatos.getLast().getVelocidad()==0 ){
+        if(historialDatos.getLast().getVelocidad()<=3 ){
             contadorCero++;
             Log.i(TAG,"CERO en TRASE: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {

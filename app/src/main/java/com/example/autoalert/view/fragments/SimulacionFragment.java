@@ -38,8 +38,12 @@ import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.example.autoalert.R;
+import com.example.autoalert.utils.FileUtils;
 import com.example.autoalert.utils.SmsUtils;
+import com.example.autoalert.view.activities.BroadcastReceiver;
+import com.example.autoalert.view.activities.BroadcastSender;
 import com.example.autoalert.view.activities.MenuInicioActivity;
+import com.example.autoalert.view.activities.MessageSender;
 import com.example.autoalert.viewmodel.SpeedViewModel;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -50,8 +54,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 
 public class SimulacionFragment extends Fragment {
@@ -61,8 +67,15 @@ public class SimulacionFragment extends Fragment {
     ProgressBar progressBar;
     ArrayList<String> contactos;
 
+    private FileUtils fileUtils;
+
     private MenuInicioActivity menuInicioActivity;
 
+    private BroadcastSender broadcastSender;
+    private BroadcastReceiver broadcastReceiver;
+
+
+    private MessageSender messageSender;
     private SpeedViewModel speedViewModel;
     private Location currentLocation;
 
@@ -77,6 +90,10 @@ public class SimulacionFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.fragment_simulacion, container, false);
 
+        broadcastSender = new BroadcastSender(menuInicioActivity);
+        broadcastReceiver = new BroadcastReceiver(menuInicioActivity);
+
+        fileUtils = new FileUtils(menuInicioActivity);
         // Initialize the launcher for permissions
         requestPermissionLauncher = registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
             Boolean fineLocationGranted = result.get(Manifest.permission.ACCESS_FINE_LOCATION);
@@ -114,11 +131,24 @@ public class SimulacionFragment extends Fragment {
         stop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                messageSender = new MessageSender();
+                menuInicioActivity = (MenuInicioActivity) getActivity();
                 stopSoundAndTimer();
-                //menuInicioActivity.resetAccidenteDetectado(); // FUNCIONA
-                requireActivity().onBackPressed(); // Regresar a la pantalla anterior
+                Set<String> listaIps = menuInicioActivity.leerListaIpsEnArchivo();
+                if(!listaIps.isEmpty()){
+                    for(String targetIp : listaIps) {
+
+                        String message = "NAVIGATE_BACK_REQUEST";
+
+                        messageSender.sendMessage(targetIp, message);
+                        Log.i("Envio de Estado", "Enviando mensaje a " + targetIp + " con: " + message);
+                    }
+                }
+                broadcastSender.sendNavigateBackMessage(); // Enviar el mensaje a los demás dispositivos
+                requireActivity().onBackPressed(); // Regresar a la pantalla anterior en el dispositivo actual
             }
         });
+
 
         showMessage.setOnClickListener(new View.OnClickListener() {
             @Override
