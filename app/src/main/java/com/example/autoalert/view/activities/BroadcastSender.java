@@ -56,5 +56,33 @@ public class BroadcastSender {
             }
         }).start();
     }
+
+    public void sendNavigateBackMessage() {
+        new Thread(() -> {
+            try {
+                Calendar calendar = Calendar.getInstance();
+                long timestamp = calendar.getTimeInMillis();
+                String timestampString = Long.toString(timestamp);
+                //String alias = this.mainActivity.getAlias();
+                //String miNumero = this.mainActivity.getMiNumero();
+
+                // Construir el mensaje de navegación
+                String message = timestampString + "-" + "NAVIGATE_BACK_REQUEST";
+
+                DatagramSocket socket = new DatagramSocket();
+                socket.setBroadcast(true);
+                InetAddress broadcastAddress = this.networkUtils.getBroadcastAddress();
+                byte[] sendData = message.getBytes();
+                DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, broadcastAddress, BROADCAST_PORT);
+                socket.send(sendPacket);
+                socket.close();
+
+                Log.d("BroadcastSender", "Mensaje de navegación enviado.");
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.e("BroadcastSender", "Error al enviar el mensaje de navegación: " + e.getMessage());
+            }
+        }).start();
+    }
 }
 

@@ -45,6 +45,13 @@ public class MessageReceiver {
                         Log.i("Recepción de mensajes", "Es un mensaje de ACCIDENTE. Mensaje: " + message);
                         ((MenuInicioActivity)context).enviarEstado();
                     }
+                    if (message.equals("NAVIGATE_BACK_REQUEST")) {
+                        Log.d("BroadcastReceiver", "Mensaje de navegación recibido de " + clientIp);
+                        ((MenuInicioActivity)context).runOnUiThread(() -> {
+                            // Utiliza el método para regresar a la pantalla anterior
+                            ((MenuInicioActivity)context).onBackPressed(); // O cualquier acción específica que necesites
+                        });
+                    }
                     input.close();
                     clientSocket.close();
                 }

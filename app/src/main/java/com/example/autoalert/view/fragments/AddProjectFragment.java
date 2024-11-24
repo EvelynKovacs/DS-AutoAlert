@@ -432,7 +432,7 @@ public class AddProjectFragment extends Fragment {
 
         // Save to JSON file
         saveProjectToFile(projectModel);
-        Toast.makeText(requireContext(), "Inserted", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Usuario creado con éxito", Toast.LENGTH_SHORT).show();
         // Navegar al fragmento VerUsuarioFragment
         requireActivity().getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fcv_main_container, new VerUsuarioFragment()) // Asegúrate de que el ID sea correcto

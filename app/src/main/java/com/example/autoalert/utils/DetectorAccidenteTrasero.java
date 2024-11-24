@@ -192,7 +192,7 @@
                 return false;
             }
 
-            if(historialDatos.getLast().getVelocidad()==0 ){
+            if(historialDatos.getLast().getVelocidad()<=3 ){
                 contadorCero++;
                 Log.i(TAG,"CERO en TRASE: "+ contadorCero);
                 if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {

@@ -141,14 +141,13 @@ public class DetectorAccidenteFrontal {
                 historialDatos.clear();  // Limpiar el historial tras detectar el accidente
 
                 return true;  // Accidente detectado
-            } else if (romperPatron()) {
+            } /*else if (romperPatron()) {
 
                 // Si se rompe el patrón (por ejemplo, el vehículo acelera), reiniciar la evaluación
                 desaceleracionBruscaConfirmada = false;
                 historialDatos.clear();
                 historialDatos.add(nuevoDato);  // Guardar el último dato y continuar la evaluación
-            }
-
+            }*/
         }
 
         return false;
@@ -188,7 +187,7 @@ public class DetectorAccidenteFrontal {
             return false;
         }
 
-        if(historialDatos.getLast().getVelocidad()==0 ){
+        if(historialDatos.getLast().getVelocidad()<=3 ){
             contadorCero++;
             Log.i(TAG,"CERO: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {
@@ -226,7 +225,7 @@ public class DetectorAccidenteFrontal {
 //    }
 
     // Romper el patrón de desaceleración si hay un aumento de velocidad
-    private boolean romperPatron() {
+    /*private boolean romperPatron() {
         for (int i = 1; i < historialDatos.size(); i++) {
             DatosMovimiento anterior = historialDatos.get(i - 1);
             DatosMovimiento actual = historialDatos.get(i);
@@ -237,6 +236,6 @@ public class DetectorAccidenteFrontal {
             }
         }
         return false;
-    }
+    }*/
 }
 

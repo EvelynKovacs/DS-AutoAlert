@@ -25,6 +25,7 @@ public class DetectorAccidenteLateralMovimiento {
     private boolean cambioBrusco=false;
     private boolean desaceleracionBruscaDetectada=false;
     private boolean aceleracionBruscaDetectada=false;
+    private static final double VELOCIDAD_MINIMA = 20.0;
 
     private int contadorCero = 0;
     private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
@@ -125,6 +126,13 @@ public class DetectorAccidenteLateralMovimiento {
         DatosMovimiento punto1 = historialDatos.get(1);
         DatosMovimiento punto2 = historialDatos.get(2);
 
+        if (punto1.getVelocidad() < VELOCIDAD_MINIMA) {
+            Log.i("ACCIDENTE_LATERAL" , "Velocidad inicial menor a 20 km/h: no se evalúa la desaceleración.");
+            umbralVariable = 0;
+            diferenciaVelocidad =0;
+            return false;  // No evaluar, simplemente seguir acumulando datos
+        }
+
         umbralVariable = punto1.getVelocidad() * 0.8;  // 80% de la velocidad del primer dato
         diferenciaVelocidad = punto1.getVelocidad() - punto2.getVelocidad();
 
@@ -139,7 +147,7 @@ public class DetectorAccidenteLateralMovimiento {
             return false;
         }
 
-        if(historialDatos.getLast().getVelocidad()==0 ){
+        if(historialDatos.getLast().getVelocidad()<=3 ){
             contadorCero++;
             Log.i(TAG,"CERO EN LAT: "+ contadorCero);
             if (contadorCero >= CEROS_CONSECUTIVOS_NECESARIOS) {
