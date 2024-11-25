@@ -94,7 +94,7 @@
         private final MutableLiveData<Boolean> locationEnabled = new MutableLiveData<>();
 
 
-        private static final long UPDATE_INTERVAL_MS = 2000;
+        private static final long UPDATE_INTERVAL_MS = 100;
 
         private Location locationDeArchivo;
         private MutableLiveData<Location> locationLiveData = new MutableLiveData<>();
@@ -503,7 +503,13 @@
                     // Ruta del archivo
 //                    File csvFile = new File(getApplication().getFilesDir(), fileName);
 //                    BufferedReader reader = new BufferedReader(new FileReader(csvFile));
-                    String archivo = fileName.equals("accidente") ? "accidente" : "normal";
+                    String archivo = fileName.equals("frontal_accidente") ? "frontal_accidente" :
+                            fileName.equals("frontal_normal") ? "frontal_normal" :
+                                    fileName.equals("lateral_accidente") ? "lateral_accidente" :
+                                            fileName.equals("lateral_normal") ? "lateral_normal" :
+                                                    fileName.equals("trasero_accidente") ? "trasero_accidente" :
+                                                            fileName.equals("trasero_normal") ? "trasero_normal" :
+                                                                    "Desconocido";
 
                     // Abrir el archivo desde assets
                     InputStream inputStream = assetManager.open(archivo);

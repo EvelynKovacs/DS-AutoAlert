@@ -1,7 +1,5 @@
 package com.example.autoalert.view.activities;
 
-import static android.content.Context.MODE_PRIVATE;
-
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -32,21 +30,13 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.work.Constraints;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
 
 
 import com.example.autoalert.R;
 import com.example.autoalert.utils.FileUtils;
-import com.example.autoalert.utils.LocationWorker;
 import com.example.autoalert.utils.NetworkUtils;
 import com.example.autoalert.utils.NotificadorAccidente;
 import com.example.autoalert.view.fragments.PantallaBienvenidaFragment;
-import com.example.autoalert.view.fragments.PasosASeguirFragment;
 import com.example.autoalert.view.fragments.PrincipalFragment;
 import com.example.autoalert.view.fragments.SimulacionFragment;
 import com.example.autoalert.viewmodel.AccidentViewModel;
@@ -66,7 +56,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -210,12 +199,28 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Seleccione el archivo a procesar")
-                .setItems(new String[]{"Accidente", "Normal"}, (dialog, which) -> {
-                    String fileName = which == 0 ? "accidente" : "normal";
+                .setItems(new String[]{
+                        "frontal_accidente",
+                        "frontal_normal",
+                        "lateral_accidente",
+                        "lateral_normal",
+                        "trasero_accidente",
+                        "trasero_normal"
+                }, (dialog, which) -> {
+                    String[] fileNames = {
+                            "frontal_accidente",
+                            "frontal_normal",
+                            "lateral_accidente",
+                            "lateral_normal",
+                            "trasero_accidente",
+                            "trasero_normal"
+                    };
+                    String fileName = fileNames[which]; // Obtener el archivo correspondiente
                     speedViewModel.loadLocationsFromCsv(fileName); // Pasar archivo al ViewModel
                 })
                 .setCancelable(false) // Obligar al usuario a elegir
                 .show();
+
 
 
         //archivoAccidenteThread = new ArchivoAccidenteThread(this,loadLocationsFromCsv(),speedViewModel);

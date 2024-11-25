@@ -2,7 +2,7 @@ package com.example.autoalert.utils;
 
 import com.example.autoalert.model.entities.DatosMovimiento;
 
-public class CalcularAngulo {
+/*public class CalcularAngulo {
 
 //    public static double calcularAngulo(DatosMovimiento punto1, DatosMovimiento punto2, DatosMovimiento punto3) {
 //        // Diferencias en latitud y longitud entre los puntos
@@ -52,4 +52,63 @@ public class CalcularAngulo {
     }
 
 
+}*/
+
+public class CalcularAngulo {
+
+//    public static double calcularAngulo(DatosMovimiento punto1, DatosMovimiento punto2, DatosMovimiento punto3) {
+//        // Diferencias en latitud y longitud entre los puntos
+//        double angulo1 = Math.atan2(punto2.getLatitud() - punto1.getLatitud(), punto2.getLongitud() - punto1.getLongitud());
+//        double angulo2 = Math.atan2(punto3.getLatitud() - punto2.getLatitud(), punto3.getLongitud() - punto2.getLongitud());
+//
+//        // Calculamos la diferencia de los ángulos y convertimos a grados
+//        double anguloDiferencia = Math.toDegrees(angulo2 - angulo1);
+//
+//        // Aseguramos que el ángulo esté entre 0 y 360 grados
+//        if (anguloDiferencia < 0) {
+//            anguloDiferencia += 360;
+//        }
+//
+//        return anguloDiferencia;
+//    }
+
+
+    public static double calcularAngulo(DatosMovimiento punto1, DatosMovimiento punto2, DatosMovimiento punto3) {
+        // Coordenadas de los puntos
+        double x1 = punto1.getLongitud();
+        double y1 = punto1.getLatitud();
+        double x2 = punto2.getLongitud();
+        double y2 = punto2.getLatitud();
+        double x3 = punto3.getLongitud();
+        double y3 = punto3.getLatitud();
+
+        // Vectores AB y BC
+        double[] AB = {x2 - x1, y2 - y1};
+        double[] BC = {x3 - x2, y3 - y2};
+
+        // Producto punto
+        double productoPunto = AB[0] * BC[0] + AB[1] * BC[1];
+
+        // Magnitudes
+        double magnitudAB = Math.sqrt(AB[0] * AB[0] + AB[1] * AB[1]);
+        double magnitudBC = Math.sqrt(BC[0] * BC[0] + BC[1] * BC[1]);
+
+        // Evitar el caso de magnitudes muy pequeñas (velocidad cero o movimiento nulo)
+        if (magnitudAB == 0 || magnitudBC == 0) {
+            return 0;  // Si no hay movimiento, no hay ángulo
+        }
+
+        // Cálculo del coseno
+        double cosTheta = productoPunto / (magnitudAB * magnitudBC);
+
+        // Asegurarse de que el coseno esté dentro del rango válido [-1, 1]
+        cosTheta = Math.max(-1, Math.min(1, cosTheta));
+
+        // Cálculo del ángulo en radianes
+        double anguloRadianes = Math.acos(cosTheta);
+
+        // Convertir a grados
+        double anguloGrados = Math.toDegrees(anguloRadianes);
+        return anguloGrados;
+    }
 }
