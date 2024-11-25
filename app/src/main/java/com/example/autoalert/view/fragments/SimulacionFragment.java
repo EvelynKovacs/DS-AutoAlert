@@ -200,9 +200,10 @@ public class SimulacionFragment extends Fragment {
         // Ajustar el volumen del dispositivo al máximo
         AudioManager audioManager = (AudioManager) getActivity().getSystemService(Context.AUDIO_SERVICE);
         if (audioManager != null) {
-            int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);int volumeToSet = (int) (maxVolume * 0.25); // Calculate 25% of max volume
-            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, volumeToSet, 0);
+            int maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, maxVolume, AudioManager.FLAG_SHOW_UI);
         }
+
 
         mp = MediaPlayer.create(getActivity(), R.raw.sound_long);
         mp.start();

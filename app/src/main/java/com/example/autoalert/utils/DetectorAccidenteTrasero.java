@@ -95,13 +95,13 @@
 
     public class DetectorAccidenteTrasero {
 
-        private static final double UMBRAL_ACELERACION = 10.0;  // Diferencia en km/h para considerar un aumento brusco
+        private static final double UMBRAL_ACELERACION = 20.0;  // Diferencia en km/h para considerar un aumento brusco
         private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();
         private boolean aceleracionBruscaDetectada = false;
         private Context context;
 
          private boolean aceleracionBruscaConfirmada;
-        private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
+        private static final int CEROS_CONSECUTIVOS_NECESARIOS= 23;
 
 
 

@@ -28,7 +28,7 @@ public class DetectorAccidenteLateralMovimiento {
     private static final double VELOCIDAD_MINIMA = 20.0;
 
     private int contadorCero = 0;
-    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 18;
+    private static final int CEROS_CONSECUTIVOS_NECESARIOS= 23;
     private double diferenciaVelocidad;
     private double umbralVariable;
 

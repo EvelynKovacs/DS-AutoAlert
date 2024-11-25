@@ -506,10 +506,10 @@
                     String archivo = fileName.equals("frontal_accidente") ? "frontal_accidente" :
                             fileName.equals("frontal_normal") ? "frontal_normal" :
                                     fileName.equals("lateral_accidente") ? "lateral_accidente" :
-                                            fileName.equals("lateral_normal") ? "lateral_normal" :
-                                                    fileName.equals("trasero_accidente") ? "trasero_accidente" :
-                                                            fileName.equals("trasero_normal") ? "trasero_normal" :
-                                                                    "Desconocido";
+                                                fileName.equals("lateral_normal") ? "lateral_normal" :
+                                                        fileName.equals("trasero_accidente") ? "trasero_accidente" :
+                                                                fileName.equals("trasero_normal") ? "trasero_normal" :
+                                                                        "Desconocido";
 
                     // Abrir el archivo desde assets
                     InputStream inputStream = assetManager.open(archivo);
