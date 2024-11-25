@@ -587,7 +587,7 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
         for(Map.Entry<String, String> dispositivo : ipTimestampFromFile.entrySet()){
             long diferenciaTiempo = calcularDiferenciaTiempo(dispositivo.getValue());
             Log.i("Verificacion Conexion", "Verificando conexion de: " + dispositivo.getKey());
-            if(diferenciaTiempo > 15){
+            if(diferenciaTiempo > 4){
                 Log.i("Verificacion Conexion", "El dispositivo " + dispositivo.getKey() + " está DESCONECTADO");
                 fileUtils.addAndRefreshMap("map-ip-message", dispositivo.getKey(), "DESCONECTADO");
                 ipMessageMap.put(dispositivo.getKey(), "DESCONECTADO");
@@ -692,7 +692,8 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
                     FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
                     transaction.replace(R.id.fcv_main_container, simulacionFragment);
                     transaction.addToBackStack(null);
-                    transaction.commit();
+                    transaction.commitAllowingStateLoss();
+
                 } else {
                     Log.i("Votacion", "NO HAY ACCIDENTE");
                     setResultadoText("NO HAY ACCIDENTE");
