@@ -267,6 +267,12 @@ public class PrincipalFragment extends Fragment {
                 transaction.replace(R.id.fcv_main_container, addProjectFragment);
                 transaction.addToBackStack(null);
                 transaction.commit();
+            }else{
+                // Iniciar transacción para cambiar al Usuario
+                FragmentTransaction transaction = getParentFragmentManager().beginTransaction();
+                transaction.replace(R.id.fcv_main_container, new AddProjectFragment());
+                transaction.addToBackStack(null);
+                transaction.commit();
             }
         });
 
