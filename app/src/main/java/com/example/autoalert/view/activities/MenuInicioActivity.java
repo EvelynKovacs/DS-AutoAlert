@@ -476,10 +476,11 @@ public class MenuInicioActivity extends AppCompatActivity implements PantallaBie
     protected void onResume() {
         super.onResume();
         speedViewModel.checkLocationSettings(this); // Verifica la configuración de ubicación cada vez que se reanuda la actividad
-        IntentFilter filter = new IntentFilter();
+        /*IntentFilter filter = new IntentFilter();
         filter.addAction("android.net.conn.CONNECTIVITY_CHANGE");
+        registerReceiver(networkChangeReceiver, filter);*/
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         registerReceiver(networkChangeReceiver, filter);
-
     }
 
     public void reiniciarContador(){

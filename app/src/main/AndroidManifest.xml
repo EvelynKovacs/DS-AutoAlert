@@ -59,12 +59,12 @@
         <activity android:name=".view.activities.RedActivity"
             android:configChanges="orientation"
             android:screenOrientation="portrait"/>
-
+<!--
         <receiver android:name=".view.activities.NetworkChangeReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             </intent-filter>
-        </receiver>
+        </receiver> -->
         <meta-data
             android:name="preloaded_fonts"
             android:resource="@array/preloaded_fonts" />
