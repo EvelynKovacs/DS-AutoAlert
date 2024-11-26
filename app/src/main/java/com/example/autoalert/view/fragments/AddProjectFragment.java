@@ -217,7 +217,7 @@ public class AddProjectFragment extends Fragment {
         binding.edtDni.setFilters(new InputFilter[] {new InputFilter.LengthFilter(9)});
 
         // Configura la visibilidad del botón de eliminar
-        binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
+        //binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
 
 //     ((AppCompatActivity) requireActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -240,10 +240,10 @@ public class AddProjectFragment extends Fragment {
             }
 
         });
-        binding.btnDeleteProject.setOnClickListener(view1 -> showDeleteConfirmationDialog());
+        //binding.btnDeleteProject.setOnClickListener(view1 -> showDeleteConfirmationDialog());
         binding.btnAddContact.setOnClickListener(view1 -> showContacts());
         // Configura la visibilidad del botón de eliminar
-        binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
+        //binding.btnDeleteProject.setVisibility(isEdit ? View.VISIBLE : View.GONE);
         binding.profileImg.setOnClickListener(view1 -> clickImage());
         edtFechaNacimiento.setOnClickListener(view1 -> showDatePickerDialog());
 
@@ -398,7 +398,7 @@ public class AddProjectFragment extends Fragment {
             Toast.makeText(requireContext(), "Actualizado", Toast.LENGTH_SHORT).show();
             // Navegar al fragmento VerUsuarioFragment
             requireActivity().getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fcv_main_container, new VerUsuarioFragment()) // Asegúrate de que el ID sea correcto
+                    .replace(R.id.fcv_main_container, new PrincipalFragment()) // Asegúrate de que el ID sea correcto
                     .addToBackStack(null) // Opcional, para permitir regresar al fragmento anterior
                     .commit();
         }
@@ -422,10 +422,10 @@ public class AddProjectFragment extends Fragment {
 
         // Save to JSON file
         saveProjectToFile(projectModel);
-        Toast.makeText(requireContext(), "Inserted", Toast.LENGTH_SHORT).show();
+        Toast.makeText(requireContext(), "Usuario creado Exitosamente", Toast.LENGTH_SHORT).show();
         // Navegar al fragmento VerUsuarioFragment
         requireActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fcv_main_container, new VerUsuarioFragment()) // Asegúrate de que el ID sea correcto
+                .replace(R.id.fcv_main_container, new PrincipalFragment()) // Asegúrate de que el ID sea correcto
                 .addToBackStack(null) // Opcional, para permitir regresar al fragmento anterior
                 .commit();
     }
@@ -461,7 +461,7 @@ public class AddProjectFragment extends Fragment {
         return project;
     }
 
-
+/*
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Confirmar Eliminación")
@@ -480,12 +480,12 @@ public class AddProjectFragment extends Fragment {
 
             // Navegar al fragmento VerUsuarioFragment
             requireActivity().getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fcv_main_container, new VerUsuarioFragment())
+                    .replace(R.id.fcv_main_container, new PrincipalFragment())
                     .addToBackStack(null)
                     .commit();
         }
     }
-
+*/
     private void clearProjectFile() {
         try {
             // Sobrescribir el archivo JSON con un archivo vacío o null

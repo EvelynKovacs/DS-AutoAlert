@@ -177,7 +177,7 @@
                     android:padding="13dp"
                     android:text="Agregar"
                     />
-
+<!--
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnDeleteProject"
                     android:layout_width="match_parent"
@@ -188,7 +188,7 @@
                     android:maxLines="1"
                     android:padding="13dp"
                     android:text="Eliminar"
-                    />
+                    /> -->
             </RelativeLayout>
 
         </LinearLayout>
