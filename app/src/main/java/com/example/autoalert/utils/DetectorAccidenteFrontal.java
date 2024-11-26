@@ -94,7 +94,7 @@ import java.util.LinkedList;
 
 public class DetectorAccidenteFrontal {
 
-    private static final double VELOCIDAD_MINIMA = 25.0;  // Velocidad mínima para considerar desaceleración brusca
+    private static final double VELOCIDAD_MINIMA = 20.0;  // Velocidad mínima para considerar desaceleración brusca
     private LinkedList<DatosMovimiento> historialDatos = new LinkedList<>();
     private Context context;
     private boolean desaceleracionBruscaConfirmada = false;
